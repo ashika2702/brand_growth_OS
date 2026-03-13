@@ -10,7 +10,9 @@ export type NotificationType =
   | 'ads.creative_fatigued' 
   | 'pr.negative_mention' 
   | 'pr.press_opportunity' 
-  | 'pr.response_needed';
+  | 'pr.response_needed'
+  | 'crm.automation'
+  | 'crm.win';
 
 export interface NotificationParams {
   clientId?: string;
@@ -40,9 +42,6 @@ export async function createNotification(params: NotificationParams) {
       }
     });
 
-    // TODO: Integrate Pusher/Ably for real-time WebSocket updates later
-    // TODO: Integrate Resend for urgent email digests
-    
     return notification;
   } catch (error) {
     console.error('Failed to create notification:', error);

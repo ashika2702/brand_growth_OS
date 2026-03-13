@@ -29,7 +29,7 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
           <Link 
             key={i} 
             href={module.href}
-            className="group relative glass-card p-8 rounded-[2.5rem] hover:border-purple-500/50 transition-all duration-700 cursor-pointer overflow-hidden border border-purple-500/5"
+            className="group relative glass-card p-8 rounded-[2.5rem] hover:border-accent-orange/50 transition-all duration-700 cursor-pointer overflow-hidden border-card-border"
           >
             {/* Hover Glow */}
             <div className={`absolute -right-8 -top-8 w-48 h-48 rounded-full opacity-0 group-hover:opacity-20 transition-opacity blur-[80px] ${module.color}`} />
@@ -43,7 +43,7 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
               </div>
               
               <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1 group-hover:text-purple-400 transition-colors">
+                <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1 group-hover:text-accent-orange transition-colors">
                   {module.title}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
@@ -52,8 +52,8 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
               </div>
 
               <div className="pt-4 mt-auto flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-purple-500 transition-colors">Launch Module</span>
-                <div className="w-8 h-8 rounded-full bg-slate-800/50 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-accent-orange transition-colors">Launch Module</span>
+                <div className="w-8 h-8 rounded-full bg-slate-800/50 flex items-center justify-center group-hover:bg-accent-orange group-hover:text-white transition-all">
                   <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>

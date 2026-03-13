@@ -35,9 +35,9 @@ export default function ClientSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-4 py-2 bg-[#1A0B2E]/50 border border-purple-500/10 rounded-xl hover:bg-[#1A0B2E] hover:border-purple-500/30 transition-all group backdrop-blur-md"
+        className="flex items-center gap-3 px-4 py-2 bg-[#111111] border border-[#1F1F1F] rounded-xl hover:bg-[#141414] hover:border-accent-blue/30 transition-all group backdrop-blur-md"
       >
-        <div className="w-6 h-6 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+        <div className="w-6 h-6 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue">
           <Globe size={14} />
         </div>
         <div className="text-left">
@@ -53,7 +53,7 @@ export default function ClientSwitcher() {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full left-0 mt-2 w-72 bg-[#1A0B2E] border border-purple-500/20 rounded-2xl shadow-2xl shadow-black/50 z-50 p-2 animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
+          <div className="absolute top-full left-0 mt-2 w-72 bg-[#111111] border border-[#1F1F1F] rounded-2xl shadow-2xl shadow-black/80 z-50 p-2 animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
             <div className="max-h-60 overflow-y-auto no-scrollbar">
               {clients.map((client) => (
                 <button
@@ -63,7 +63,7 @@ export default function ClientSwitcher() {
                     setIsOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeClientId === client.id
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/20'
+                      ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/20'
                       : 'text-slate-400 hover:bg-white/5 hover:text-white'
                     }`}
                 >
@@ -77,7 +77,7 @@ export default function ClientSwitcher() {
               <Link
                 href="/brain/setup"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-purple-400 hover:bg-purple-500/5 transition-all"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-accent-blue hover:bg-accent-blue/5 transition-all"
               >
                 <Plus size={14} /> Add New Brand
               </Link>

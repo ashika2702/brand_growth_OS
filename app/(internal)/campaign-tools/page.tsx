@@ -9,21 +9,21 @@ export default function CampaignToolsHub() {
       description: 'Capture leads and promote offers with high-converting builders.',
       href: '/landing-pages',
       icon: <LayoutPanelTop />,
-      color: 'bg-purple-500',
+      color: 'bg-accent-orange',
     },
     {
       title: 'Email / SMS',
       description: 'Communicate directly via automated email and SMS sequences.',
       href: '/communication',
       icon: <Mail />,
-      color: 'bg-blue-500',
+      color: 'bg-accent-blue',
     },
     {
       title: 'PR Engine',
       description: 'Manage press releases, media outreach, and reputation.',
       href: '/pr',
       icon: <Megaphone />,
-      color: 'bg-teal-500',
+      color: 'bg-accent-green',
     },
   ];
 

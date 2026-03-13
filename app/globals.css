@@ -1,34 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0A0118;
-  --foreground: #F0F6FC;
-  --card-bg: rgba(26, 11, 46, 0.4);
-  --card-border: rgba(139, 92, 246, 0.1);
-  --accent-purple: #8B5CF6;
-  --accent-blue: #3B82F6;
-  --accent-teal: #14B8A6;
-  --accent-danger: #F85149;
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card-bg: #111111;
+  --card-border: #1F1F1F;
+  --accent-orange: #FF4D00;
+  --accent-blue: #3E80FF;
+  --accent-green: #37D67A;
+  --accent-red: #FF3B3B;
+  --accent-yellow: #FFB800;
+  --accent-navy: #1E293B;
+  --text-muted: #808080;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-red: var(--accent-red);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-navy: var(--accent-navy);
+  --color-text-muted: var(--text-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @layer base {
   body {
-    background: #0A0118;
+    background: var(--background);
     color: var(--foreground);
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(20, 184, 166, 0.1) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 40%),
-      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 40%);
-    background-attachment: fixed;
     min-height: 100vh;
   }
 }
@@ -36,25 +39,36 @@
 @layer components {
   .glass-card {
     background: var(--card-bg);
-    backdrop-filter: blur(12px);
     border: 1px solid var(--card-border);
-    transition: all 0.3s ease;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .glass-card:hover {
-    border-color: rgba(139, 92, 246, 0.5);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    border-color: #333333;
+    background: #141414;
   }
 
-  .text-glow-purple {
-    text-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+  /* High contrast glow for text/icons */
+  .text-glow-orange {
+    text-shadow: 0 0 20px rgba(255, 77, 0, 0.4);
   }
   
   .text-glow-blue {
-    text-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+    text-shadow: 0 0 20px rgba(51, 136, 255, 0.4);
   }
 
-  .text-glow-teal {
-    text-shadow: 0 0 15px rgba(20, 184, 166, 0.5);
+  .text-glow-green {
+    text-shadow: 0 0 20px rgba(51, 255, 136, 0.4);
   }
+
+  .text-glow-red {
+    text-shadow: 0 0 20px rgba(255, 51, 51, 0.4);
+  }
+
+  /* Dashboard specific utility */
+  .border-accent-orange { border-color: var(--accent-orange); }
+  .border-accent-blue { border-color: var(--accent-blue); }
+  .border-accent-green { border-color: var(--accent-green); }
+  .border-accent-red { border-color: var(--accent-red); }
 }

@@ -35,17 +35,17 @@ export default function Dialog({ isOpen, onClose, children, title }: DialogProps
     >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-[#0A0118]/80 backdrop-blur-md cursor-pointer"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
         onClick={onClose}
       />
 
       {/* Dialog Content */}
       <div 
-        className={`relative w-full max-w-5xl max-h-[90vh] glass-card border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col transition-all duration-500 scale-in-center ${
+        className={`relative w-full max-w-5xl max-h-[90vh] glass-card rounded-[2.5rem] overflow-hidden flex flex-col transition-all duration-500 scale-in-center ${
           isOpen ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'
         }`}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-blue-500/5 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-orange/10 via-transparent to-accent-blue/5 pointer-events-none" />
         
         {/* Header */}
         <div className="px-10 pt-8 pb-4 flex justify-between items-center shrink-0 relative z-10">

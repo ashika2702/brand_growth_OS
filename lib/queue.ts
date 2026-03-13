@@ -1,31 +1,12 @@
-import { Queue } from 'bullmq';
-import Redis from 'ioredis';
-
-const redisConnection = new Redis(process.env.UPSTASH_REDIS_REST_URL!, {
-  maxRetriesPerRequest: null,
-});
+import { processCRMAutomation } from '../workers/crm_worker';
 
 /**
- * Centralized BullMQ queue definitions.
+ * CRM Job Dispatcher (No-Redis Version)
+ * Dispatches tasks to the automation engine.
  */
-export const automationQueue = new Queue('automation', { 
-  connection: redisConnection as any 
-});
-export const agentQueue = new Queue('agents', { 
-  connection: redisConnection as any 
-});
-export const reportQueue = new Queue('reports', { 
-  connection: redisConnection as any 
-});
-
-export async function addJob(queue: Queue, name: string, data: any, delay?: number) {
-  await queue.add(name, data, {
-    delay,
-    removeOnComplete: true,
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 1000,
-    },
+export async function addCRMJob(type: string, leadId: string, clientId: string, data: any = {}) {
+  // Fire and forget (don't await so the UI stays fast)
+  processCRMAutomation(type, leadId, clientId, data).catch(err => {
+    console.error('Failed to process CRM automation:', err);
   });
 }

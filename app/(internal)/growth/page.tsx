@@ -9,21 +9,21 @@ export default function GrowthHub() {
       description: 'Keyword research, content optimization, and ranking tracking.',
       href: '/seo',
       icon: <Search />,
-      color: 'bg-blue-500',
+      color: 'bg-accent-blue',
     },
     {
       title: 'Local SEO',
       description: 'Optimize Google Business profiles and local search visibility.',
       href: '/seo/local',
       icon: <MapPin />,
-      color: 'bg-teal-500',
+      color: 'bg-accent-green',
     },
     {
       title: 'AEO',
       description: 'Answer Engine Optimization for ChatGPT and AI search platforms.',
       href: '/aeo',
       icon: <Sparkles />,
-      color: 'bg-purple-500',
+      color: 'bg-accent-orange',
     },
   ];
 

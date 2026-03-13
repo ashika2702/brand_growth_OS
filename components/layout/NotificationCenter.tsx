@@ -27,8 +27,13 @@ export default function NotificationCenter() {
       try {
         const res = await fetch(`/api/notifications?clientId=${activeClientId}`);
         const data = await res.json();
-        setNotifications(data);
+        if (Array.isArray(data)) {
+          setNotifications(data);
+        } else {
+          setNotifications([]);
+        }
       } catch (error) {
+        setNotifications([]);
         console.error('Failed to fetch notifications');
       }
     }
@@ -57,21 +62,21 @@ export default function NotificationCenter() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2.5 bg-[#1A0B2E]/50 text-slate-500 hover:text-purple-400 hover:bg-purple-500/10 rounded-xl transition-all border border-purple-500/10 hover:border-purple-500/30 group backdrop-blur-md"
+        className="relative p-2.5 bg-[#111111] text-slate-500 hover:text-accent-orange hover:bg-accent-orange/10 rounded-xl transition-all border border-[#1F1F1F] hover:border-accent-orange/30 group backdrop-blur-md"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 w-4 h-4 bg-purple-500 text-white text-[9px] font-black rounded-full border-2 border-[#1A0B2E] flex items-center justify-center shadow-[0_0_10px_rgba(168,85,247,0.5)]">
+          <span className="absolute top-2 right-2 w-4 h-4 bg-accent-orange text-white text-[9px] font-black rounded-full border-2 border-black flex items-center justify-center shadow-[0_0_10px_rgba(255,77,0,0.5)]">
             {unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-96 bg-[#1A0B2E] rounded-2xl border border-purple-500/20 shadow-2xl shadow-black/60 z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
+        <div className="absolute right-0 mt-3 w-96 bg-[#111111] rounded-2xl border border-[#1F1F1F] shadow-2xl shadow-black/80 z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
           <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
             <h3 className="font-black text-[10px] uppercase tracking-widest text-white">Alerts & Notifications</h3>
-            <button className="text-[10px] text-purple-400 font-black uppercase tracking-widest hover:text-purple-300 transition-colors">Mark all read</button>
+            <button className="text-[10px] text-accent-orange font-black uppercase tracking-widest hover:text-accent-orange/80 transition-colors">Mark all read</button>
           </div>
 
           <div className="max-h-[450px] overflow-y-auto no-scrollbar">
@@ -84,11 +89,11 @@ export default function NotificationCenter() {
               notifications.map(n => (
                 <div
                   key={n.id}
-                  className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group ${!n.isRead ? 'bg-purple-500/5' : ''}`}
+                  className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group ${!n.isRead ? 'bg-accent-orange/5' : ''}`}
                   onClick={() => markAsRead(n.id)}
                 >
                   <div className="flex gap-4">
-                    <div className={`mt-1 p-2 rounded-lg transition-colors ${!n.isRead ? 'text-purple-400 bg-purple-500/10' : 'text-slate-500 bg-white/5'}`}>
+                    <div className={`mt-1 p-2 rounded-lg transition-colors ${!n.isRead ? 'text-accent-orange bg-accent-orange/10' : 'text-slate-500 bg-white/5'}`}>
                       {n.type === 'lead.new' ? <UsersIcon className="w-4 h-4" /> : <Info className="w-4 h-4" />}
                     </div>
                     <div className="flex-1">
@@ -100,7 +105,7 @@ export default function NotificationCenter() {
 
                       <div className="flex items-center gap-2">
                         {n.link && (
-                          <a href={n.link} className="text-[10px] font-black uppercase tracking-widest text-purple-400 flex items-center gap-1 hover:text-purple-300 transition-colors">
+                          <a href={n.link} className="text-[10px] font-black uppercase tracking-widest text-accent-orange flex items-center gap-1 hover:text-accent-orange/80 transition-colors">
                             View details
                             <ExternalLink className="w-2.5 h-2.5" />
                           </a>

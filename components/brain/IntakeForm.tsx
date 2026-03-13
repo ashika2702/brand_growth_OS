@@ -75,7 +75,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
             <div className={`flex items-center gap-3 shrink-0 transition-all duration-500 ${currentStep >= step.id ? 'opacity-100' : 'opacity-40'}`}>
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all duration-500 ${
                 currentStep >= step.id 
-                  ? 'bg-purple-500 text-white border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.4)]' 
+                  ? 'bg-accent-orange text-white border-accent-orange/40 shadow-[0_0_20px_rgba(255,127,0,0.4)]' 
                   : 'bg-white/5 border-white/10 text-slate-500'
               }`}>
                 {currentStep > step.id ? <CheckCircle2 size={16} /> : <span className="text-[10px] font-black">{step.id}</span>}
@@ -84,7 +84,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                 <span className={`text-[11px] font-black uppercase tracking-tight ${currentStep >= step.id ? 'text-white' : 'text-slate-500'}`}>{step.title}</span>
               </div>
             </div>
-            {idx < STEPS.length - 1 && <div className={`h-[1px] w-8 shrink-0 rounded-full transition-all duration-1000 ${currentStep > step.id ? 'bg-purple-500' : 'bg-white/5'}`} />}
+            {idx < STEPS.length - 1 && <div className={`h-[1px] w-8 shrink-0 rounded-full transition-all duration-1000 ${currentStep > step.id ? 'bg-accent-orange' : 'bg-white/5'}`} />}
           </React.Fragment>
         ))}
       </div>
@@ -103,7 +103,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                   <input
                     type="text"
                     placeholder="e.g. Acme Corporation"
-                    className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
+                    className="w-full bg-white/5 border border-white/10 focus:border-accent-orange/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
                     value={formData.clientName}
                     onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
                   />
@@ -113,7 +113,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                   <input
                     type="url"
                     placeholder="https://acme.com"
-                    className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
+                    className="w-full bg-white/5 border border-white/10 focus:border-accent-orange/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
                     value={formData.domain}
                     onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                   />
@@ -128,15 +128,15 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                 <div className="space-y-1">
                   <p className="text-sm text-slate-500 font-medium">Who are the ideal buyers for this brand?</p>
                 </div>
-                <button
-                  onClick={() => setFormData({
-                    ...formData,
-                    personas: [...formData.personas, { id: Date.now().toString(), name: '', description: '', painPoints: [], desires: [] }]
-                  })}
-                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors bg-purple-500/10 px-3 py-1.5 rounded-lg border border-purple-500/20"
-                >
-                  <Plus size={12} /> Add Persona
-                </button>
+                  <button
+                    onClick={() => setFormData({
+                      ...formData,
+                      personas: [...formData.personas, { id: Date.now().toString(), name: '', description: '', painPoints: [], desires: [] }]
+                    })}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
+                  >
+                    <Plus size={12} /> Add Persona
+                  </button>
               </div>
 
               <div className="space-y-4">
@@ -157,7 +157,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                         <input
                           type="text"
                           placeholder="e.g. CTOs in Fintech"
-                          className="w-full bg-transparent border-b border-white/10 py-2 font-black text-white outline-none focus:border-purple-500 transition-colors placeholder:text-slate-700"
+                          className="w-full bg-transparent border-b border-white/10 py-2 font-black text-white outline-none focus:border-accent-orange transition-colors placeholder:text-slate-700"
                           value={persona.name}
                           onChange={(e) => {
                             const newPersonas = [...formData.personas];
@@ -170,7 +170,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                         <label className="text-[8px] font-black uppercase tracking-widest text-slate-600">Strategic Profile</label>
                         <textarea
                           placeholder="Describe their mindset, priorities, and pain points..."
-                          className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-xs h-24 outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-slate-700"
+                          className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-xs h-24 outline-none focus:border-accent-orange/50 transition-all text-white placeholder:text-slate-700"
                           value={persona.description}
                           onChange={(e) => {
                             const newPersonas = [...formData.personas];
@@ -192,15 +192,15 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                 <div className="space-y-1">
                   <p className="text-sm text-slate-500 font-medium">What value are we delivering to market?</p>
                 </div>
-                <button
-                  onClick={() => setFormData({
-                    ...formData,
-                    offers: [...formData.offers, { id: Date.now().toString(), name: '', valueProposition: '', price: '' }]
-                  })}
-                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors bg-purple-500/10 px-3 py-1.5 rounded-lg border border-purple-500/20"
-                >
-                  <Plus size={12} /> Add Offer
-                </button>
+                  <button
+                    onClick={() => setFormData({
+                      ...formData,
+                      offers: [...formData.offers, { id: Date.now().toString(), name: '', valueProposition: '', price: '' }]
+                    })}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
+                  >
+                    <Plus size={12} /> Add Offer
+                  </button>
               </div>
 
               <div className="space-y-4">
@@ -212,7 +212,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                         <input
                           type="text"
                           placeholder="e.g. Growth Accelerator"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs outline-none focus:border-purple-500/50 transition-all text-white font-black placeholder:text-slate-700"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs outline-none focus:border-accent-orange/50 transition-all text-white font-black placeholder:text-slate-700"
                           value={offer.name}
                           onChange={(e) => {
                             const newOffers = [...formData.offers];
@@ -226,7 +226,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                         <input
                           type="text"
                           placeholder="e.g. $5,000/mo"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs outline-none focus:border-purple-500/50 transition-all text-white font-black placeholder:text-slate-700"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs outline-none focus:border-accent-orange/50 transition-all text-white font-black placeholder:text-slate-700"
                           value={offer.price}
                           onChange={(e) => {
                             const newOffers = [...formData.offers];
@@ -240,7 +240,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                       <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 ml-1">Value Proposition</label>
                       <textarea
                         placeholder="What is the primary breakthrough transformation?"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs h-20 outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-slate-700"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs h-20 outline-none focus:border-accent-orange/50 transition-all text-white placeholder:text-slate-700"
                         value={offer.valueProposition}
                         onChange={(e) => {
                           const newOffers = [...formData.offers];
@@ -257,8 +257,8 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
 
           {currentStep === 4 && (
             <div className="flex flex-col items-center justify-center h-[350px] text-center">
-              <div className="w-20 h-20 bg-purple-500/10 rounded-[2rem] flex items-center justify-center text-purple-400 mb-6 shadow-2xl border border-purple-500/20 relative">
-                <div className="absolute inset-0 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
+              <div className="w-20 h-20 bg-accent-orange/10 rounded-[2rem] flex items-center justify-center text-accent-orange mb-6 shadow-2xl border border-accent-orange/20 relative">
+                <div className="absolute inset-0 bg-accent-orange/20 blur-2xl rounded-full animate-pulse" />
                 <Rocket size={32} className="animate-bounce relative z-10" />
               </div>
               <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic">Neural Sync Ready</h3>
@@ -280,7 +280,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="px-8 py-3.5 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_30px_rgba(139,92,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-3 group"
+              className="px-8 py-3.5 bg-gradient-to-br from-accent-orange to-accent-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_30px_rgba(255,127,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-3 group"
             >
               {isLoading ? (
                 <>

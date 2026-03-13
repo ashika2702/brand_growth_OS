@@ -46,7 +46,7 @@ export default function AIPlayground() {
       <div className="flex justify-between items-end">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-accent-orange/10 flex items-center justify-center text-accent-orange border border-accent-orange/20">
               <Sparkles size={24} />
             </div>
             <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic text-shadow-glow">Context Playground</h1>
@@ -59,7 +59,7 @@ export default function AIPlayground() {
             onClick={() => setProvider('claude')}
             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
               provider === 'claude' 
-                ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]' 
+                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]' 
                 : 'text-slate-500 hover:text-white'
             }`}
           >
@@ -69,7 +69,7 @@ export default function AIPlayground() {
             onClick={() => setProvider('llama')}
             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
               provider === 'llama' 
-                ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]' 
+                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]' 
                 : 'text-slate-500 hover:text-white'
             }`}
           >
@@ -83,7 +83,7 @@ export default function AIPlayground() {
         <div className="col-span-12 lg:col-span-4 flex flex-col h-full gap-4">
           <div className="glass-card flex-1 p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden flex flex-col">
             <div className="flex items-center gap-2 mb-6">
-               <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
+               <div className="w-2 h-2 rounded-full bg-accent-orange shadow-[0_0_8px_#FF4D00]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Inference Input</span>
             </div>
             
@@ -98,7 +98,7 @@ export default function AIPlayground() {
               <button
                 onClick={testCall}
                 disabled={isLoading}
-                className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+                className="w-full py-4 bg-gradient-to-r from-accent-orange to-accent-red text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,77,0,0.2)]"
               >
                 {isLoading ? (
                   <>
@@ -123,7 +123,7 @@ export default function AIPlayground() {
               <div className="flex gap-6">
                 <div className="flex items-center gap-2">
                   <User size={14} className="text-slate-600" />
-                  <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Active Client Context</span>
+                  <span className="text-[10px] font-black uppercase text-accent-blue tracking-widest">Active Client Context</span>
                 </div>
                 <div className="flex items-center gap-2 border-l border-white/5 pl-6">
                   <Server size={14} className="text-slate-600" />
@@ -138,7 +138,7 @@ export default function AIPlayground() {
             <div className="p-10 flex-1 overflow-y-auto no-scrollbar relative z-10">
               {isLoading ? (
                 <div className="h-full flex flex-col items-center justify-center space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 animate-pulse">
+                  <div className="w-16 h-16 rounded-3xl bg-accent-orange/10 flex items-center justify-center text-accent-orange border border-accent-orange/20 animate-pulse">
                     <Zap size={32} />
                   </div>
                   <p className="font-black text-slate-500 animate-pulse tracking-[0.4em] uppercase text-[9px]">Analyzing Neural Latency</p>
@@ -146,7 +146,7 @@ export default function AIPlayground() {
               ) : result ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
                   {result.error ? (
-                    <div className="p-6 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-purple-400 text-[11px] font-black uppercase tracking-widest text-center shadow-inner">
+                    <div className="p-6 bg-accent-orange/10 border border-accent-orange/20 rounded-2xl text-accent-orange text-[11px] font-black uppercase tracking-widest text-center shadow-inner">
                       {result.error}
                     </div>
                   ) : (

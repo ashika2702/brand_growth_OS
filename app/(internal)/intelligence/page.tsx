@@ -9,14 +9,14 @@ export default function IntelligenceHub() {
       description: 'Performance measurement system tracking traffic and conversion metrics.',
       href: '/analytics',
       icon: <BarChart3 />,
-      color: 'bg-teal-500',
+      color: 'bg-accent-green',
     },
     {
       title: 'Lead Scoring',
       description: 'AI-based lead qualification based on behavior and persona fit.',
       href: '/leads/scoring',
       icon: <Percent />,
-      color: 'bg-purple-500',
+      color: 'bg-accent-orange',
     },
   ];
 

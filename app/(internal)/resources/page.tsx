@@ -9,7 +9,7 @@ export default function ResourcesHub() {
       description: 'Central storage for logos, images, videos, and ad creatives.',
       href: '/assets',
       icon: <ImageIcon />,
-      color: 'bg-teal-500',
+      color: 'bg-accent-green',
     },
   ];
 

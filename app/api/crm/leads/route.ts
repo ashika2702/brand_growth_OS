@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { callAI } from '@/lib/ai';
 import { createNotification } from '@/lib/notifications';
+import { addCRMJob } from '@/lib/queue';
 
 /**
  * GET /api/crm/leads
@@ -78,8 +79,8 @@ export async function POST(request: Request) {
     });
 
     const [personaTagRaw, scoreRaw] = (aiResponse.content || "Unknown | 0").split('|');
-    const personaTag = personaTagRaw.trim();
-    const score = parseInt(scoreRaw.trim()) || 0;
+    const personaTag = personaTagRaw ? personaTagRaw.trim() : "Unknown";
+    const score = scoreRaw ? (parseInt(scoreRaw.trim()) || 0) : 0;
 
     // 3. Update the lead with the tag and score
     const updatedLead = await prisma.lead.update({
@@ -87,7 +88,13 @@ export async function POST(request: Request) {
       data: { personaTag, score }
     });
 
-    // 4. Fire Notification
+    // 4. Trigger background auto-responder
+    await addCRMJob('lead.new', updatedLead.id, updatedLead.clientId, {
+      email: updatedLead.email,
+      name: updatedLead.name
+    });
+
+    // 5. Fire Internal Notification
     await createNotification({
       clientId,
       type: 'lead.new',

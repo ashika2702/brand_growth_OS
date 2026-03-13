@@ -9,14 +9,14 @@ export default function BusinessHub() {
       description: 'Central intelligence of the brand. Stores brand info, personas, and tone of voice.',
       href: '/brain',
       icon: <Brain />,
-      color: 'bg-purple-500',
+      color: 'bg-accent-orange',
     },
     {
       title: 'CRM',
       description: 'Client and lead management system. Track leads, deals, and interaction history.',
       href: '/crm',
       icon: <Users />,
-      color: 'bg-blue-500',
+      color: 'bg-accent-blue',
     },
   ];
 
