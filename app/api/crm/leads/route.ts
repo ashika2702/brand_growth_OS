@@ -1,0 +1,105 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/db';
+import { callAI } from '@/lib/ai';
+import { createNotification } from '@/lib/notifications';
+
+/**
+ * GET /api/crm/leads
+ * Fetches leads for a specific clientId with RLS-style filtering.
+ */
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const clientId = searchParams.get('clientId');
+
+    if (!clientId) {
+      return NextResponse.json({ error: 'Missing clientId' }, { status: 400 });
+    }
+
+    const leads = await prisma.lead.findMany({
+      where: { clientId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return NextResponse.json(leads);
+  } catch (error: any) {
+    console.error('CRM Fetch Error:', error);
+    return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/crm/leads
+ * Creates a new lead and automatically tags them with a Persona using AI.
+ */
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { clientId, name, email, phone, source, utmSource, utmMedium, utmCampaign } = body;
+
+    if (!clientId || !name || !email) {
+      return NextResponse.json({ error: 'Missing required lead fields' }, { status: 400 });
+    }
+
+    // 1. Create the lead first
+    const lead = await prisma.lead.create({
+      data: {
+        clientId,
+        name,
+        email,
+        phone,
+        source: source || 'Direct',
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        stage: 'new'
+      }
+    });
+
+    // 2. Trigger AI Persona Tagging & Scoring
+    const aiResponse = await callAI({
+      provider: 'llama',
+      userId: 'system',
+      clientId,
+      moduleName: 'CRM',
+      prompt: `Analyze this new lead:
+      NAME: ${name}
+      EMAIL: ${email}
+      SOURCE: ${source || 'N/A'}
+      
+      TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name)
+      TASK 2: Calculate a LEAD SCORE from 0-100 based on:
+        - Persona Match (30%)
+        - Source Quality (25%)
+        - Offer Fit (45%)
+      
+      Return format: PERSONA | SCORE`,
+      maxTokens: 50
+    });
+
+    const [personaTagRaw, scoreRaw] = (aiResponse.content || "Unknown | 0").split('|');
+    const personaTag = personaTagRaw.trim();
+    const score = parseInt(scoreRaw.trim()) || 0;
+
+    // 3. Update the lead with the tag and score
+    const updatedLead = await prisma.lead.update({
+      where: { id: lead.id },
+      data: { personaTag, score }
+    });
+
+    // 4. Fire Notification
+    await createNotification({
+      clientId,
+      type: 'lead.new',
+      title: 'New Lead Captured',
+      message: `${name} (Score: ${score}/100) just entered the pipeline via ${source || 'Direct'}.`,
+      priority: score > 70 ? 'urgent' : 'high',
+      link: `/crm/${clientId}`
+    });
+
+    return NextResponse.json(updatedLead);
+  } catch (error: any) {
+    console.error('CRM Create Error:', error);
+    return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
+  }
+}

@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      String   @default("account_manager") // Alex, Max, Nova, Forge, Quinn, Oracle
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedClients Client[]
+}
+
+model Client {
+  id                 String   @id @default(cuid())
+  name               String
+  domain             String?
+  logo               String?
+  primaryColor       String?  @default("#0D1117")
+  brand24ProjectId   String?
+  canvaBrandKitId    String?
+  elevenlabsVoiceId  String?
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  brain              BusinessBrain?
+  assignedUsers      User[]
+  prMentions         PRMention[]
+  prOpportunities    PROpportunity[]
+  prReleases         PRRelease[]
+  leads              Lead[]
+  notifications      Notification[]
+}
+
+model BusinessBrain {
+  id               String   @id @default(cuid())
+  clientId         String   @unique
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  personas         Json?    // Array of persona objects
+  offers           Json?    // Array of offer objects
+  salesJourney     Json?    
+  onlineChannels   String[]
+  offlineChannels  String[]
+  proofAssets      Json?
+  constraints      String[]
+  messagingAngles  Json?
+  competitorIntel  Json?
+
+  updatedAt        DateTime @updatedAt
+}
+
+model PRMention {
+  id               String   @id @default(cuid())
+  clientId         String
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  brand24MentionId String?
+  sourceType       String?  // 'news'|'social'|'blog'|'review'|'forum'
+  url              String?
+  title            String?
+  snippet          String?
+  sentiment        String?  // 'positive'|'negative'|'neutral'
+  authorityScore   Int?
+  reach            Int?
+  classification   String?  // 'opportunity'|'threat'|'journalist'|'neutral'
+  actionTaken      String?
+  publishedAt      DateTime?
+  detectedAt       DateTime @default(now())
+
+  responses        PRResponse[]
+}
+
+model PRResponse {
+  id               String   @id @default(cuid())
+  mentionId        String
+  mention          PRMention @relation(fields: [mentionId], references: [id], onDelete: Cascade)
+  clientId         String
+  draftText        String
+  status           String   @default("pending") // 'pending'|'approved'|'posted'|'dismissed'
+  approvedBy       String?
+  postedAt         DateTime?
+  createdAt        DateTime @default(now())
+}
+
+model PROpportunity {
+  id               String   @id @default(cuid())
+  clientId         String
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type             String   // 'haro'|'journalist'|'amplification'
+  title            String
+  description      String?
+  draftPitch       String?
+  sourceUrl        String?
+  deadline         DateTime?
+  status           String   @default("open")
+  priorityScore    Int?
+  createdAt        DateTime @default(now())
+}
+
+model PRRelease {
+  id               String   @id @default(cuid())
+  clientId         String
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  triggerEvent     String?  // 'award'|'launch'|'milestone'|'review_surge'
+  headline         String
+  bodyMd           String
+  status           String   @default("draft") // 'draft'|'approved'|'distributed'
+  createdBy        String?  // 'agent'|'manual'
+  createdAt        DateTime @default(now())
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name            String
+  email           String
+  phone           String?
+  source          String?
+  personaTag      String?
+  stage           String   @default("new") // 'new'|'contacted'|'qualified'|'proposal'|'negotiation'|'closed_won'|'closed_lost'
+  assignedTo      String?
+  score           Int      @default(0)
+  tags            String[]
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  emailOptOut     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  clientId  String?
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId    String?
+  type      String   // 'lead.new'|'content.awaiting_approval'|'seo.rank_drop'|'pr.negative_mention'|etc.
+  title     String
+  message   String
+  priority  String   @default("medium") // 'low'|'medium'|'high'|'urgent'
+  isRead    Boolean  @default(false)
+  link      String?  // Actionable link
+  createdAt DateTime @default(now())
+}
