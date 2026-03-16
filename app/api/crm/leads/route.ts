@@ -19,6 +19,14 @@ export async function GET(request: Request) {
 
     const leads = await prisma.lead.findMany({
       where: { clientId },
+      include: {
+        activities: {
+          orderBy: { createdAt: 'desc' }
+        },
+        tasks: {
+          orderBy: { dueDate: 'asc' }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -68,13 +76,12 @@ export async function POST(request: Request) {
       EMAIL: ${email}
       SOURCE: ${source || 'N/A'}
       
-      TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name)
-      TASK 2: Calculate a LEAD SCORE from 0-100 based on:
-        - Persona Match (30%)
-        - Source Quality (25%)
-        - Offer Fit (45%)
+      TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name, 1-3 words max)
+      TASK 2: Calculate a LEAD SCORE from 0-100.
       
-      Return format: PERSONA | SCORE`,
+      CRITICAL: Output ONLY the requested format. Do not include any explanations, reasoning, introductions, or markdown.
+      REQUIRED FORMAT: EXACT_PERSONA_NAME | SCORE
+      EXAMPLE: B2B Founder | 85`,
       maxTokens: 50
     });
 

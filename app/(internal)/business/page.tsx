@@ -1,20 +1,25 @@
+'use client';
+
 import React from 'react';
 import { Brain, Users } from 'lucide-react';
 import HubPage from '@/components/ui/HubPage';
+import { useClientStore } from '@/lib/store';
 
 export default function BusinessHub() {
+  const { activeClientId } = useClientStore();
+
   const modules = [
     {
       title: 'Agent',
       description: 'Central intelligence of the brand. Stores brand info, personas, and tone of voice.',
-      href: '/brain',
+      href: activeClientId ? `/brain/${activeClientId}` : '/brain',
       icon: <Brain />,
       color: 'bg-accent-orange',
     },
     {
       title: 'CRM',
       description: 'Client and lead management system. Track leads, deals, and interaction history.',
-      href: '/crm',
+      href: activeClientId ? `/crm/${activeClientId}` : '/crm',
       icon: <Users />,
       color: 'bg-accent-blue',
     },

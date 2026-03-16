@@ -127,16 +127,47 @@ model Lead {
   phone           String?
   source          String?
   personaTag      String?
-  stage           String   @default("new") // 'new'|'contacted'|'qualified'|'proposal'|'negotiation'|'closed_won'|'closed_lost'
+  stage           String   @default("new") // 'new'|'contacted'|'qualified'|'quoted'|'won'|'lost'
   assignedTo      String?
   score           Int      @default(0)
+  scoreFactors    Json?    // Stores the sub-scores (persona_match, source_quality, behaviour, stage_velocity, offer_fit)
   tags            String[]
   utmSource       String?
   utmMedium       String?
   utmCampaign     String?
   emailOptOut     Boolean  @default(false)
+  quotedValue     Int?     // Value of quote if stage is 'quoted' or 'won'
+  lossReason      String?  // Reason if stage is 'lost'
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  lastActivityAt  DateTime @default(now())
+
+  activities      LeadActivity[]
+  tasks           LeadTask[]
+}
+
+model LeadActivity {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type        String   // 'call'|'email'|'whatsapp'|'note'|'stage_change'|'created'|'score_update'|'task_due'
+  description String
+  metadata    Json?    // Optional extra context (e.g., fromStage, toStage, messageBody)
+  createdAt   DateTime @default(now())
+}
+
+model LeadTask {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type        String   // 'call'|'email'|'whatsapp'|'visit'|'quote'
+  title       String
+  description String?
+  dueDate     DateTime
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Notification {

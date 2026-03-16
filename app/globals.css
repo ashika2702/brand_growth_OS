@@ -71,4 +71,31 @@
   .border-accent-blue { border-color: var(--accent-blue); }
   .border-accent-green { border-color: var(--accent-green); }
   .border-accent-red { border-color: var(--accent-red); }
+
+  /* Premium Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 8px; /* Slightly thicker for horizontal scrolling ease */
+  }
+
+  ::-webkit-scrollbar-track {
+    
+    border-radius: 10px;
+    margin: 4px; /* Gives some breathing room */
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1); 
+    border-radius: 10px;
+    border: 2px solid #0A0D14; /* Fake margin effect */
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2); 
+  }
+
+  /* Specific override for horizontal Kanban scrolling */
+  .custom-h-scrollbar::-webkit-scrollbar {
+    height: 8px;
+  }
 }

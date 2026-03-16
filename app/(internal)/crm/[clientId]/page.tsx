@@ -2,121 +2,25 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Plus, Users, Search, Filter, MoreHorizontal, MessageSquare, Phone, Mail } from 'lucide-react';
+import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode } from 'lucide-react';
 import LeadSidebar from '@/components/crm/LeadSidebar';
-import {
-  DndContext,
-  DragOverlay,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragStartEvent,
-  DragOverEvent,
-  DragEndEvent,
-  defaultDropAnimationSideEffects,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import PipelineView from '@/components/crm/views/PipelineView';
+import AllLeadsTable from '@/components/crm/views/AllLeadsTable';
+import QRCapture from '@/components/crm/views/QRCapture';
+import AddLeadModal from '@/components/crm/AddLeadModal';
 
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  personaTag: string | null;
-  stage: string;
-  score: number;
-  source: string | null;
-  createdAt: string;
-}
-
-const STAGES = [
-  { id: 'new', name: 'New Leads', color: 'bg-accent-blue' },
-  { id: 'contacted', name: 'Contacted', color: 'bg-accent-yellow' },
-  { id: 'qualified', name: 'Qualified', color: 'bg-accent-orange' },
-  { id: 'proposal', name: 'Proposal', color: 'bg-accent-navy' },
-  { id: 'negotiation', name: 'Negotiation', color: 'bg-accent-blue' },
-  { id: 'closed_won', name: 'Won', color: 'bg-accent-green' }
-];
-
-function SortableItem({ lead, onSelect }: { lead: Lead; onSelect: (lead: Lead) => void }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lead.id, data: { type: 'Lead', lead } });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
-
-  return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      {...attributes} 
-      {...listeners}
-      className="glass-card p-5 rounded-[2rem] border border-white/5 hover:border-white/20 transition-all group cursor-grab active:cursor-grabbing relative overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-      
-      <div 
-        className="relative z-10"
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(lead);
-        }}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <span className="text-[9px] font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg uppercase tracking-wider border border-accent-blue/20">
-            {lead.personaTag || 'General'}
-          </span>
-          <span className="text-[10px] font-black italic text-slate-600">Sync: {lead.score}%</span>
-        </div>
-        <h4 className="text-base font-black text-white group-hover:text-accent-blue transition-colors mb-1">{lead.name}</h4>
-        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">{lead.source || 'Direct Source'}</p>
-        
-        <div className="flex items-center justify-between pt-4 border-t border-white/5">
-          <div className="flex gap-4">
-            <Mail className="w-4 h-4 text-slate-600 hover:text-accent-blue transition-colors" />
-            <Phone className="w-4 h-4 text-slate-600 hover:text-accent-blue transition-colors" />
-            <MessageSquare className="w-4 h-4 text-slate-600 hover:text-accent-blue transition-colors" />
-          </div>
-          <div className="w-7 h-7 rounded-xl bg-black border border-[#1F1F1F] flex items-center justify-center font-black text-[9px] text-slate-500 uppercase">
-            {lead.name[0]}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+type TabView = 'pipeline' | 'all' | 'activities' | 'tasks' | 'qr';
 
 export default function CRMPage() {
   const params = useParams();
   const clientId = params.clientId as string;
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeLead, setActiveLead] = useState<Lead | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const [activeTab, setActiveTab] = useState<TabView>('pipeline');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -135,6 +39,7 @@ export default function CRMPage() {
   }, [clientId, fetchLeads]);
 
   const updateLeadStage = async (leadId: string, stage: string) => {
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage } : l));
     try {
       await fetch(`/api/crm/leads/${leadId}`, {
         method: 'PATCH',
@@ -146,75 +51,27 @@ export default function CRMPage() {
     }
   };
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const lead = leads.find(l => l.id === active.id);
-    if (lead) setActiveLead(lead);
-  };
+  const totalLeads = leads.length;
+  const wonThisMonth = leads.filter(l => l.stage === 'won' && new Date(l.updatedAt).getMonth() === new Date().getMonth()).length;
+  const avgScore = totalLeads ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / totalLeads) : 0;
+  
+  const avgResponseTime = "1h 22m";
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    const isActiveALead = active.data.current?.type === 'Lead';
-    const isOverALead = over.data.current?.type === 'Lead';
-    const isOverAColumn = STAGES.find(s => s.id === overId);
-
-    if (!isActiveALead) return;
-
-    // Dragging lead over another lead
-    if (isActiveALead && isOverALead) {
-      const activeLead = active.data.current?.lead as Lead;
-      const overLead = over.data.current?.lead as Lead;
-
-      if (activeLead.stage !== overLead.stage) {
-        setLeads(prev => {
-          const activeIndex = prev.findIndex(l => l.id === activeId);
-          const overIndex = prev.findIndex(l => l.id === overId);
-          
-          const newLeads = [...prev];
-          newLeads[activeIndex].stage = overLead.stage;
-          return arrayMove(newLeads, activeIndex, overIndex);
-        });
-      }
-    }
-
-    // Dragging lead over a column
-    if (isActiveALead && isOverAColumn) {
-      const activeLead = active.data.current?.lead as Lead;
-      if (activeLead.stage !== overId) {
-        setLeads(prev => {
-          const activeIndex = prev.findIndex(l => l.id === activeId);
-          const newLeads = [...prev];
-          newLeads[activeIndex].stage = overId as string;
-          return arrayMove(newLeads, activeIndex, activeIndex); // Refresh
-        });
-      }
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveLead(null);
-
-    if (!over) return;
-
-    const lead = leads.find(l => l.id === active.id);
-    if (lead) {
-      updateLeadStage(lead.id, lead.stage);
-    }
-  };
+  const filteredLeads = leads.filter(lead => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      lead.name?.toLowerCase().includes(query) ||
+      lead.email?.toLowerCase().includes(query) ||
+      lead.personaTag?.toLowerCase().includes(query) ||
+      lead.source?.toLowerCase().includes(query)
+    );
+  });
 
   if (loading) return <div className="p-8 text-white font-black uppercase italic animate-pulse">Synchronizing Leads...</div>;
 
   return (
     <div className="h-full flex flex-col gap-6 overflow-hidden">
-      {/* Header */}
       <div className="flex justify-between items-end">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -225,101 +82,117 @@ export default function CRMPage() {
           </div>
           <p className="text-slate-500 font-medium">Manage and track your client acquisition infrastructure.</p>
         </div>
-        <button className="bg-gradient-to-br from-accent-orange to-accent-red text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(255,77,0,0.3)] hover:scale-[1.02] transition-all flex items-center gap-2">
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-gradient-to-br from-accent-orange to-accent-red text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(255,77,0,0.3)] hover:scale-[1.02] transition-all flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
-          Add High-Intent Lead
+          Add Lead
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex gap-4 p-2 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md">
+      <div className="flex items-center gap-6 border-b border-white/10 px-2 shrink-0">
+        {[
+          { id: 'pipeline', label: 'Pipeline', icon: AppWindow },
+          { id: 'all', label: 'All Leads', icon: Users },
+          { id: 'activities', label: 'Activities', icon: Activity },
+          { id: 'tasks', label: 'Tasks', icon: ListTodo },
+          { id: 'qr', label: 'QR Capture', icon: QrCode }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as TabView)}
+            className={`flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest transition-all relative
+              ${activeTab === tab.id ? 'text-accent-blue' : 'text-slate-500 hover:text-white'}`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+            {activeTab === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-blue shadow-[0_0_8px_rgba(45,140,255,0.6)]" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-4 gap-4 shrink-0">
+        {[
+          { label: 'Total Leads', val: totalLeads },
+          { label: 'Won This Month', val: wonThisMonth },
+          { label: 'Avg Score', val: avgScore },
+          { label: 'Response Time', val: avgResponseTime },
+        ].map((stat, i) => (
+           <div key={i} className="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between group">
+             <div>
+               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
+               <p className="text-2xl font-black text-white italic">{stat.val}</p>
+             </div>
+             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-accent-green group-hover:scale-110 transition-transform">
+               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+             </div>
+           </div>
+        ))}
+      </div>
+
+      <div className="flex gap-4 p-2 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md shrink-0">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input 
             type="text" 
-            placeholder="Search leads by name, persona, or context..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search leads by name" 
             className="w-full pl-12 pr-4 py-3 bg-transparent text-sm text-white outline-none placeholder:text-slate-600 font-medium"
           />
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all border border-white/5">
+        {/* <button className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all border border-white/5">
           <Filter className="w-4 h-4" />
-          Intelligence Filters
-        </button>
+          Filters
+        </button> */}
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex gap-6 overflow-x-auto pb-6 no-scrollbar h-full">
-          {STAGES.map(stage => (
-            <div key={stage.id} className="min-w-[320px] max-w-[320px] flex flex-col h-full">
-              <div className="flex items-center justify-between mb-6 px-2">
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${stage.color} shadow-[0_0_8px_currentColor]`} />
-                  <h3 className="font-black text-white uppercase text-[10px] tracking-widest">{stage.name}</h3>
-                  <span className="bg-white/5 text-slate-500 px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/5">
-                    {leads.filter(l => l.stage === stage.id).length}
-                  </span>
-                </div>
-                <button className="text-slate-600 hover:text-white transition-colors">
-                  <MoreHorizontal size={14} />
-                </button>
-              </div>
-
-              <div className="space-y-4 overflow-y-auto no-scrollbar pb-10 flex-1">
-                <SortableContext
-                  id={stage.id}
-                  items={leads.filter(l => l.stage === stage.id).map(l => l.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {leads.filter(l => l.stage === stage.id).map(lead => (
-                    <SortableItem 
-                      key={lead.id} 
-                      lead={lead} 
-                      onSelect={(l) => {
-                        setSelectedLead(l);
-                        setIsSidebarOpen(true);
-                      }}
-                    />
-                  ))}
-                </SortableContext>
-                
-                {leads.filter(l => l.stage === stage.id).length === 0 && (
-                  <div className="h-32 border border-dashed border-white/5 rounded-[2rem] flex flex-col items-center justify-center text-slate-600 text-xs gap-2">
-                    <Users className="w-6 h-6 opacity-20" />
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Pipeline Empty</p>
-                  </div>
-                )}
-              </div>
+      <div className="flex-1 overflow-hidden">
+         {activeTab === 'pipeline' && (
+            <PipelineView 
+               leads={filteredLeads}
+               setLeads={setLeads}
+               onSelectLead={(l) => {
+                 setSelectedLead(l);
+                 setIsSidebarOpen(true);
+               }}
+               updateLeadStage={updateLeadStage}
+            />
+         )}
+         {activeTab === 'all' && (
+            <AllLeadsTable leads={filteredLeads} />
+         )}
+         {activeTab === 'activities' && (
+            <div className="h-full flex items-center justify-center border border-white/5 rounded-3xl border-dashed">
+               <p className="text-slate-500 italic uppercase">Global Activities Feed (Coming Soon)</p>
             </div>
-          ))}
-        </div>
-
-        <DragOverlay adjustScale={false}>
-          {activeLead ? (
-            <div className="glass-card p-5 rounded-[2rem] border border-white/20 shadow-2xl bg-accent-blue/10 scale-105 pointer-events-none">
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-[9px] font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg uppercase tracking-wider border border-accent-blue/20">
-                  {activeLead.personaTag || 'General'}
-                </span>
-                <span className="text-[10px] font-black italic text-slate-600">Sync: {activeLead.score}%</span>
-              </div>
-              <h4 className="text-base font-black text-white mb-1">{activeLead.name}</h4>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">{activeLead.source || 'Direct Source'}</p>
+         )}
+         {activeTab === 'tasks' && (
+            <div className="h-full flex items-center justify-center border border-white/5 rounded-3xl border-dashed">
+               <p className="text-slate-500 italic uppercase">Global Task List (Coming Soon)</p>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+         )}
+         {activeTab === 'qr' && (
+            <QRCapture clientId={clientId} />
+         )}
+      </div>
 
       {/* Lead Detail Sidebar */}
       <LeadSidebar 
         lead={selectedLead}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        refreshLeads={fetchLeads}
+      />
+
+      <AddLeadModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        clientId={clientId}
+        onSuccess={fetchLeads}
       />
     </div>
   );
