@@ -12,7 +12,7 @@ export default function BusinessHub() {
     {
       title: 'Agent',
       description: 'Central intelligence of the brand. Stores brand info, personas, and tone of voice.',
-      href: activeClientId ? `/brain/${activeClientId}` : '/brain',
+      href: '/brain',
       icon: <Brain />,
       color: 'bg-accent-orange',
     },

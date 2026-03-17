@@ -38,27 +38,56 @@ export async function processCRMAutomation(type: string, leadId: string, clientI
       case 'lead.stage_updated': {
         const { oldStage, newStage } = data;
         
-        // Automation: If moved to "proposal", send a simulate notification
-        if (newStage === 'proposal') {
+        // Dynamic Lead Scoring: Adjust score based on pipeline progression
+        let updatedScore = lead.score;
+        const stageMappings: Record<string, number> = {
+          'contacted': 40,
+          'qualified': 60,
+          'quoted': 80,
+          'won': 100,
+          'lost': 0
+        };
+
+        // If the new stage has a higher priority/score, update it
+        if (stageMappings[newStage] !== undefined) {
+          // We only increase the score (unless it's 'lost') to prevent logic loops
+          if (newStage === 'lost' || stageMappings[newStage] > lead.score) {
+            updatedScore = stageMappings[newStage];
+            
+            await prisma.lead.update({
+              where: { id: leadId },
+              data: { score: updatedScore }
+            });
+
+            await prisma.leadActivity.create({
+              data: {
+                leadId,
+                type: 'score_update',
+                description: `Dynamic Score Adjustment: ${lead.score} -> ${updatedScore} (${newStage.toUpperCase()} stage reached).`
+              }
+            });
+          }
+        }
+
+        // Automation: If moved to "quoted" (or the legacy "proposal"), trigger notifications
+        if (newStage === 'quoted' || newStage === 'proposal') {
            await createNotification({
              clientId,
              type: 'crm.automation',
-             title: 'Automation Triggered',
-             message: `Lead ${lead.name} moved to Proposal. Drafting personalized brief...`,
+             title: 'High-Value Intent',
+             message: `Lead ${lead.name} moved to Quoted. Score boosted to ${updatedScore}.`,
              priority: 'medium',
              link: `/crm/${clientId}`
            });
-           
-           console.log(`[CRM AUTOMATION] Auto-drafting brief for ${lead.email}`);
         }
 
-        // Automation: If moved to "closed_won", fire "Social Proof" job trigger
-        if (newStage === 'closed_won') {
+        // Automation: If moved to "won" (or the legacy "closed_won"), fire win triggers
+        if (newStage === 'won' || newStage === 'closed_won') {
            await createNotification({
              clientId,
              type: 'crm.win',
-             title: 'Account Won!',
-             message: `Congratulations! ${lead.name} is now a client. Triggering onboarding...`,
+             title: 'Account Won! (100 pts)',
+             message: `Congratulations! ${lead.name} is now a client. Starting onboarding...`,
              priority: 'high',
              link: `/crm/${clientId}`
            });

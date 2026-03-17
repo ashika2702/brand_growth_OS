@@ -11,7 +11,7 @@ export default function MobileCapturePage() {
   const source = searchParams.get('s') || 'QR Scan';
   const campaign = searchParams.get('c') || 'General';
 
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', intent: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [mounted, setMounted] = useState(false);
 
@@ -114,6 +114,17 @@ export default function MobileCapturePage() {
                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
                  className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder-slate-700 outline-none focus:border-white/20 transition-all"
                  placeholder="+1 (555) 000-0000"
+               />
+             </div>
+
+             <div>
+               <label className="block text-[10px] font-black uppercase tracking-widest text-accent-orange mb-2 px-1">What is your primary goal or interest today? *</label>
+               <textarea 
+                 required
+                 value={formData.intent}
+                 onChange={e => setFormData({ ...formData, intent: e.target.value })}
+                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-600 outline-none focus:border-accent-orange/50 focus:bg-white/10 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-md min-h-[120px]"
+                 placeholder="Tell us what you are looking to achieve..."
                />
              </div>
           </div>

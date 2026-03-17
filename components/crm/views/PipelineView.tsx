@@ -65,11 +65,11 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
               {stageLeads.length}
             </span>
           </div>
-          {(stage.id === 'quoted' || stage.id === 'won') && (
+          {/* {(stage.id === 'quoted' || stage.id === 'won') && (
              <p className="text-[10px] font-black text-slate-500 italic ml-5">
                TOTAL: <span className="text-white">${stageTotalVal.toLocaleString()}</span>
              </p>
-          )}
+          )} */}
         </div>
         
         <button className="text-slate-600 hover:text-white transition-colors">
@@ -93,9 +93,9 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
         </SortableContext>
         
         {stageLeads.length === 0 && (
-          <div className="h-32 border border-dashed border-white/5 rounded-[2rem] flex flex-col items-center justify-center text-slate-600 text-xs gap-2">
-            <Users className="w-6 h-6 opacity-20" />
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Pipeline Empty</p>
+          <div className="h-24 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center text-slate-600 text-xs gap-2">
+            <Users className="w-5 h-5 opacity-20" />
+            <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Pipeline Empty</p>
           </div>
         )}
       </div>

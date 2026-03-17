@@ -131,6 +131,7 @@ model Lead {
   assignedTo      String?
   score           Int      @default(0)
   scoreFactors    Json?    // Stores the sub-scores (persona_match, source_quality, behaviour, stage_velocity, offer_fit)
+  intent          String?
   tags            String[]
   utmSource       String?
   utmMedium       String?

@@ -7,6 +7,8 @@ import LeadSidebar from '@/components/crm/LeadSidebar';
 import PipelineView from '@/components/crm/views/PipelineView';
 import AllLeadsTable from '@/components/crm/views/AllLeadsTable';
 import QRCapture from '@/components/crm/views/QRCapture';
+import GlobalActivitiesFeed from '@/components/crm/views/GlobalActivitiesFeed';
+import GlobalTasksList from '@/components/crm/views/GlobalTasksList';
 import AddLeadModal from '@/components/crm/AddLeadModal';
 
 type TabView = 'pipeline' | 'all' | 'activities' | 'tasks' | 'qr';
@@ -166,14 +168,10 @@ export default function CRMPage() {
             <AllLeadsTable leads={filteredLeads} />
          )}
          {activeTab === 'activities' && (
-            <div className="h-full flex items-center justify-center border border-white/5 rounded-3xl border-dashed">
-               <p className="text-slate-500 italic uppercase">Global Activities Feed (Coming Soon)</p>
-            </div>
+            <GlobalActivitiesFeed leads={leads} />
          )}
          {activeTab === 'tasks' && (
-            <div className="h-full flex items-center justify-center border border-white/5 rounded-3xl border-dashed">
-               <p className="text-slate-500 italic uppercase">Global Task List (Coming Soon)</p>
-            </div>
+            <GlobalTasksList leads={leads} onUpdateTask={fetchLeads} />
          )}
          {activeTab === 'qr' && (
             <QRCapture clientId={clientId} />
