@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, Info, AlertTriangle, XCircle, ExternalLink, Inbox } from 'lucide-react';
 import { useClientStore } from '@/lib/store';
-import { supabase } from '@/lib/supabase';
 import { useToast } from './ToastProvider';
 import Link from 'next/link';
 
@@ -41,36 +40,8 @@ export default function NotificationCenter() {
   useEffect(() => {
     fetchNotifications();
 
-    // Supabase Real-time Subscription
-    if (activeClientId) {
-        const channel = supabase
-          .channel('schema-db-changes')
-          .on(
-            'postgres_changes',
-            { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'Notification',
-                filter: `clientId=eq.${activeClientId}`
-            },
-            (payload) => {
-               const newNotif = payload.new as Notification;
-               setNotifications(prev => [newNotif, ...prev]);
-               
-               // Show Global Toast
-               addToast({
-                 type: newNotif.priority === 'urgent' ? 'error' : newNotif.priority === 'high' ? 'warning' : 'info',
-                 title: newNotif.title,
-                 message: newNotif.message
-               });
-            }
-          )
-          .subscribe();
-
-        return () => {
-          supabase.removeChannel(channel);
-        };
-    }
+    // Removed Supabase Real-time Subscription as per user request
+    // Notifications will now be refreshed on component mount or manual refresh
   }, [activeClientId]);
 
   const markAsRead = async (id: string) => {

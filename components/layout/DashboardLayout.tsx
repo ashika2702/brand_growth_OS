@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Script from 'next/script';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -84,6 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-black font-sans text-slate-300 selection:bg-blue-500/30 overflow-hidden">
+      <Script src="https://js.puter.com/v2/" strategy="afterInteractive" />
       {/* Sidebar */}
       <aside
         className={`h-full bg-black border-r border-[#1F1F1F] z-50 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? 'w-20' : 'w-64'

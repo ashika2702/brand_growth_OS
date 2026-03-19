@@ -27,6 +27,9 @@ model Client {
   primaryColor       String?  @default("#0D1117")
   brand24ProjectId   String?
   canvaBrandKitId    String?
+  canvaAccessToken   String?
+  canvaRefreshToken  String?
+  canvaTokenExpiresAt DateTime?
   elevenlabsVoiceId  String?
   
   createdAt          DateTime @default(now())
@@ -39,6 +42,50 @@ model Client {
   prReleases         PRRelease[]
   leads              Lead[]
   notifications      Notification[]
+  contentRequests    ContentRequest[]
+  intelligence       ContentIntelligence?
+}
+
+model ContentRequest {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  type            String   // Reel, Post, Story, Ad, Email, Blog, Page
+  platform        String[] // IG, FB, LinkedIn, GBP, Email, Google
+  status          String   @default("REQUESTED") // REQUESTED, BRIEFED, IN_PROD, REVIEW, APPROVED, PUBLISHED
+  
+  title           String
+  briefText       String?  // The plain language brief from user
+  aiBrief         Json?    // hooks[], script, captions[], CTAs[], image_prompt
+  
+  campaign        String?
+  dueDate         DateTime?
+  assignedTo      String?
+  priority        String   @default("medium") // low, medium, high, urgent
+  
+  voiceScore      Int?
+  performanceData Json?    // reach, engagement_rate, etc.
+  
+  canvaDesignUrl  String?
+  aiImageUrls     String[] @default([])
+  publishAt       DateTime?
+  approvedAt      DateTime?
+  
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clientId, status])
+}
+
+model ContentIntelligence {
+  id        String   @id @default(cuid())
+  clientId  String   @unique
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  tips      String[] // Array of intelligence tips
+  updatedAt DateTime @updatedAt
 }
 
 model BusinessBrain {

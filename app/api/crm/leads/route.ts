@@ -75,9 +75,10 @@ export async function POST(request: Request) {
       NAME: ${name}
       EMAIL: ${email}
       SOURCE: ${source || 'N/A'}
+      CAMPAIGN: ${utmCampaign || 'N/A'} (Source: ${utmSource || 'N/A'}, Medium: ${utmMedium || 'N/A'})
       
       TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name, 1-3 words max)
-      TASK 2: Calculate a LEAD SCORE from 0-100.
+      TASK 2: Calculate a LEAD SCORE from 0-100 based on their origin, intent signal from source, and known persona alignment.
       
       CRITICAL: Output ONLY the requested format. Do not include any explanations, reasoning, introductions, or markdown.
       REQUIRED FORMAT: EXACT_PERSONA_NAME | SCORE

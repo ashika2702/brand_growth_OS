@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { X, Mail, Phone, Calendar, Tag, MessageSquare, ExternalLink, Zap, Clock, PenLine, CheckSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Mail, Phone, Calendar, Tag, MessageSquare, ExternalLink, Zap, Clock, PenLine, CheckSquare, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -46,8 +46,47 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
   const [addingTask, setAddingTask] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [tasksExpanded, setTasksExpanded] = useState(true);
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   if (!lead) return null;
+
+  // Fetch suggestions when sidebar opens
+  React.useEffect(() => {
+    if (isOpen && lead) {
+      fetchSuggestions();
+    }
+  }, [isOpen, lead?.id]);
+
+  const fetchSuggestions = async () => {
+    try {
+      setLoadingSuggestions(true);
+      const res = await fetch(`/api/crm/leads/${lead.id}/suggestions`);
+      const data = await res.json();
+      setSuggestions(data.suggestions || []);
+    } catch (e) {
+      console.error('Failed to fetch suggestions');
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleAIDraft = async () => {
+    try {
+      setIsDrafting(true);
+      const res = await fetch(`/api/crm/leads/${lead.id}/draft`);
+      const data = await res.json();
+      const draft = data.draft || `Hi ${lead.name.split(' ')[0]}, reaching out regarding your interest!`;
+      
+      window.open(`https://wa.me/${lead.phone?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(draft)}`, '_blank');
+      logActivity('whatsapp', 'Sent Personalized AI Follow-up');
+    } catch (e) {
+      console.error('Drafting failed');
+    } finally {
+      setIsDrafting(false);
+    }
+  };
 
   const logActivity = async (type: string, description: string) => {
     try {
@@ -99,9 +138,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
   };
 
   const handleWhatsApp = () => {
-    const draft = `Hi ${lead.name.split(' ')[0]},\n\nI was reviewing your interest in our premium scaling infrastructure. As someone matching our ${lead.personaTag || 'ideal'} profile, I believe we have a high synergy.\n\nAre you available for a quick chat today?`;
-    window.open(`https://wa.me/${lead.phone?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(draft)}`, '_blank');
-    logActivity('whatsapp', 'Initiated AI-drafted WhatsApp chat');
+    handleAIDraft();
   };
 
   return (
@@ -136,17 +173,50 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8">
           
-          {/* AI Assist Chip Always Visible */}
-          <button onClick={handleWhatsApp} className="w-full relative group overflow-hidden rounded-2xl">
+          {/* AI Assist Chip */}
+          <button 
+            onClick={handleWhatsApp} 
+            disabled={isDrafting}
+            className={`w-full relative group overflow-hidden rounded-2xl transition-all ${isDrafting ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             <div className="absolute inset-0 bg-gradient-to-r from-[#A855F7]/20 to-accent-blue/20 opacity-50 group-hover:opacity-100 transition-opacity" />
             <div className="relative p-4 border border-white/10 flex flex-col items-center justify-center gap-1 backdrop-blur-sm">
                <div className="flex items-center gap-2 text-[#A855F7]">
-                 <Zap size={14} fill="currentColor" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-white mt-0.5">Alex AI Assist</span>
+                 <Zap size={14} fill="currentColor" className={isDrafting ? 'animate-pulse' : ''} />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-white mt-0.5">
+                   {isDrafting ? 'Alex AI Drafting...' : 'Alex AI Assist'}
+                 </span>
                </div>
-               <p className="text-xs text-slate-300">Draft personalized follow-up for this lead.</p>
+               <p className="text-xs text-slate-300">Draft high-conversion follow-up using AI context.</p>
             </div>
           </button>
+
+          {/* AI Strategic Suggestions */}
+          <div className="space-y-3">
+             <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-[#A855F7]" />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sales Intelligence Suggestions</h3>
+             </div>
+             
+             {loadingSuggestions ? (
+                <div className="space-y-2 animate-pulse">
+                   <div className="h-8 bg-white/5 rounded-xl border border-white/5" />
+                   <div className="h-8 bg-white/5 rounded-xl border border-white/5" />
+                </div>
+             ) : (
+                <div className="space-y-2">
+                   {suggestions.map((suggestion, i) => (
+                      <div key={i} className="group p-3 bg-white/5 border border-white/5 rounded-xl hover:border-[#A855F7]/30 transition-all flex items-center justify-between">
+                         <span className="text-xs text-slate-300 font-medium">{suggestion}</span>
+                         <ExternalLink size={10} className="text-slate-600 group-hover:text-[#A855F7] transition-colors" />
+                      </div>
+                   ))}
+                   {suggestions.length === 0 && (
+                      <p className="text-[10px] text-slate-600 italic">No specific suggestions for this stage yet.</p>
+                   )}
+                </div>
+             )}
+          </div>
 
           {/* Quick Actions Row */}
           <div className="grid grid-cols-5 gap-2">
@@ -192,7 +262,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Follow-up Tasks</h3>
                    {lead.tasks && lead.tasks.filter(t => !t.isCompleted).length > 0 && (
                       <span className="bg-accent-orange/20 text-accent-orange px-1.5 rounded text-[9px] font-black">
-                        {lead.tasks.filter(t => !t.isCompleted).length} Due
+                         {lead.tasks.filter(t => !t.isCompleted).length} Due
                       </span>
                    )}
                 </div>
@@ -200,45 +270,45 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
              </div>
              
              {tasksExpanded && (
-               <div className="space-y-2">
-                 {lead.tasks?.map(task => {
-                   const isDueToday = new Date(task.dueDate).toDateString() === new Date().toDateString();
-                   return (
-                     <div key={task.id} className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${task.isCompleted ? 'bg-white/5 border-white/5 opacity-50' : isDueToday ? 'bg-accent-orange/10 border-accent-orange/30' : 'bg-white/5 border-white/10'}`}>
-                       <button onClick={() => completeTask(task.id, task.isCompleted)} className="mt-0.5 text-slate-500 hover:text-white">
-                         {task.isCompleted ? <CheckSquare size={14} className="text-accent-green" /> : <div className="w-3.5 h-3.5 rounded-sm border border-slate-500" />}
-                       </button>
-                       <div className="flex-1">
-                         <p className={`text-sm font-medium ${task.isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{task.title}</p>
-                         <div className="flex items-center gap-2 mt-1">
-                           <Clock size={10} className={isDueToday && !task.isCompleted ? "text-accent-orange" : "text-slate-500"} />
-                           <span className={`text-[9px] font-black uppercase tracking-widest ${isDueToday && !task.isCompleted ? "text-accent-orange" : "text-slate-500"}`}>
-                             {isDueToday ? 'Due Today' : new Date(task.dueDate).toLocaleDateString()}
-                           </span>
+                <div className="space-y-2">
+                   {lead.tasks?.map(task => {
+                      const isDueToday = new Date(task.dueDate).toDateString() === new Date().toDateString();
+                      return (
+                         <div key={task.id} className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${task.isCompleted ? 'bg-white/5 border-white/5 opacity-50' : isDueToday ? 'bg-accent-orange/10 border-accent-orange/30' : 'bg-white/5 border-white/10'}`}>
+                            <button onClick={() => completeTask(task.id, task.isCompleted)} className="mt-0.5 text-slate-500 hover:text-white">
+                               {task.isCompleted ? <CheckSquare size={14} className="text-accent-green" /> : <div className="w-3.5 h-3.5 rounded-sm border border-slate-500" />}
+                            </button>
+                            <div className="flex-1">
+                               <p className={`text-sm font-medium ${task.isCompleted ? 'line-through text-slate-500' : 'text-white'}`}>{task.title}</p>
+                               <div className="flex items-center gap-2 mt-1">
+                                  <Clock size={10} className={isDueToday && !task.isCompleted ? "text-accent-orange" : "text-slate-500"} />
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${isDueToday && !task.isCompleted ? "text-accent-orange" : "text-slate-500"}`}>
+                                     {isDueToday ? 'Due Today' : new Date(task.dueDate).toLocaleDateString()}
+                                  </span>
+                               </div>
+                            </div>
                          </div>
-                       </div>
-                     </div>
-                   );
-                 })}
-                 
-                 {addingTask ? (
-                   <div className="p-3 bg-black/40 border border-white/10 rounded-xl flex gap-2">
-                     <input 
-                        type="text" 
-                        value={taskTitle} 
-                        onChange={e => setTaskTitle(e.target.value)} 
-                        autoFocus
-                        placeholder="Task title..." 
-                        className="bg-transparent text-sm text-white outline-none flex-1" 
-                     />
-                     <button onClick={addTask} className="text-[10px] font-black uppercase text-accent-blue">Add</button>
-                   </div>
-                 ) : (
-                   <button onClick={() => setAddingTask(true)} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest inline-flex items-center gap-1">
-                     + Add Task
-                   </button>
-                 )}
-               </div>
+                      );
+                   })}
+                   
+                   {addingTask ? (
+                      <div className="p-3 bg-black/40 border border-white/10 rounded-xl flex gap-2">
+                         <input 
+                            type="text" 
+                            value={taskTitle} 
+                            onChange={e => setTaskTitle(e.target.value)} 
+                            autoFocus
+                            placeholder="Task title..." 
+                            className="bg-transparent text-sm text-white outline-none flex-1" 
+                         />
+                         <button onClick={addTask} className="text-[10px] font-black uppercase text-accent-blue">Add</button>
+                      </div>
+                   ) : (
+                      <button onClick={() => setAddingTask(true)} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest inline-flex items-center gap-1">
+                         + Add Task
+                      </button>
+                   )}
+                </div>
              )}
           </div>
 
@@ -250,10 +320,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
                    <p className="text-[9px] text-slate-500 uppercase font-black mb-1">UTM Source / Campaign</p>
                    <p className="text-xs text-slate-300 font-medium">{lead.utmSource || 'Direct'} / {lead.utmCampaign || 'None'}</p>
                 </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                   <p className="text-[9px] text-slate-500 uppercase font-black mb-1">Estimated Time on Site</p>
-                   <p className="text-xs text-slate-300 font-medium">4m 12s</p>
-                </div>
+                {/* Behavioral data hidden for now since we don't track site time yet */}
              </div>
           </div>
 
@@ -262,17 +329,17 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Activity Timeline</h3>
              <div className="space-y-0 relative ml-4 border-l border-white/10 pl-6 pb-4">
                 {lead.activities?.map((act, i) => (
-                  <div key={act.id} className="relative pb-6 last:pb-0">
-                     <div className="absolute left-[-31.5px] top-1 w-5 h-5 rounded-full bg-[#12141A] border border-white/20 flex items-center justify-center text-slate-400">
-                        {getActivityIcon(act.type)}
-                     </div>
-                     <p className="text-[10px] font-black text-white uppercase tracking-widest mb-0.5">{act.type.replace('_', ' ')}</p>
-                     <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{act.description}</p>
-                     <p className="text-[9px] font-black text-slate-600 uppercase mt-1">{new Date(act.createdAt).toLocaleString()}</p>
-                  </div>
+                   <div key={act.id} className="relative pb-6 last:pb-0">
+                      <div className="absolute left-[-31.5px] top-1 w-5 h-5 rounded-full bg-[#12141A] border border-white/20 flex items-center justify-center text-slate-400">
+                         {getActivityIcon(act.type)}
+                      </div>
+                      <p className="text-[10px] font-black text-white uppercase tracking-widest mb-0.5">{act.type.replace('_', ' ')}</p>
+                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{act.description}</p>
+                      <p className="text-[9px] font-black text-slate-600 uppercase mt-1">{new Date(act.createdAt).toLocaleString()}</p>
+                   </div>
                 ))}
                 {(!lead.activities || lead.activities.length === 0) && (
-                  <div className="text-xs text-slate-500 italic">No activities recorded yet.</div>
+                   <div className="text-xs text-slate-500 italic">No activities recorded yet.</div>
                 )}
              </div>
           </div>
