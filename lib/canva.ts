@@ -19,14 +19,14 @@ export async function getCanvaToken(clientId: string) {
 
   // Check if token is expired (or about to expire in 5 mins)
   if (client.canvaTokenExpiresAt && client.canvaTokenExpiresAt.getTime() < Date.now() + 300000) {
-    return refreshCanvaToken(clientId, client.canvaRefreshToken!);
+    return refreshCanvaToken(clientId, client.canvaRefreshToken as string);
   }
 
   return client.canvaAccessToken;
 }
 
 async function refreshCanvaToken(clientId: string, refreshToken: string) {
-  const response = await fetch('https://api.canva.com/v1/oauth/token', {
+  const response = await fetch('https://api.canva.com/rest/v1/oauth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -68,7 +68,7 @@ export async function generateCanvaDesignFromTemplate(contentId: string) {
 
   // 1. Call Autofill API
   // Documentation: https://www.canva.com/developers/docs/connect/autofill/
-  const response = await fetch('https://api.canva.com/v1/autofills', {
+  const response = await fetch('https://api.canva.com/rest/v1/autofills', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -86,16 +86,45 @@ export async function generateCanvaDesignFromTemplate(contentId: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
+    if (errorData.code === 'forbidden' && errorData.message?.includes('Enterprise')) {
+      throw new Error('Canva Error: This feature requires a Canva Enterprise organization plan.');
+    }
     throw new Error(`Canva API Error: ${errorData.message || response.statusText}`);
   }
 
-  const data = await response.json();
+  const { job }: { job: { id: string, status: string } } = await response.json();
+  
+  // 2. Poll for Status
+  let jobData: any = { job };
+  let attempts = 0;
+  const maxAttempts = 30; // 60 seconds max
+
+  while (jobData.job.status === 'in_progress' && attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const pollResponse = await fetch(`https://api.canva.com/rest/v1/autofills/${jobData.job.id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (pollResponse.ok) {
+      jobData = await pollResponse.json();
+    }
+    attempts++;
+  }
+
+  if (jobData.job.status === 'failed') {
+    throw new Error(`Canva API Error: ${jobData.job.error?.message || 'Autofill job failed'}`);
+  }
+
+  if (jobData.job.status !== 'success') {
+    throw new Error('Canva API Error: Job timed out or still processing.');
+  }
+
+  const design = jobData.job.result.design;
   
   // Update the request with the new design URL
   await prisma.contentRequest.update({
     where: { id: contentId },
-    data: { canvaDesignUrl: data.job?.result?.design?.url || data.job?.result?.url }
+    data: { canvaDesignUrl: design.url }
   });
 
-  return data.job?.result?.design;
+  return design;
 }

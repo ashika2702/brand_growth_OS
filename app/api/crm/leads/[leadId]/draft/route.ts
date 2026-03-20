@@ -4,10 +4,10 @@ import { callAI } from '@/lib/ai';
 
 export async function GET(
   request: Request,
-  { params }: { params: { leadId: string } }
+  { params }: { params: Promise<{ leadId: string }> }
 ) {
   try {
-    const leadId = params.leadId;
+    const { leadId } = await params;
     const lead = await prisma.lead.findUnique({
       where: { id: leadId },
       include: {

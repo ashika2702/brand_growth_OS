@@ -3,9 +3,9 @@ import prisma from '@/lib/db';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id;
+  const { id } = await params;
   try {
     const body = await req.json();
     const updated = await prisma.contentRequest.update({
@@ -20,9 +20,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id;
+  const { id } = await params;
   try {
     await prisma.contentRequest.delete({
       where: { id },

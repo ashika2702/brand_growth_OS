@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Sparkles, 
@@ -25,27 +25,47 @@ interface BriefModalProps {
 export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefModalProps) {
   const [editing, setEditing] = useState(false);
   const [imageGenerating, setImageGenerating] = useState(false);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [voiceGenerating, setVoiceGenerating] = useState(false);
-  const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
-  const [designUrl, setDesignUrl] = useState<string | null>(null);
   const [designLoading, setDesignLoading] = useState(false);
+  const [imageUrls, setImageUrls] = useState<string[]>(item?.aiImageUrls || []);
+  const [voiceGenerating, setVoiceGenerating] = useState(false);
+  const [voiceUrl, setVoiceUrl] = useState<string | null>(item?.voiceUrl || null);
+  const [designUrl, setDesignUrl] = useState<string | null>(item?.canvaDesignUrl || null);
+
+  useEffect(() => {
+    if (item?.aiImageUrls) {
+        setImageUrls(item.aiImageUrls);
+    }
+  }, [item?.aiImageUrls]);
 
   const brief = item?.aiBrief || {};
 
   const handleGenerateDesign = async () => {
     setDesignLoading(true);
     try {
-        // High-end Graphic Design prompt for a template look
-        const designPrompt = `Modern social media graphic design template for: ${item.title}. Vibrant colors, premium typography, minimalist aesthetic, professional branding style, 4k resolution, clean layout.`;
-        const seed = Math.floor(Math.random() * 999999);
-        const url = `https://pollinations.ai/p/${encodeURIComponent(designPrompt)}?width=1080&height=1350&seed=${seed}&nofeed=true&nologo=true`;
+        const res = await fetch(`/api/content/${item.id}/design`, { method: 'POST' });
+        const data = await res.json();
         
-        // Simulating processing time for the "Wow" effect
-        await new Promise(r => setTimeout(r, 2000));
-        setDesignUrl(url);
-    } catch (e) {
+        if (data.error === 'Canva not connected for this client' || data.error?.includes('Missing scopes')) {
+          // Redirect to login or show alert
+          const msg = data.error?.includes('Missing scopes') 
+            ? 'Canva needs more permissions. Update connection now?' 
+            : 'Canva is not connected for this client. Connect now?';
+            
+          if (confirm(msg)) {
+            window.open(`/api/auth/canva/login?clientId=${item.clientId}`, '_blank');
+          }
+          return;
+        }
+
+        if (data.url) {
+          setDesignUrl(data.url);
+          onUpdate(); // Refresh the list
+        } else {
+          throw new Error(data.error || 'Failed to generate');
+        }
+    } catch (e: any) {
         console.error('Design generation failed:', e);
+        alert(`Canva Error: ${e.message}`);
     } finally {
         setDesignLoading(false);
     }
@@ -60,7 +80,15 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
         });
         const data = await res.json();
         if (data.imageUrl) {
-            setImageUrls([data.imageUrl]);
+            const newUrls = [...imageUrls, data.imageUrl];
+            setImageUrls(newUrls);
+            
+            // Persist to DB
+            await fetch(`/api/content/${item.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ aiImageUrls: newUrls }),
+            });
+            onUpdate();
         } else {
             throw new Error(data.error || 'Failed to generate');
         }
@@ -68,9 +96,16 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
         console.error('Image generation failed:', e);
         // Fallback to mock for demo if key is missing
         const prompt = encodeURIComponent(brief.image_prompt || item.title);
-        setImageUrls([
-            `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&seed=${Math.floor(Math.random()*1000)}&nologo=true`
-        ]);
+        const fallbackUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&seed=${Math.floor(Math.random()*1000)}&nologo=true`;
+        const newUrls = [...imageUrls, fallbackUrl];
+        setImageUrls(newUrls);
+        
+        // Even persist fallback for demo consistency
+        await fetch(`/api/content/${item.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ aiImageUrls: newUrls }),
+        });
+        onUpdate();
     } finally {
         setImageGenerating(false);
     }
