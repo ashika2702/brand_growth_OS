@@ -13,6 +13,7 @@ import {
   Zap,
   Search,
   Bell,
+  LogOut,
   ChevronRight,
   ChevronLeft,
   MoreVertical,
@@ -180,19 +181,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Bottom Section */}
         <div className="mt-auto border-t border-[#1F1F1F] p-4 space-y-4">
-          {!isCollapsed && (
-            <div className="bg-[#0D0D0D] p-4 rounded-2xl border border-[#1F1F1F] group cursor-pointer hover:border-blue-500/40 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400 group-hover:scale-110 transition-transform">
-                  <Zap size={16} fill="currentColor" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-black text-white uppercase tracking-wide">Upgrade Plan</p>
-                  <p className="text-[9px] text-slate-500 font-medium whitespace-nowrap overflow-hidden">Unlock advanced features</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Puter Account Management */}
+         
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}

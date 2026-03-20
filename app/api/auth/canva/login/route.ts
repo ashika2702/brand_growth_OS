@@ -25,8 +25,8 @@ export async function GET(req: Request) {
     new URLSearchParams({
       response_type: 'code',
       client_id: canvaClientId,
-      redirect_uri: `${new URL(req.url).origin.replace('localhost', '127.0.0.1')}/api/auth/canva/callback`,
-      scope: 'design:content:read design:content:write asset:read asset:write brandtemplate:content',
+      redirect_uri: `${new URL(req.url).origin}/api/auth/canva/callback`,
+      scope: 'canva:design:content:read canva:asset:read canva:asset:write canva:brand_template:read',
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       state: clientId, // Pass clientId through state

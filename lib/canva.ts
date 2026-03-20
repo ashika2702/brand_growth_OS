@@ -19,14 +19,14 @@ export async function getCanvaToken(clientId: string) {
 
   // Check if token is expired (or about to expire in 5 mins)
   if (client.canvaTokenExpiresAt && client.canvaTokenExpiresAt.getTime() < Date.now() + 300000) {
-    return refreshCanvaToken(clientId, client.canvaRefreshToken as string);
+    return refreshCanvaToken(clientId, client.canvaRefreshToken!);
   }
 
   return client.canvaAccessToken;
 }
 
 async function refreshCanvaToken(clientId: string, refreshToken: string) {
-  const response = await fetch('https://api.canva.com/rest/v1/oauth/token', {
+  const response = await fetch('https://api.canva.com/v1/oauth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -67,8 +67,7 @@ export async function generateCanvaDesignFromTemplate(contentId: string) {
   const token = await getCanvaToken(content.clientId);
 
   // 1. Call Autofill API
-  // Documentation: https://www.canva.com/developers/docs/connect/autofill/
-  const response = await fetch('https://api.canva.com/rest/v1/autofills', {
+  const response = await fetch('https://api.canva.com/v1/autofills', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -86,45 +85,64 @@ export async function generateCanvaDesignFromTemplate(contentId: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    if (errorData.code === 'forbidden' && errorData.message?.includes('Enterprise')) {
-      throw new Error('Canva Error: This feature requires a Canva Enterprise organization plan.');
-    }
     throw new Error(`Canva API Error: ${errorData.message || response.statusText}`);
   }
 
-  const { job }: { job: { id: string, status: string } } = await response.json();
-  
-  // 2. Poll for Status
-  let jobData: any = { job };
-  let attempts = 0;
-  const maxAttempts = 30; // 60 seconds max
+  const data = await response.json();
+  const jobId = data.job?.id;
 
-  while (jobData.job.status === 'in_progress' && attempts < maxAttempts) {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const pollResponse = await fetch(`https://api.canva.com/rest/v1/autofills/${jobData.job.id}`, {
+  if (!jobId) throw new Error('No job ID returned from Canva');
+
+  // 2. Poll for Completion (Max 10 seconds)
+  let designData = null;
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await fetch(`https://api.canva.com/v1/autofills/${jobId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (pollResponse.ok) {
-      jobData = await pollResponse.json();
+    const statusData = await statusRes.json();
+    if (statusData.job?.status === 'success') {
+      designData = statusData.job.result?.design;
+      break;
     }
-    attempts++;
+    if (statusData.job?.status === 'failed') {
+      throw new Error(`Canva job failed: ${statusData.job.error?.message}`);
+    }
   }
 
-  if (jobData.job.status === 'failed') {
-    throw new Error(`Canva API Error: ${jobData.job.error?.message || 'Autofill job failed'}`);
+  if (!designData) throw new Error('Canva design generation timed out');
+
+  // 3. Fetch Thumbnail
+  let thumbnailUrl = null;
+  try {
+    const thumbRes = await fetch(`https://api.canva.com/v1/thumbnails?design_id=${designData.id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (thumbRes.ok) {
+      const thumbData = await thumbRes.json();
+      thumbnailUrl = thumbData.thumbnails?.[0]?.url;
+    }
+  } catch (e) {
+    console.warn('Failed to fetch Canva thumbnail', e);
   }
 
-  if (jobData.job.status !== 'success') {
-    throw new Error('Canva API Error: Job timed out or still processing.');
-  }
+  const editUrl = designData.url;
 
-  const design = jobData.job.result.design;
-  
-  // Update the request with the new design URL
+  // Update the request with both URLs
+  // We'll store thumbnail in the Json brief for now to avoid schema changes if possible, 
+  // but if schema allows, we'll use a field.
+  const updatedBrief = {
+    ...(content.aiBrief as any || {}),
+    canvaThumbnailUrl: thumbnailUrl
+  };
+
   await prisma.contentRequest.update({
     where: { id: contentId },
-    data: { canvaDesignUrl: design.url }
+    data: { 
+      canvaDesignUrl: editUrl,
+      aiBrief: updatedBrief
+    }
   });
 
-  return design;
+  return { ...designData, thumbnailUrl };
 }

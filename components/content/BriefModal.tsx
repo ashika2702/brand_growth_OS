@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   Sparkles, 
@@ -25,17 +25,12 @@ interface BriefModalProps {
 export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefModalProps) {
   const [editing, setEditing] = useState(false);
   const [imageGenerating, setImageGenerating] = useState(false);
-  const [designLoading, setDesignLoading] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>(item?.aiImageUrls || []);
   const [voiceGenerating, setVoiceGenerating] = useState(false);
-  const [voiceUrl, setVoiceUrl] = useState<string | null>(item?.voiceUrl || null);
+  const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
   const [designUrl, setDesignUrl] = useState<string | null>(item?.canvaDesignUrl || null);
-
-  useEffect(() => {
-    if (item?.aiImageUrls) {
-        setImageUrls(item.aiImageUrls);
-    }
-  }, [item?.aiImageUrls]);
+  const [designThumbnailUrl, setDesignThumbnailUrl] = useState<string | null>(item?.aiBrief?.canvaThumbnailUrl || null);
+  const [designLoading, setDesignLoading] = useState(false);
 
   const brief = item?.aiBrief || {};
 
@@ -45,13 +40,9 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
         const res = await fetch(`/api/content/${item.id}/design`, { method: 'POST' });
         const data = await res.json();
         
-        if (data.error === 'Canva not connected for this client' || data.error?.includes('Missing scopes')) {
+        if (data.error === 'Canva not connected for this client') {
           // Redirect to login or show alert
-          const msg = data.error?.includes('Missing scopes') 
-            ? 'Canva needs more permissions. Update connection now?' 
-            : 'Canva is not connected for this client. Connect now?';
-            
-          if (confirm(msg)) {
+          if (confirm('Canva is not connected for this client. Connect now?')) {
             window.open(`/api/auth/canva/login?clientId=${item.clientId}`, '_blank');
           }
           return;
@@ -59,6 +50,7 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
 
         if (data.url) {
           setDesignUrl(data.url);
+          setDesignThumbnailUrl(data.thumbnailUrl || data.url);
           onUpdate(); // Refresh the list
         } else {
           throw new Error(data.error || 'Failed to generate');
@@ -80,15 +72,7 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
         });
         const data = await res.json();
         if (data.imageUrl) {
-            const newUrls = [...imageUrls, data.imageUrl];
-            setImageUrls(newUrls);
-            
-            // Persist to DB
-            await fetch(`/api/content/${item.id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ aiImageUrls: newUrls }),
-            });
-            onUpdate();
+            setImageUrls([data.imageUrl]);
         } else {
             throw new Error(data.error || 'Failed to generate');
         }
@@ -96,16 +80,9 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
         console.error('Image generation failed:', e);
         // Fallback to mock for demo if key is missing
         const prompt = encodeURIComponent(brief.image_prompt || item.title);
-        const fallbackUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&seed=${Math.floor(Math.random()*1000)}&nologo=true`;
-        const newUrls = [...imageUrls, fallbackUrl];
-        setImageUrls(newUrls);
-        
-        // Even persist fallback for demo consistency
-        await fetch(`/api/content/${item.id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ aiImageUrls: newUrls }),
-        });
-        onUpdate();
+        setImageUrls([
+            `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&seed=${Math.floor(Math.random()*1000)}&nologo=true`
+        ]);
     } finally {
         setImageGenerating(false);
     }
@@ -257,9 +234,13 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
                                                         if (res && res.src) {
                                                             img.src = res.src;
                                                         }
-                                                    } catch (puterErr) {
+                                                    } catch (puterErr: any) {
                                                         console.error('Puter generation failed:', puterErr);
+                                                        // If balance is low, Puter logic usually handles its own modal, 
+                                                        // but we can log more context here.
                                                     }
+                                                } else {
+                                                    console.warn('Puter.js not loaded. Please check your internet or refresh.');
                                                 }
                                             }}
                                         />
@@ -277,13 +258,16 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
                                 <p className="text-[9px] font-black uppercase tracking-widest text-accent-blue mb-2">Design Template Ready</p>
                                 <div className="aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 bg-black shadow-2xl relative group/design">
                                     <img 
-                                        src={designUrl} 
+                                        src={designThumbnailUrl || designUrl || ''} 
                                         alt="Design Template" 
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                                         referrerPolicy="no-referrer"
                                     />
                                     <div className="absolute inset-0 bg-accent-blue/20 opacity-0 group-hover/design:opacity-100 transition-opacity flex items-center justify-center">
-                                         <button className="px-6 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-2xl transform translate-y-4 group-hover/design:translate-y-0 transition-transform">
+                                         <button 
+                                            onClick={() => window.open(designUrl!, '_blank')}
+                                            className="px-6 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-2xl transform translate-y-4 group-hover/design:translate-y-0 transition-transform"
+                                         >
                                             Edit in Canva
                                          </button>
                                     </div>
