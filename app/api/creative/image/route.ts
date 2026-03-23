@@ -10,6 +10,11 @@ export async function POST(req: Request) {
     }
 
     const data = await generateImage(prompt);
+    
+    if (!data || !data[0] || !data[0].url) {
+      throw new Error('Image generation failed to return a valid URL');
+    }
+
     return NextResponse.json({ imageUrl: data[0].url });
   } catch (error: any) {
     console.error('Image generation failed:', error);
