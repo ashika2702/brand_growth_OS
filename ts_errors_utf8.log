@@ -1,0 +1,71 @@
+﻿.next/dev/types/validator.ts(243,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/leads/[leadId]/activities/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/leads/[leadId]/activities">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: Request, { params }: { params: { leadId: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ id: string; createdAt: Date; type: string; description: string; metadata: JsonValue; leadId: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ leadId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ leadId: string; }>; }' is not assignable to type '{ params: { leadId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'leadId' is missing in type 'Promise<{ leadId: string; }>' but required in type '{ leadId: string; }'.
+.next/dev/types/validator.ts(252,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/leads/[leadId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/leads/[leadId]">'.
+  Types of property 'PATCH' are incompatible.
+    Type '(request: Request, { params }: { params: { leadId: string; }; }) => Promise<NextResponse<{ id: string; clientId: string; updatedAt: Date; name: string; createdAt: Date; email: string; source: string | null; ... 13 more ...; lastActivityAt: Date; }> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ leadId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ leadId: string; }>; }' is not assignable to type '{ params: { leadId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'leadId' is missing in type 'Promise<{ leadId: string; }>' but required in type '{ leadId: string; }'.
+.next/dev/types/validator.ts(261,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/leads/[leadId]/tasks/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/leads/[leadId]/tasks">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: Request, { params }: { params: { leadId: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ id: string; updatedAt: Date; createdAt: Date; type: string; ... 5 more ...; completedAt: Date | null; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ leadId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ leadId: string; }>; }' is not assignable to type '{ params: { leadId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'leadId' is missing in type 'Promise<{ leadId: string; }>' but required in type '{ leadId: string; }'.
+.next/dev/types/validator.ts(279,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/tasks/[taskId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/tasks/[taskId]">'.
+  Types of property 'PATCH' are incompatible.
+    Type '(request: Request, { params }: { params: { taskId: string; }; }) => Promise<NextResponse<{ id: string; updatedAt: Date; createdAt: Date; type: string; title: string; dueDate: Date; description: string | null; leadId: string; isCompleted: boolean; completedAt: Date | null; }> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ taskId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ taskId: string; }>; }' is not assignable to type '{ params: { taskId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'taskId' is missing in type 'Promise<{ taskId: string; }>' but required in type '{ taskId: string; }'.
+.next/dev/types/validator.ts(297,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/public/capture/[clientId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/capture/[clientId]">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { clientId: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; leadId: any; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ clientId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ clientId: string; }>; }' is not assignable to type '{ params: { clientId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'clientId' is missing in type 'Promise<{ clientId: string; }>' but required in type '{ clientId: string; }'.
+.next/types/validator.ts(243,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/leads/[leadId]/activities/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/leads/[leadId]/activities">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: Request, { params }: { params: { leadId: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ id: string; createdAt: Date; type: string; description: string; metadata: JsonValue; leadId: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ leadId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ leadId: string; }>; }' is not assignable to type '{ params: { leadId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'leadId' is missing in type 'Promise<{ leadId: string; }>' but required in type '{ leadId: string; }'.
+.next/types/validator.ts(252,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/leads/[leadId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/leads/[leadId]">'.
+  Types of property 'PATCH' are incompatible.
+    Type '(request: Request, { params }: { params: { leadId: string; }; }) => Promise<NextResponse<{ id: string; clientId: string; updatedAt: Date; name: string; createdAt: Date; email: string; source: string | null; ... 13 more ...; lastActivityAt: Date; }> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ leadId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ leadId: string; }>; }' is not assignable to type '{ params: { leadId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'leadId' is missing in type 'Promise<{ leadId: string; }>' but required in type '{ leadId: string; }'.
+.next/types/validator.ts(261,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/leads/[leadId]/tasks/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/leads/[leadId]/tasks">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: Request, { params }: { params: { leadId: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ id: string; updatedAt: Date; createdAt: Date; type: string; ... 5 more ...; completedAt: Date | null; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ leadId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ leadId: string; }>; }' is not assignable to type '{ params: { leadId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'leadId' is missing in type 'Promise<{ leadId: string; }>' but required in type '{ leadId: string; }'.
+.next/types/validator.ts(279,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/crm/tasks/[taskId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/crm/tasks/[taskId]">'.
+  Types of property 'PATCH' are incompatible.
+    Type '(request: Request, { params }: { params: { taskId: string; }; }) => Promise<NextResponse<{ id: string; updatedAt: Date; createdAt: Date; type: string; title: string; dueDate: Date; description: string | null; leadId: string; isCompleted: boolean; completedAt: Date | null; }> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ taskId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ taskId: string; }>; }' is not assignable to type '{ params: { taskId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'taskId' is missing in type 'Promise<{ taskId: string; }>' but required in type '{ taskId: string; }'.
+.next/types/validator.ts(297,31): error TS2344: Type 'typeof import("C:/Files/vsc files/brand_growth_OS/app/api/public/capture/[clientId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/capture/[clientId]">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { clientId: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; leadId: any; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ clientId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ clientId: string; }>; }' is not assignable to type '{ params: { clientId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'clientId' is missing in type 'Promise<{ clientId: string; }>' but required in type '{ clientId: string; }'.
+app/api/public/capture/[clientId]/route.ts(2,10): error TS2614: Module '"@/lib/db"' has no exported member 'db'. Did you mean to use 'import db from "@/lib/db"' instead?

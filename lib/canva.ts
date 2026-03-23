@@ -146,3 +146,48 @@ export async function generateCanvaDesignFromTemplate(contentId: string) {
 
   return { ...designData, thumbnailUrl };
 }
+
+/**
+ * Upload an external image URL to Canva (Free Plan Friendly)
+ */
+export async function uploadAssetToCanva(clientId: string, imageUrl: string, fileName: string) {
+  const token = await getCanvaToken(clientId);
+
+  const response = await fetch('https://api.canva.com/v1/asset-uploads', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: fileName,
+      url: imageUrl
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Canva Asset Upload Error: ${errorData.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  const jobId = data.job?.id;
+
+  if (!jobId) throw new Error('No asset upload job ID returned');
+
+  // Poll for Completion
+  let assetId = null;
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await fetch(`https://api.canva.com/v1/asset-uploads/${jobId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const statusData = await statusRes.json();
+    if (statusData.job?.status === 'success') {
+      assetId = statusData.job.result?.asset?.id;
+      break;
+    }
+  }
+
+  return assetId;
+}

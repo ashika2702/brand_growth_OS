@@ -8,6 +8,9 @@ export async function GET(
 ) {
   try {
     const { leadId } = await params;
+    const { searchParams } = new URL(request.url);
+    const instruction = searchParams.get('instruction');
+
     const lead = await prisma.lead.findUnique({
       where: { id: leadId },
       include: {
@@ -38,7 +41,10 @@ export async function GET(
       ${activityContext || 'None'}
       
       TASK:
-      Draft a highly personalized, high-conversion follow-up message for WhatsApp.
+      ${instruction 
+        ? `Draft a highly personalized, high-conversion WhatsApp message specifically focused on this goal: "${instruction}"`
+        : 'Draft a highly personalized, high-conversion follow-up message for WhatsApp.'}
+      
       Keep it short, professional yet punchy, and refer to their persona/source if relevant.
       The goal is to get a quick response or a meeting booked.
       

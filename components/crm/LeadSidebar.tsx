@@ -50,14 +50,14 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
-  if (!lead) return null;
-
   // Fetch suggestions when sidebar opens
   React.useEffect(() => {
     if (isOpen && lead) {
       fetchSuggestions();
     }
   }, [isOpen, lead?.id]);
+
+  if (!lead) return null;
 
   const fetchSuggestions = async () => {
     try {
@@ -72,11 +72,11 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
     }
   };
 
-  const handleAIDraft = async () => {
+  const handleAIDraft = async (instruction?: string) => {
+    setIsDrafting(true);
     try {
-      setIsDrafting(true);
-      const res = await fetch(`/api/crm/leads/${lead.id}/draft`);
-      const data = await res.json();
+      const response = await fetch(`/api/crm/leads/${lead.id}/draft${instruction ? `?instruction=${encodeURIComponent(instruction)}` : ''}`);
+      const data = await response.json();
       const draft = data.draft || `Hi ${lead.name.split(' ')[0]}, reaching out regarding your interest!`;
       
       window.open(`https://wa.me/${lead.phone?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(draft)}`, '_blank');
@@ -175,7 +175,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
           
           {/* AI Assist Chip */}
           <button 
-            onClick={handleWhatsApp} 
+            onClick={() => handleAIDraft()} 
             disabled={isDrafting}
             className={`w-full relative group overflow-hidden rounded-2xl transition-all ${isDrafting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
@@ -206,11 +206,16 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
              ) : (
                 <div className="space-y-2">
                    {suggestions.map((suggestion, i) => (
-                      <div key={i} className="group p-3 bg-white/5 border border-white/5 rounded-xl hover:border-[#A855F7]/30 transition-all flex items-center justify-between">
+                      <button 
+                        key={i} 
+                        onClick={() => handleAIDraft(suggestion)}
+                        disabled={isDrafting}
+                        className="w-full group p-3 bg-white/5 border border-white/5 rounded-xl hover:border-[#A855F7]/30 transition-all flex items-center justify-between text-left disabled:opacity-50"
+                      >
                          <span className="text-xs text-slate-300 font-medium">{suggestion}</span>
                          <ExternalLink size={10} className="text-slate-600 group-hover:text-[#A855F7] transition-colors" />
-                      </div>
-                   ))}
+                      </button>
+                    ))}
                    {suggestions.length === 0 && (
                       <p className="text-[10px] text-slate-600 italic">No specific suggestions for this stage yet.</p>
                    )}
@@ -223,7 +228,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
             {[
               { id: 'call', icon: Phone, label: 'Call', action: () => { window.location.href=`tel:${lead.phone}`; logActivity('call', 'Initiated phone call') } },
               { id: 'email', icon: Mail, label: 'Email', action: () => { window.location.href=`mailto:${lead.email}`; logActivity('email', 'Initiated email draft') } },
-              { id: 'wa', icon: MessageSquare, label: 'WhatsApp', action: handleWhatsApp },
+              { id: 'wa', icon: MessageSquare, label: 'WhatsApp', action: () => handleAIDraft() },
               { id: 'note', icon: PenLine, label: 'Note', action: () => setAddingNote(!addingNote) },
               { id: 'task', icon: CheckSquare, label: 'Task', action: () => setAddingTask(!addingTask) }
             ].map(action => (

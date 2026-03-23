@@ -31,8 +31,28 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
   const [designUrl, setDesignUrl] = useState<string | null>(item?.canvaDesignUrl || null);
   const [designThumbnailUrl, setDesignThumbnailUrl] = useState<string | null>(item?.aiBrief?.canvaThumbnailUrl || null);
   const [designLoading, setDesignLoading] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   const brief = item?.aiBrief || {};
+
+  const handleApprove = async () => {
+    setApproving(true);
+    try {
+      const res = await fetch(`/api/content/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'APPROVED' }),
+      });
+      if (res.ok) {
+        onUpdate();
+        onClose();
+      }
+    } catch (e) {
+      console.error('Approval failed:', e);
+    } finally {
+      setApproving(false);
+    }
+  };
 
   const handleGenerateDesign = async () => {
     setDesignLoading(true);
@@ -52,6 +72,9 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
           setDesignUrl(data.url);
           setDesignThumbnailUrl(data.thumbnailUrl || data.url);
           onUpdate(); // Refresh the list
+        } else if (data.fallback) {
+          alert(`Success: ${data.message}\n\nYou can now find this image in your Canva 'Uploads' tab.`);
+          window.open('https://www.canva.com/folder/all-uploads', '_blank');
         } else {
           throw new Error(data.error || 'Failed to generate');
         }
@@ -120,7 +143,10 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
   if (!isOpen || !item) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-8">
+    <div 
+      className="fixed inset-0 z-[110] flex items-center justify-center p-8"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
       
       <div className="relative w-full max-w-6xl h-full bg-[#0A0A0A] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
@@ -339,8 +365,12 @@ export default function BriefModal({ item, isOpen, onClose, onUpdate }: BriefMod
                 </div>
 
                 <div className="flex gap-2">
-                    <button className="flex-1 py-4 bg-accent-blue hover:bg-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg">
-                        Approve Content
+                    <button 
+                      onClick={handleApprove}
+                      disabled={approving}
+                      className="flex-1 py-4 bg-accent-blue hover:bg-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg disabled:opacity-50"
+                    >
+                        {approving ? 'Approving...' : 'Approve Content'}
                     </button>
                     <button className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all">
                         <RotateCcw size={18} className="text-slate-500" />
