@@ -35,6 +35,15 @@ model Client {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  // Email Configuration (For Neural Auto-Pilot)
+  smtpHost           String?
+  smtpPort           Int?
+  smtpUser           String?
+  smtpPass           String?
+  imapHost           String?
+  imapPort           Int?
+  fromName           String?
+
   brain              BusinessBrain?
   assignedUsers      User[]
   prMentions         PRMention[]
@@ -44,6 +53,7 @@ model Client {
   notifications      Notification[]
   contentRequests    ContentRequest[]
   intelligence       ContentIntelligence?
+  sequences          NeuralSequence[]
 }
 
 model ContentRequest {
@@ -193,6 +203,11 @@ model Lead {
 
   activities      LeadActivity[]
   tasks           LeadTask[]
+  
+  // Phase 4: Autonomous Sequences
+  isAutoPilotActive Boolean @default(false)
+  currentSequenceId String?
+  sequences         LeadSequence[]
 }
 
 model LeadActivity {
@@ -231,4 +246,39 @@ model Notification {
   isRead    Boolean  @default(false)
   link      String?  // Actionable link
   createdAt DateTime @default(now())
+}
+
+model NeuralSequence {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  steps       Json     // Array of { delayDays: number, strategy: string, offerId?: string }
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  leads       LeadSequence[]
+
+  @@index([clientId])
+}
+
+model LeadSequence {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  sequenceId  String
+  sequence    NeuralSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  
+  status      String   @default("active") // active, paused, completed, stopped_by_reply
+  currentStep Int      @default(0)
+  nextStepAt  DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([leadId, sequenceId])
 }

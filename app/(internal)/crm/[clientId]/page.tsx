@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode } from 'lucide-react';
+import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode, RefreshCw } from 'lucide-react';
 import LeadSidebar from '@/components/crm/LeadSidebar';
 import PipelineView from '@/components/crm/views/PipelineView';
 import AllLeadsTable from '@/components/crm/views/AllLeadsTable';
@@ -23,6 +23,8 @@ export default function CRMPage() {
   const [activeTab, setActiveTab] = useState<TabView>('pipeline');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -46,6 +48,22 @@ export default function CRMPage() {
     if (clientId) fetchLeads();
   }, [clientId, fetchLeads]);
 
+  const handleSyncHub = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/crm/sync-inbox', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setLastSync(new Date());
+        await fetchLeads();
+      }
+    } catch (error) {
+      console.error('Hub Sync failed:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const updateLeadStage = async (leadId: string, stage: string) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage } : l));
     try {
@@ -60,14 +78,14 @@ export default function CRMPage() {
   };
 
   const totalLeads = Array.isArray(leads) ? leads.length : 0;
-  const wonThisMonth = Array.isArray(leads) 
+  const wonThisMonth = Array.isArray(leads)
     ? leads.filter(l => l.stage === 'won' && new Date(l.updatedAt).getMonth() === new Date().getMonth()).length
     : 0;
-  
-  const avgScore = totalLeads 
-    ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / totalLeads) 
+
+  const avgScore = totalLeads
+    ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / totalLeads)
     : 0;
-  
+
   const avgResponseTime = "1h 22m";
 
   const filteredLeads = Array.isArray(leads) ? leads.filter(lead => {
@@ -95,13 +113,33 @@ export default function CRMPage() {
           </div>
           <p className="text-slate-500 font-medium">Manage and track your client acquisition infrastructure.</p>
         </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-gradient-to-br from-accent-orange to-accent-red text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(255,77,0,0.3)] hover:scale-[1.02] transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Lead
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end mr-2">
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Neural Sync Status</span>
+            <span className="text-[10px] font-medium text-slate-400">
+              {lastSync ? `Last checked: ${lastSync.toLocaleTimeString()}` : 'Hub Standby'}
+            </span>
+          </div>
+
+          <button
+            onClick={handleSyncHub}
+            disabled={isSyncing}
+            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 px-5 py-3 rounded-2xl transition-all group"
+          >
+            <RefreshCw size={14} className={`text-accent-blue ${isSyncing ? 'animate-spin' : ''}`} />
+            <span className="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-accent-blue transition-colors">
+              {isSyncing ? 'Syncing...' : 'Sync Hub'}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-gradient-to-br from-accent-orange to-accent-red text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(255,77,0,0.3)] hover:scale-[1.02] transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Lead
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-6 border-b border-white/10 px-2 shrink-0">
@@ -134,26 +172,26 @@ export default function CRMPage() {
           { label: 'Avg Score', val: avgScore },
           { label: 'Response Time', val: avgResponseTime },
         ].map((stat, i) => (
-           <div key={i} className="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between group">
-             <div>
-               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
-               <p className="text-2xl font-black text-white italic">{stat.val}</p>
-             </div>
-             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-accent-green group-hover:scale-110 transition-transform">
-               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
-             </div>
-           </div>
+          <div key={i} className="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between group">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
+              <p className="text-2xl font-black text-white italic">{stat.val}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-accent-green group-hover:scale-110 transition-transform">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17" /></svg>
+            </div>
+          </div>
         ))}
       </div>
 
       <div className="flex gap-4 p-2 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md shrink-0">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search leads by name" 
+            placeholder="Search leads by name"
             className="w-full pl-12 pr-4 py-3 bg-transparent text-sm text-white outline-none placeholder:text-slate-600 font-medium"
           />
         </div>
@@ -164,33 +202,33 @@ export default function CRMPage() {
       </div>
 
       <div className="flex-1 overflow-hidden">
-         {activeTab === 'pipeline' && (
-            <PipelineView 
-               leads={filteredLeads}
-               setLeads={setLeads}
-               onSelectLead={(l) => {
-                 setSelectedLead(l);
-                 setIsSidebarOpen(true);
-               }}
-               updateLeadStage={updateLeadStage}
-            />
-         )}
-         {activeTab === 'all' && (
-            <AllLeadsTable leads={filteredLeads} />
-         )}
-         {activeTab === 'activities' && (
-            <GlobalActivitiesFeed leads={leads} />
-         )}
-         {activeTab === 'tasks' && (
-            <GlobalTasksList leads={leads} onUpdateTask={fetchLeads} />
-         )}
-         {activeTab === 'qr' && (
-            <QRCapture clientId={clientId} />
-         )}
+        {activeTab === 'pipeline' && (
+          <PipelineView
+            leads={filteredLeads}
+            setLeads={setLeads}
+            onSelectLead={(l) => {
+              setSelectedLead(l);
+              setIsSidebarOpen(true);
+            }}
+            updateLeadStage={updateLeadStage}
+          />
+        )}
+        {activeTab === 'all' && (
+          <AllLeadsTable leads={filteredLeads} />
+        )}
+        {activeTab === 'activities' && (
+          <GlobalActivitiesFeed leads={leads} />
+        )}
+        {activeTab === 'tasks' && (
+          <GlobalTasksList leads={leads} onUpdateTask={fetchLeads} />
+        )}
+        {activeTab === 'qr' && (
+          <QRCapture clientId={clientId} />
+        )}
       </div>
 
       {/* Lead Detail Sidebar */}
-      <LeadSidebar 
+      <LeadSidebar
         lead={selectedLead}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}

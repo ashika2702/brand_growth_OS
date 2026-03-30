@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, MoreHorizontal } from 'lucide-react';
+import { Users, MoreHorizontal, RefreshCw, Zap } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,

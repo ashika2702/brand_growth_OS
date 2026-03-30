@@ -8,12 +8,20 @@ export async function PATCH(
 ) {
   try {
     const { leadId } = await params;
-    const { stage, quotedValue, lossReason, score, scoreFactors } = await request.json();
+    const {
+      stage,
+      quotedValue,
+      lossReason,
+      score,
+      scoreFactors,
+      isAutoPilotActive,
+      currentSequenceId
+    } = await request.json();
 
     const oldLead = await prisma.lead.findUnique({ where: { id: leadId } });
     if (!oldLead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
 
-    const updateData: any = { 
+    const updateData: any = {
       lastActivityAt: new Date()
     };
     if (stage !== undefined) updateData.stage = stage;
@@ -21,6 +29,8 @@ export async function PATCH(
     if (lossReason !== undefined) updateData.lossReason = lossReason;
     if (score !== undefined) updateData.score = score;
     if (scoreFactors !== undefined) updateData.scoreFactors = scoreFactors;
+    if (isAutoPilotActive !== undefined) updateData.isAutoPilotActive = isAutoPilotActive;
+    if (currentSequenceId !== undefined) updateData.currentSequenceId = currentSequenceId;
 
     const updatedLead = await prisma.lead.update({
       where: { id: leadId },
@@ -37,7 +47,7 @@ export async function PATCH(
           metadata: { fromStage: oldLead.stage, toStage: stage }
         }
       });
-      
+
       // Trigger background automation
       await addCRMJob('lead.stage_updated', updatedLead.id, updatedLead.clientId, {
         oldStage: oldLead.stage,
@@ -49,5 +59,29 @@ export async function PATCH(
   } catch (error) {
     console.error('Lead update error:', error);
     return NextResponse.json({ error: 'Failed to update lead' }, { status: 500 });
+  }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ leadId: string }> }
+) {
+  try {
+    const { leadId } = await params;
+    const lead = await prisma.lead.findUnique({
+      where: { id: leadId },
+      include: {
+        activities: { orderBy: { createdAt: 'desc' } },
+        tasks: { orderBy: { dueDate: 'asc' } }
+      }
+    });
+
+    if (!lead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(lead);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch lead' }, { status: 500 });
   }
 }

@@ -15,6 +15,13 @@ const brainSchema = z.object({
   messagingAngles: z.any().optional(),
   competitorIntel: z.any().optional(),
   voiceGuide: z.any().optional(),
+  smtpHost: z.string().optional(),
+  smtpPort: z.number().optional(),
+  smtpUser: z.string().optional(),
+  smtpPass: z.string().optional(),
+  imapHost: z.string().optional(),
+  imapPort: z.number().optional(),
+  fromName: z.string().optional(),
 });
 
 export async function GET(request: Request) {
@@ -43,7 +50,19 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validated = brainSchema.parse(body);
 
-    const { clientId, clientName, domain, ...brainData } = validated;
+    const {
+      clientId,
+      clientName,
+      domain,
+      smtpHost,
+      smtpPort,
+      smtpUser,
+      smtpPass,
+      imapHost,
+      imapPort,
+      fromName,
+      ...brainData
+    } = validated;
 
     // 1. Ensure Client exists
     const client = await prisma.client.upsert({
@@ -51,11 +70,25 @@ export async function POST(request: Request) {
       update: {
         name: clientName || 'Unnamed Client',
         domain: domain || null,
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPass,
+        imapHost,
+        imapPort,
+        fromName
       },
       create: {
         id: clientId,
         name: clientName || 'Unnamed Client',
         domain: domain || null,
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPass,
+        imapHost,
+        imapPort,
+        fromName
       },
     });
 

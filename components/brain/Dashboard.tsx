@@ -16,12 +16,15 @@ import {
     ShoppingBag,
     Mic,
     ArrowUpRight,
-    Sparkles
+    Sparkles,
+    Mail
 } from 'lucide-react';
 import OverviewTab from './tabs/OverviewTab';
 import PersonasTab from './tabs/PersonasTab';
 import OffersTab from './tabs/OffersTab';
 import VoiceTab from './tabs/VoiceTab';
+import EmailTab from './tabs/EmailTab';
+import SequenceBuilder from '../crm/SequenceBuilder';
 
 interface BusinessBrainDashboardProps {
     clientId: string;
@@ -50,6 +53,8 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
         { id: 'personas', label: 'Personas', icon: <User size={16} /> },
         { id: 'offers', label: 'Offers', icon: <ShoppingBag size={16} /> },
         { id: 'voice', label: 'Voice', icon: <Mic size={16} /> },
+        { id: 'email', label: 'Email Settings', icon: <Mail size={16} /> },
+        { id: 'sequences', label: 'Blueprints', icon: <Zap size={16} /> },
         { id: 'journey', label: 'Sales Journey', icon: <Target size={16} />, disabled: true },
         { id: 'competitors', label: 'Competitors', icon: <Search size={16} />, disabled: true },
         { id: 'history', label: 'History', icon: <History size={16} />, disabled: true },
@@ -61,6 +66,8 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
             case 'personas': return <PersonasTab data={data} clientId={clientId} onUpdate={setData} />;
             case 'offers': return <OffersTab data={data} clientId={clientId} onUpdate={setData} />;
             case 'voice': return <VoiceTab data={data} clientId={clientId} onUpdate={setData} />;
+            case 'email': return <EmailTab data={data} clientId={clientId} onUpdate={setData} />;
+            case 'sequences': return <SequenceBuilder clientId={clientId} />;
             default: return <OverviewTab data={data} healthScore={healthScore} />;
         }
     };
@@ -95,10 +102,10 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
                             disabled={tab.disabled}
                             onClick={() => setActiveTab(tab.id)}
                             className={`w-full flex items-center gap-3 px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
-                                    ? 'bg-accent-blue/10 text-accent-blue shadow-[inset_0_0_20px_rgba(62,128,255,0.05)] border border-accent-blue/20'
-                                    : tab.disabled
-                                        ? 'opacity-30 cursor-not-allowed text-slate-700'
-                                        : 'text-slate-500 hover:text-white hover:bg-white/5'
+                                ? 'bg-accent-blue/10 text-accent-blue shadow-[inset_0_0_20px_rgba(62,128,255,0.05)] border border-accent-blue/20'
+                                : tab.disabled
+                                    ? 'opacity-30 cursor-not-allowed text-slate-700'
+                                    : 'text-slate-500 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             {tab.icon}

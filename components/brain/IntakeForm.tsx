@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  CheckCircle2, 
-  Plus, 
-  Trash2, 
-  ChevronRight, 
+import {
+  CheckCircle2,
+  Plus,
+  Trash2,
+  ChevronRight,
   ChevronLeft,
   Rocket
 } from 'lucide-react';
@@ -22,7 +22,8 @@ const STEPS: Step[] = [
   { id: 2, title: 'Personas' },
   { id: 3, title: 'Offers' },
   { id: 4, title: 'Brand Voice' },
-  { id: 5, title: 'Confirm' },
+  { id: 5, title: 'Agent Setup' },
+  { id: 6, title: 'Confirm' },
 ];
 
 interface IntakeFormProps {
@@ -49,7 +50,14 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
       vocab_do: [] as string[],
       vocab_dont: [] as string[],
       samples: [] as string[]
-    }
+    },
+    fromName: '',
+    smtpUser: '',
+    smtpPass: '',
+    smtpHost: 'smtp.gmail.com',
+    smtpPort: 465,
+    imapHost: 'imap.gmail.com',
+    imapPort: 993
   });
 
   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
@@ -82,11 +90,10 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
         {STEPS.map((step, idx) => (
           <React.Fragment key={step.id}>
             <div className={`flex items-center gap-3 shrink-0 transition-all duration-500 ${currentStep >= step.id ? 'opacity-100' : 'opacity-40'}`}>
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all duration-500 ${
-                currentStep >= step.id 
-                  ? 'bg-accent-orange text-white border-accent-orange/40 shadow-[0_0_20px_rgba(255,127,0,0.4)]' 
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all duration-500 ${currentStep >= step.id
+                  ? 'bg-accent-orange text-white border-accent-orange/40 shadow-[0_0_20px_rgba(255,127,0,0.4)]'
                   : 'bg-white/5 border-white/10 text-slate-500'
-              }`}>
+                }`}>
                 {currentStep > step.id ? <CheckCircle2 size={16} /> : <span className="text-[10px] font-black">{step.id}</span>}
               </div>
               <div className="flex flex-col">
@@ -137,21 +144,21 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                 <div className="space-y-1">
                   <p className="text-sm text-slate-500 font-medium">Who are the ideal buyers for this brand?</p>
                 </div>
-                  <button
-                    onClick={() => setFormData({
-                      ...formData,
-                      personas: [...formData.personas, { id: Date.now().toString(), name: '', description: '', painPoints: [], desires: [] }]
-                    })}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
-                  >
-                    <Plus size={12} /> Add Persona
-                  </button>
+                <button
+                  onClick={() => setFormData({
+                    ...formData,
+                    personas: [...formData.personas, { id: Date.now().toString(), name: '', description: '', painPoints: [], desires: [] }]
+                  })}
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
+                >
+                  <Plus size={12} /> Add Persona
+                </button>
               </div>
 
               <div className="space-y-4">
                 {formData.personas.map((persona, idx) => (
                   <div key={persona.id} className="p-6 bg-white/5 border border-white/5 rounded-2xl relative group backdrop-blur-md">
-                    <button 
+                    <button
                       className="absolute top-4 right-4 text-slate-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                       onClick={() => {
                         const newPersonas = formData.personas.filter((_, i) => i !== idx);
@@ -201,21 +208,21 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                 <div className="space-y-1">
                   <p className="text-sm text-slate-500 font-medium">What value are we delivering to market?</p>
                 </div>
-                  <button
-                    onClick={() => setFormData({
-                      ...formData,
-                      offers: [...formData.offers, { id: Date.now().toString(), name: '', valueProposition: '', price: '' }]
-                    })}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
-                  >
-                    <Plus size={12} /> Add Offer
-                  </button>
+                <button
+                  onClick={() => setFormData({
+                    ...formData,
+                    offers: [...formData.offers, { id: Date.now().toString(), name: '', valueProposition: '', price: '' }]
+                  })}
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
+                >
+                  <Plus size={12} /> Add Offer
+                </button>
               </div>
 
               <div className="space-y-4">
                 {formData.offers.map((offer, idx) => (
                   <div key={offer.id} className="p-6 bg-white/5 border border-white/5 rounded-2xl relative backdrop-blur-md">
-                   <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 ml-1">Offer Name</label>
                         <input
@@ -269,7 +276,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
               <div className="space-y-1 mb-8">
                 <p className="text-sm text-slate-500 font-medium italic">Define the neural personality of the brand used for all AI generations.</p>
               </div>
-              <VoiceGuideEditor 
+              <VoiceGuideEditor
                 value={(formData as any).voiceGuide}
                 onChange={(voiceGuide) => setFormData({ ...formData, voiceGuide })}
               />
@@ -277,6 +284,51 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
           )}
 
           {currentStep === 5 && (
+            <div className="space-y-8">
+              <div className="space-y-1">
+                <p className="text-sm text-slate-500 font-medium">Configure the Neural Agent's identity and communication channel.</p>
+              </div>
+
+              <div className="grid gap-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Agent "From" Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Alex from Stedaxis"
+                    className="w-full bg-white/5 border border-white/10 focus:border-accent-orange/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
+                    value={formData.fromName}
+                    onChange={(e) => setFormData({ ...formData, fromName: e.target.value })}
+                  />
+                  <p className="text-[9px] text-slate-600 italic px-1 font-medium">This is the name leads will see in their inbox. Use a real person's name for 3x higher conversion.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Agent Email (SMTP/IMAP User)</label>
+                  <input
+                    type="email"
+                    placeholder="agent@brand.com"
+                    className="w-full bg-white/5 border border-white/10 focus:border-accent-orange/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
+                    value={formData.smtpUser}
+                    onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">App Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••••••••••"
+                    className="w-full bg-white/5 border border-white/10 focus:border-accent-orange/50 focus:bg-white/10 rounded-2xl p-4 text-sm outline-none transition-all text-white placeholder:text-slate-700"
+                    value={formData.smtpPass}
+                    onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })}
+                  />
+                  <p className="text-[9px] text-accent-orange/60 italic px-1 font-medium">For Gmail, use a 16-character "App Password". Regular passwords will not work.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 6 && (
             <div className="flex flex-col items-center justify-center h-[350px] text-center">
               <div className="w-20 h-20 bg-accent-orange/10 rounded-[2rem] flex items-center justify-center text-accent-orange mb-6 shadow-2xl border border-accent-orange/20 relative">
                 <div className="absolute inset-0 bg-accent-orange/20 blur-2xl rounded-full animate-pulse" />
