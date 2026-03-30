@@ -28,9 +28,15 @@ export default function CRMPage() {
     try {
       const res = await fetch(`/api/crm/leads?clientId=${clientId}`);
       const data = await res.json();
-      setLeads(data);
+      if (Array.isArray(data)) {
+        setLeads(data);
+      } else {
+        console.error('API returned non-array data:', data);
+        setLeads([]);
+      }
     } catch (error) {
-      console.error('Failed to fetch leads');
+      console.error('Failed to fetch leads:', error);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
@@ -53,13 +59,18 @@ export default function CRMPage() {
     }
   };
 
-  const totalLeads = leads.length;
-  const wonThisMonth = leads.filter(l => l.stage === 'won' && new Date(l.updatedAt).getMonth() === new Date().getMonth()).length;
-  const avgScore = totalLeads ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / totalLeads) : 0;
+  const totalLeads = Array.isArray(leads) ? leads.length : 0;
+  const wonThisMonth = Array.isArray(leads) 
+    ? leads.filter(l => l.stage === 'won' && new Date(l.updatedAt).getMonth() === new Date().getMonth()).length
+    : 0;
+  
+  const avgScore = totalLeads 
+    ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / totalLeads) 
+    : 0;
   
   const avgResponseTime = "1h 22m";
 
-  const filteredLeads = leads.filter(lead => {
+  const filteredLeads = Array.isArray(leads) ? leads.filter(lead => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -68,7 +79,7 @@ export default function CRMPage() {
       lead.personaTag?.toLowerCase().includes(query) ||
       lead.source?.toLowerCase().includes(query)
     );
-  });
+  }) : [];
 
   if (loading) return <div className="p-8 text-white font-black uppercase italic animate-pulse">Synchronizing Leads...</div>;
 

@@ -60,10 +60,10 @@ export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: 
   };
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      {...attributes} 
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
       {...listeners}
       className={`relative p-3.5 rounded-xl border transition-all group overflow-visible
         ${lead.stage === 'lost' ? 'bg-black/40 border-white/5 opacity-60 grayscale' : 'glass-card border-white/5 hover:border-white/20 cursor-grab active:cursor-grabbing'}
@@ -71,11 +71,11 @@ export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: 
       `}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-xl" />
-      
+
       {/* Left Colored Bar for Score */}
       <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${getScoreColor(lead.score)}`} />
 
-      <div 
+      <div
         className="relative z-10 pl-2"
         onClick={(e) => {
           if (onSelect) {
@@ -88,38 +88,77 @@ export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: 
           <span className="text-[9px] font-black text-[#A855F7] bg-[#A855F7]/10 px-2 py-0.5 rounded-lg uppercase tracking-wider border border-[#A855F7]/20 group relative truncate max-w-[70%] inline-block">
             {lead.personaTag || 'General'}
           </span>
-          
-          <div className="relative inline-block">
-            <span className="text-[10px] font-black italic text-slate-400 flex items-center gap-1">
+
+          <div className="relative inline-block group/score">
+            <span className="text-[10px] font-black italic text-slate-400 flex items-center gap-1 cursor-help">
               <div className={`w-1.5 h-1.5 rounded-full ${getScoreColor(lead.score)}`} />
               {lead.score}
             </span>
+
+            {/* Score Breakdown Tooltip */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-4 bg-[#0A0D14] border border-white/10 rounded-2xl shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover/score:opacity-100 group-hover/score:translate-y-0 transition-all z-50 backdrop-blur-xl">
+              <div className="space-y-3">
+                <h5 className="text-[9px] font-black uppercase tracking-widest text-white border-b border-white/5 pb-2 mb-2">Neural Score Analysis</h5>
+                {[
+                  { label: 'Persona Match', val: 30, weight: '30%' },
+                  { label: 'Source Quality', val: 25, weight: '25%' },
+                  { label: 'Behavioral', val: 20, weight: '20%' },
+                  { label: 'Stage Velocity', val: 15, weight: '15%' },
+                  { label: 'Offer Fit', val: 10, weight: '10%' },
+                ].map((factor, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex justify-between text-[8px] font-black uppercase tracking-tight text-slate-500">
+                      <span>{factor.label}</span>
+                      <span>{factor.weight}</span>
+                    </div>
+                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${getScoreColor(lead.score)} opacity-50`}
+                        style={{ width: `${(lead.score / 100) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#0A0D14]" />
+            </div>
           </div>
         </div>
-        
+
         <h4 className={`text-sm font-black group-hover:text-accent-blue transition-colors mb-0.5 ${lead.stage === 'lost' ? 'text-slate-500 line-through' : 'text-white'}`}>{lead.name}</h4>
-        
+
         <div className="flex flex-col gap-1 mb-2.5">
           <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1">
-             {lead.source?.toLowerCase().includes('google') ? '🔍' : lead.source?.toLowerCase().includes('qr') ? '📱' : '🌐'} {lead.source || 'Direct'}
+            {lead.source?.toLowerCase().includes('google') ? '🔍' : lead.source?.toLowerCase().includes('qr') ? '📱' : '🌐'} {lead.source || 'Direct'}
           </p>
           <p className={`text-[9px] tracking-widest ${timeWarningColor}`}>
-             ⌚ {formatTime()}
+            ⌚ {formatTime()}
           </p>
         </div>
 
         {lead.stage === 'won' && (
           <div className="flex justify-between items-center mb-2">
-             <div className="flex text-accent-yellow"><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /></div>
+            <div className="flex text-accent-yellow scale-75 origin-left">
+              <Star size={10} fill="currentColor" />
+              <Star size={10} fill="currentColor" />
+              <Star size={10} fill="currentColor" />
+              <Star size={10} fill="currentColor" />
+              <Star size={10} fill="currentColor" />
+            </div>
+            {lead.quotedValue && (
+              <span className="text-[10px] font-black text-accent-yellow italic tracking-tighter shadow-[0_0_10px_rgba(255,184,46,0.3)]">
+                ${(lead.quotedValue / 1000).toFixed(1)}K
+              </span>
+            )}
           </div>
         )}
 
         {lead.stage === 'lost' && lead.lossReason && (
           <div className="mb-2.5 bg-white/5 border border-white/5 rounded-lg p-1.5">
-             <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black line-clamp-1">{lead.lossReason}</p>
+            <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black line-clamp-1">{lead.lossReason}</p>
           </div>
         )}
-        
+
         <div className="flex items-center justify-between pt-2.5 border-t border-white/5">
           <div className="flex gap-3">
             <Mail className="w-3.5 h-3.5 text-slate-600 hover:text-accent-blue transition-colors pointer-events-auto" />

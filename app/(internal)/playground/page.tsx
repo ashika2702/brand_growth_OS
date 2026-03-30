@@ -6,7 +6,7 @@ import { useClientStore } from '@/lib/store';
 
 export default function AIPlayground() {
   const [prompt, setPrompt] = useState('Who are you and what do you know about my brand?');
-  const [provider, setProvider] = useState<'claude' | 'llama'>('llama');
+  const [provider, setProvider] = useState<'claude' | 'llama' | 'nemoclaw'>('nemoclaw');
   const { activeClientId } = useClientStore();
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function AIPlayground() {
         body: JSON.stringify({
           provider,
           prompt,
-          userId: 'test_user_id', 
+          userId: 'test_user_id',
           clientId: activeClientId,
           moduleName: 'Playground'
         }),
@@ -53,27 +53,34 @@ export default function AIPlayground() {
           </div>
           <p className="text-slate-500 font-medium">Verify real-time neural context injection across LLM clusters.</p>
         </div>
-        
+
         <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-md">
           <button
             onClick={() => setProvider('claude')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              provider === 'claude' 
-                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]' 
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'claude'
+                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]'
                 : 'text-slate-500 hover:text-white'
-            }`}
+              }`}
           >
             Claude 3.5 Sonnet
           </button>
           <button
             onClick={() => setProvider('llama')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              provider === 'llama' 
-                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]' 
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'llama'
+                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]'
                 : 'text-slate-500 hover:text-white'
-            }`}
+              }`}
           >
             Llama 3.3 70B
+          </button>
+          <button
+            onClick={() => setProvider('nemoclaw')}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'nemoclaw'
+                ? 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.4)]'
+                : 'text-slate-500 hover:text-white'
+              }`}
+          >
+            NemoClaw (Local)
           </button>
         </div>
       </div>
@@ -83,10 +90,10 @@ export default function AIPlayground() {
         <div className="col-span-12 lg:col-span-4 flex flex-col h-full gap-4">
           <div className="glass-card flex-1 p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden flex flex-col">
             <div className="flex items-center gap-2 mb-6">
-               <div className="w-2 h-2 rounded-full bg-accent-orange shadow-[0_0_8px_#FF4D00]" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Inference Input</span>
+              <div className="w-2 h-2 rounded-full bg-accent-orange shadow-[0_0_8px_#FF4D00]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Inference Input</span>
             </div>
-            
+
             <textarea
               className="flex-1 w-full bg-transparent border-none text-white text-sm outline-none placeholder:text-slate-700 font-medium leading-relaxed resize-none no-scrollbar"
               value={prompt}
@@ -131,7 +138,7 @@ export default function AIPlayground() {
                 </div>
               </div>
               <div className="flex gap-1">
-                 {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-slate-700" />)}
+                {[1, 2, 3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-slate-700" />)}
               </div>
             </div>
 

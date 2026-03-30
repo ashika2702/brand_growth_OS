@@ -14,6 +14,7 @@ const brainSchema = z.object({
   constraints: z.array(z.string()).optional(),
   messagingAngles: z.any().optional(),
   competitorIntel: z.any().optional(),
+  voiceGuide: z.any().optional(),
 });
 
 export async function GET(request: Request) {

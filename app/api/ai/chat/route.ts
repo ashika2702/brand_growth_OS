@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     const result = await callAI({
-      provider: (provider as AIProvider) || 'claude',
+      provider: (provider as AIProvider) || (process.env.DEFAULT_AI_PROVIDER as AIProvider) || 'claude',
       userId,
       clientId,
       moduleName: moduleName || 'Playground',
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('AI Chat Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: error.message || 'Internal AI error',
       details: error.status === 401 ? 'Check your API keys in .env' : undefined
     }, { status: 500 });

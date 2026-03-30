@@ -16,9 +16,18 @@ export async function getBrainContext(clientId: string): Promise<string> {
     const personas = Array.isArray(brain.personas) ? brain.personas : [];
     const offers = Array.isArray(brain.offers) ? brain.offers : [];
 
+    const voice = (brain.voiceGuide as any) || {};
+
     return `
 ### BRAND CONTEXT: ${brain.client.name}
 **Domain**: ${brain.client.domain || 'N/A'}
+
+#### BRAND VOICE (A6 Rules):
+- **Tone**: ${voice.tone || 'Professional'}
+- **Style Adjectives**: ${(voice.adjectives || []).join(', ') || 'N/A'}
+- **Vocabulary DOs**: ${(voice.vocab_do || []).join(', ') || 'N/A'}
+- **Vocabulary DONTs**: ${(voice.vocab_dont || []).join(', ') || 'N/A'}
+- **Master Reference Sample**: ${voice.samples?.[0] || 'None provided'}
 
 #### TARGET PERSONAS:
 ${personas.map((p: any) => `- **${p.name}**: ${p.description || ''} (Pains: ${p.painPoints || ''}, Desires: ${p.desires || ''})`).join('\n')}

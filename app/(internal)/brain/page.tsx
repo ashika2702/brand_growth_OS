@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Brain, 
+import { useRouter } from 'next/navigation';
+import {
+  Brain,
   Plus,
   Globe,
   Settings,
@@ -19,6 +20,7 @@ import Dialog from '@/components/ui/Dialog';
 import IntakeForm from '@/components/brain/IntakeForm';
 
 export default function BusinessBrainPage() {
+  const router = useRouter();
   const { clients, setClients, setActiveClientId } = useClientStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
@@ -54,7 +56,7 @@ export default function BusinessBrainPage() {
           </div>
           <p className="text-slate-500 font-medium">Manage your brand intelligence cores and AI personas.</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsSetupOpen(true)}
           className="px-6 py-3 bg-gradient-to-br from-accent-orange to-accent-red text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(255,77,0,0.4)] hover:scale-[1.02] transition-all flex items-center gap-2 group"
         >
@@ -95,10 +97,13 @@ export default function BusinessBrainPage() {
                 ))
               ) : clients.length > 0 ? (
                 clients.map((agent) => (
-                  <tr 
-                    key={agent.id} 
+                  <tr
+                    key={agent.id}
                     className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
-                    onClick={() => setActiveClientId(agent.id)}
+                    onClick={() => {
+                      setActiveClientId(agent.id);
+                      router.push(`/brain/${agent.id}`);
+                    }}
                   >
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
@@ -137,9 +142,16 @@ export default function BusinessBrainPage() {
                         <button className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all">
                           <Settings size={16} />
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-accent-orange/10 hover:bg-accent-orange text-accent-orange hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-accent-orange/20 transition-all">
+                        <Link
+                          href={`/brain/${agent.id}`}
+                          className="flex items-center gap-2 px-4 py-2 bg-accent-orange/10 hover:bg-accent-orange text-accent-orange hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-accent-orange/20 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveClientId(agent.id);
+                          }}
+                        >
                           Manage <ChevronRight size={14} />
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -160,13 +172,13 @@ export default function BusinessBrainPage() {
                           <Zap size={20} />
                         </div>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <h4 className="text-xl font-black text-white uppercase italic tracking-tighter">No Agent Found</h4>
-                       
+
                       </div>
 
-                      
+
                     </div>
                   </td>
                 </tr>
@@ -177,13 +189,13 @@ export default function BusinessBrainPage() {
       </div>
 
       {/* Setup Dialog */}
-      <Dialog 
-        isOpen={isSetupOpen} 
+      <Dialog
+        isOpen={isSetupOpen}
         onClose={() => setIsSetupOpen(false)}
         title="Agent Intelligence Setup"
       >
-        <IntakeForm 
-          onClose={() => setIsSetupOpen(false)} 
+        <IntakeForm
+          onClose={() => setIsSetupOpen(false)}
           onSuccess={fetchClients}
         />
       </Dialog>

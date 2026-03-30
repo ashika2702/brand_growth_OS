@@ -65,13 +65,13 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
               {stageLeads.length}
             </span>
           </div>
-          {/* {(stage.id === 'quoted' || stage.id === 'won') && (
-             <p className="text-[10px] font-black text-slate-500 italic ml-5">
-               TOTAL: <span className="text-white">${stageTotalVal.toLocaleString()}</span>
-             </p>
-          )} */}
+          {(stage.id === 'quoted' || stage.id === 'won') && (
+            <p className="text-[10px] font-black text-slate-500 italic ml-5">
+              TOTAL: <span className="text-white">${stageTotalVal.toLocaleString()}</span>
+            </p>
+          )}
         </div>
-        
+
         <button className="text-slate-600 hover:text-white transition-colors">
           <MoreHorizontal size={14} />
         </button>
@@ -84,14 +84,14 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
           strategy={verticalListSortingStrategy}
         >
           {stageLeads.map((lead: any) => (
-            <LeadCard 
-              key={lead.id} 
-              lead={lead} 
+            <LeadCard
+              key={lead.id}
+              lead={lead}
               onSelect={onSelectLead}
             />
           ))}
         </SortableContext>
-        
+
         {stageLeads.length === 0 && (
           <div className="h-24 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center text-slate-600 text-xs gap-2">
             <Users className="w-5 h-5 opacity-20" />
@@ -103,13 +103,13 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
   );
 }
 
-export default function PipelineView({ 
-  leads, 
-  setLeads, 
+export default function PipelineView({
+  leads,
+  setLeads,
   onSelectLead,
   updateLeadStage
-}: { 
-  leads: Lead[], 
+}: {
+  leads: Lead[],
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>,
   onSelectLead: (lead: Lead) => void,
   updateLeadStage: (id: string, stage: string) => void
@@ -126,8 +126,8 @@ export default function PipelineView({
     const { active } = event;
     const lead = leads.find(l => l.id === active.id);
     if (lead) {
-       setActiveLead(lead);
-       setActiveLeadOriginalStage(lead.stage);
+      setActiveLead(lead);
+      setActiveLeadOriginalStage(lead.stage);
     }
   };
 
@@ -140,10 +140,10 @@ export default function PipelineView({
 
     const isActiveALead = active.data.current?.type === 'Lead';
     const isOverAColumn = over.data.current?.type === 'Column';
-    
+
     // If dragging a lead over a valid drop target (Column or another lead)
     const newStage = isOverAColumn ? overId : leads.find(l => l.id === overId)?.stage;
-    
+
     if (isActiveALead && newStage) {
       const activeLead = active.data.current?.lead as Lead;
       if (activeLead.stage !== newStage) {
@@ -151,7 +151,7 @@ export default function PipelineView({
           const activeIndex = prev.findIndex(l => l.id === activeId);
           const newLeads = [...prev];
           newLeads[activeIndex].stage = newStage as string;
-          return arrayMove(newLeads, activeIndex, activeIndex); 
+          return arrayMove(newLeads, activeIndex, activeIndex);
         });
       }
     }
@@ -160,7 +160,7 @@ export default function PipelineView({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     const originStage = activeLeadOriginalStage;
-    
+
     setActiveLead(null);
     setActiveLeadOriginalStage(null);
     if (!over) return;
@@ -168,11 +168,11 @@ export default function PipelineView({
     let newStage = over.id as string;
     const overLead = leads.find(l => l.id === over.id);
     if (overLead) {
-        newStage = overLead.stage;
+      newStage = overLead.stage;
     }
 
     if (originStage && originStage !== newStage) {
-        updateLeadStage(active.id as string, newStage);
+      updateLeadStage(active.id as string, newStage);
     }
   };
 

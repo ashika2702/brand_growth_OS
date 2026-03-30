@@ -102,6 +102,7 @@ model BusinessBrain {
   constraints      String[]
   messagingAngles  Json?
   competitorIntel  Json?
+  voiceGuide       Json?    // { tone, adjectives[], vocab_do[], vocab_dont[], samples[] }
 
   updatedAt        DateTime @updatedAt
 }

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     `;
 
     const aiResponse = await callAI({
-      provider: 'llama',
+      provider: (process.env.DEFAULT_AI_PROVIDER as any) || 'llama',
       userId: userId || 'admin',
       clientId,
       moduleName: 'Content Tap',
@@ -50,12 +50,12 @@ export async function POST(req: Request) {
     // Parse JSON from response
     let briefJson = {};
     try {
-        const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            briefJson = JSON.parse(jsonMatch[0]);
-        }
+      const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        briefJson = JSON.parse(jsonMatch[0]);
+      }
     } catch (e) {
-        console.error('Failed to parse AI JSON:', e);
+      console.error('Failed to parse AI JSON:', e);
     }
 
     // Update Request

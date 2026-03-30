@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   Rocket
 } from 'lucide-react';
+import VoiceGuideEditor from './VoiceGuideEditor';
 
 interface Step {
   id: number;
@@ -20,7 +21,8 @@ const STEPS: Step[] = [
   { id: 1, title: 'Identity' },
   { id: 2, title: 'Personas' },
   { id: 3, title: 'Offers' },
-  { id: 4, title: 'Confirm' },
+  { id: 4, title: 'Brand Voice' },
+  { id: 5, title: 'Confirm' },
 ];
 
 interface IntakeFormProps {
@@ -41,6 +43,13 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
     onlineChannels: [] as string[],
     offlineChannels: [] as string[],
     constraints: [] as string[],
+    voiceGuide: {
+      tone: 'Professional',
+      adjectives: [] as string[],
+      vocab_do: [] as string[],
+      vocab_dont: [] as string[],
+      samples: [] as string[]
+    }
   });
 
   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
@@ -256,6 +265,18 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
           )}
 
           {currentStep === 4 && (
+            <div className="space-y-6">
+              <div className="space-y-1 mb-8">
+                <p className="text-sm text-slate-500 font-medium italic">Define the neural personality of the brand used for all AI generations.</p>
+              </div>
+              <VoiceGuideEditor 
+                value={(formData as any).voiceGuide}
+                onChange={(voiceGuide) => setFormData({ ...formData, voiceGuide })}
+              />
+            </div>
+          )}
+
+          {currentStep === 5 && (
             <div className="flex flex-col items-center justify-center h-[350px] text-center">
               <div className="w-20 h-20 bg-accent-orange/10 rounded-[2rem] flex items-center justify-center text-accent-orange mb-6 shadow-2xl border border-accent-orange/20 relative">
                 <div className="absolute inset-0 bg-accent-orange/20 blur-2xl rounded-full animate-pulse" />
