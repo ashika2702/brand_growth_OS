@@ -109,7 +109,7 @@ export default function CRMPage() {
             <div className="w-10 h-10 rounded-2xl bg-accent-blue/10 flex items-center justify-center text-accent-blue border border-accent-blue/20">
               <Users size={24} />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Lead Pipeline</h1>
+            <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">Lead Pipeline</h1>
           </div>
           <p className="text-slate-500 font-medium">Manage and track your client acquisition infrastructure.</p>
         </div>
@@ -172,7 +172,7 @@ export default function CRMPage() {
           { label: 'Avg Score', val: avgScore },
           { label: 'Response Time', val: avgResponseTime },
         ].map((stat, i) => (
-          <div key={i} className="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between group">
+          <div key={i} className="glass-card p-3 rounded-xl border border-white/5 flex items-center justify-between group">
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
               <p className="text-2xl font-black text-white italic">{stat.val}</p>
@@ -184,7 +184,7 @@ export default function CRMPage() {
         ))}
       </div>
 
-      <div className="flex gap-4 p-2 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md shrink-0">
+      <div className="flex gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5 backdrop-blur-md shrink-0">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
@@ -192,7 +192,7 @@ export default function CRMPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search leads by name"
-            className="w-full pl-12 pr-4 py-3 bg-transparent text-sm text-white outline-none placeholder:text-slate-600 font-medium"
+            className="w-full pl-10 pr-4 py-2 bg-transparent text-sm text-white outline-none placeholder:text-slate-600 font-medium"
           />
         </div>
         {/* <button className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all border border-white/5">

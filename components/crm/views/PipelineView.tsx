@@ -55,8 +55,8 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
   });
 
   return (
-    <div className="w-[250px] flex flex-col h-full shrink-0">
-      <div className="flex items-center justify-between mb-6 px-2">
+    <div className="w-[200px] flex flex-col h-full shrink-0">
+      <div className="flex items-center justify-between mb-3 px-2">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${stage.color} shadow-[0_0_8px_currentColor]`} />
@@ -65,7 +65,6 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
               {stageLeads.length}
             </span>
           </div>
-
         </div>
 
         <button className="text-slate-600 hover:text-white transition-colors">
@@ -73,7 +72,7 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
         </button>
       </div>
 
-      <div ref={setNodeRef} className="space-y-4 overflow-y-auto no-scrollbar pb-10 flex-1 min-h-[150px]">
+      <div ref={setNodeRef} className="space-y-4 overflow-y-auto overflow-x-hidden no-scrollbar pb-10 flex-1 min-h-[150px]">
         <SortableContext
           id={stage.id}
           items={stageLeads.map((l: any) => l.id)}
@@ -180,7 +179,7 @@ export default function PipelineView({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 overflow-x-auto pb-4 custom-h-scrollbar h-full pt-4 px-2">
+      <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar h-full pt-4 px-2">
         {STAGES.map(stage => {
           const stageLeads = leads.filter(l => l.stage === stage.id);
           const stageTotalVal = stageLeads.reduce((acc, l) => acc + (l.quotedValue || 0), 0);
