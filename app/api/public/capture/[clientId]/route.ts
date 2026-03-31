@@ -60,11 +60,11 @@ export async function POST(
         SOURCE: ${compiledSource}
         
         TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name, 1-3 words max)
-        TASK 2: Calculate a LEAD SCORE from 0-100 based on their expressed intent and profile fit.
+        TASK 2: Calculate a LEAD SCORE from 0-20 based on their expressed intent and profile fit.
         
         CRITICAL: Output ONLY the requested format. Do not include any explanations, reasoning, introductions, or markdown.
         REQUIRED FORMAT: EXACT_PERSONA_NAME | SCORE
-        EXAMPLE: B2B Founder | 85`,
+        EXAMPLE: B2B Founder | 15`,
         maxTokens: 50
       });
 

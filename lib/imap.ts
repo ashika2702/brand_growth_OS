@@ -138,11 +138,12 @@ async function syncClientInbox(client: any) {
                                                     }
                                                 });
 
-                                                // Update Stage to Qualified and kill automation
+                                                // Update Stage to Qualified, update score to 60, and kill automation
                                                 await prisma.lead.update({
                                                     where: { id: lead.id },
                                                     data: {
                                                         stage: 'qualified',
+                                                        score: 60, // Standardize score for qualified leads
                                                         isAutoPilotActive: false,
                                                         currentSequenceId: null,
                                                         lastActivityAt: new Date()
@@ -167,7 +168,8 @@ async function syncClientInbox(client: any) {
                                             await prisma.lead.update({
                                                 where: { id: lead.id },
                                                 data: {
-                                                    stage: 'contacted', // Move from 'new' to 'contacted'
+                                                    stage: 'contacted',
+                                                    score: 40,
                                                     isAutoPilotActive: false,
                                                     currentSequenceId: null,
                                                     lastActivityAt: new Date()
