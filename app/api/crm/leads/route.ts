@@ -50,7 +50,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required lead fields' }, { status: 400 });
     }
 
-    // 1. Create the lead first
+    // 0. Find first active sequence for this client to auto-enroll
+    const defaultSequence = await prisma.neuralSequence.findFirst({
+      where: { clientId, isActive: true },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    // 1. Create the lead first (with auto-pilot if sequence exists)
     const lead = await prisma.lead.create({
       data: {
         clientId,
@@ -61,9 +67,24 @@ export async function POST(request: Request) {
         utmSource,
         utmMedium,
         utmCampaign,
-        stage: 'new'
+        stage: 'new',
+        isAutoPilotActive: !!defaultSequence,
+        currentSequenceId: defaultSequence?.id || null
       }
     });
+
+    // 1b. Create LeadSequence record if auto-enrolled
+    if (defaultSequence) {
+      await prisma.leadSequence.create({
+        data: {
+          leadId: lead.id,
+          sequenceId: defaultSequence.id,
+          status: 'active',
+          currentStep: 0,
+          nextStepAt: new Date() // Trigger immediately
+        }
+      });
+    }
 
     // 2. Trigger AI Persona Tagging & Scoring
     const aiResponse = await callAI({

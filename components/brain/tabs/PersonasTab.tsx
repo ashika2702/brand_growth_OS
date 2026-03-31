@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { User, Plus, Trash2, Edit3, Sparkles } from 'lucide-react';
+import { User, Plus, Trash2, Edit3, Sparkles, Rocket } from 'lucide-react';
 
 export default function PersonasTab({ data, clientId, onUpdate }: { data: any, clientId: string, onUpdate: (data: any) => void }) {
     const personas = Array.isArray(data.personas) ? data.personas : [];
@@ -55,11 +55,15 @@ export default function PersonasTab({ data, clientId, onUpdate }: { data: any, c
                                 <div>
                                     <span className="text-[8px] font-black text-red-500/50 uppercase tracking-[0.2em] block mb-2">Pain Points</span>
                                     <div className="flex flex-wrap gap-2">
-                                        {typeof persona.painPoints === 'string'
-                                            ? persona.painPoints.split(',').map((p: string, i: number) => (
+                                        {Array.isArray(persona.painPoints)
+                                            ? persona.painPoints.map((p: string, i: number) => (
                                                 <span key={i} className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest rounded-full">{p.trim()}</span>
                                             ))
-                                            : <span className="text-[10px] text-slate-700 italic">No pain points listed</span>
+                                            : typeof persona.painPoints === 'string'
+                                                ? persona.painPoints.split(',').map((p: string, i: number) => (
+                                                    <span key={i} className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest rounded-full">{p.trim()}</span>
+                                                ))
+                                                : <span className="text-[10px] text-slate-700 italic">No pain points listed</span>
                                         }
                                     </div>
                                 </div>
@@ -67,14 +71,65 @@ export default function PersonasTab({ data, clientId, onUpdate }: { data: any, c
                                 <div>
                                     <span className="text-[8px] font-black text-accent-green/50 uppercase tracking-[0.2em] block mb-2">Primary Desires</span>
                                     <div className="flex flex-wrap gap-2">
-                                        {typeof persona.desires === 'string'
-                                            ? persona.desires.split(',').map((d: string, i: number) => (
+                                        {Array.isArray(persona.desires)
+                                            ? persona.desires.map((d: string, i: number) => (
                                                 <span key={i} className="px-3 py-1 bg-accent-green/10 border border-accent-green/20 text-accent-green text-[9px] font-black uppercase tracking-widest rounded-full">{d.trim()}</span>
                                             ))
-                                            : <span className="text-[10px] text-slate-700 italic">No desires listed</span>
+                                            : typeof persona.desires === 'string'
+                                                ? persona.desires.split(',').map((d: string, i: number) => (
+                                                    <span key={i} className="px-3 py-1 bg-accent-green/10 border border-accent-green/20 text-accent-green text-[9px] font-black uppercase tracking-widest rounded-full">{d.trim()}</span>
+                                                ))
+                                                : <span className="text-[10px] text-slate-700 italic">No desires listed</span>
                                         }
                                     </div>
                                 </div>
+
+                                {persona.blueprint?.steps && persona.blueprint.steps.length > 0 && (
+                                    <div className="pt-4 border-t border-white/5 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[8px] font-black text-accent-blue/50 uppercase tracking-[0.2em] block">
+                                                {persona.blueprint.name || "Strategic Blueprint"}
+                                            </span>
+                                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/5">{persona.blueprint.steps.length} Steps</span>
+                                        </div>
+
+                                        {persona.blueprint.universalGoal && (
+                                            <p className="text-[9px] text-slate-400 font-bold italic leading-relaxed bg-accent-blue/5 p-2 rounded-lg border border-accent-blue/10">
+                                                Goal: {persona.blueprint.universalGoal}
+                                            </p>
+                                        )}
+
+                                        <div className="space-y-3 relative">
+                                            <div className="absolute left-2 top-2 bottom-2 w-[1px] bg-white/5" />
+                                            {persona.blueprint.steps.map((step: any, sIdx: number) => {
+                                                const cumulativeDay = persona.blueprint.steps
+                                                    .slice(0, sIdx + 1)
+                                                    .reduce((acc: number, curr: any) => acc + (parseInt(curr.delayDays) || 0), 0);
+
+                                                return (
+                                                    <div key={sIdx} className="relative pl-6">
+                                                        <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-black border border-white/10 flex items-center justify-center text-[7px] font-black text-accent-blue z-10 shadow-[0_0_10px_rgba(0,123,255,0.2)]">
+                                                            {sIdx + 1}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                            <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">T+{cumulativeDay} DAYS</span>
+                                                            {step.name && <span className="text-[8px] font-black uppercase text-accent-blue/80 tracking-tighter">{step.name}</span>}
+                                                            {sIdx === 0 && <Rocket size={8} className="text-accent-green opacity-50" />}
+                                                        </div>
+                                                        {step.goal && (
+                                                            <p className="text-[8px] font-black uppercase text-slate-500 mb-1 leading-none italic">
+                                                                → {step.goal}
+                                                            </p>
+                                                        )}
+                                                        <p className="text-[10px] text-slate-400 font-medium italic leading-relaxed line-clamp-2 hover:line-clamp-none transition-all">
+                                                            {step.strategy}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

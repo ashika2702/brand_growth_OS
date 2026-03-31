@@ -30,7 +30,7 @@ export async function getBrainContext(clientId: string): Promise<string> {
 - **Master Reference Sample**: ${voice.samples?.[0] || 'None provided'}
 
 #### TARGET PERSONAS:
-${personas.map((p: any) => `- **${p.name}**: ${p.description || ''} (Pains: ${p.painPoints || ''}, Desires: ${p.desires || ''})`).join('\n')}
+${personas.map((p: any) => `- **${p.name}**: ${p.description || ''} (Pains: ${p.painPoints || ''}, Desires: ${p.desires || ''}, Blueprint: ${p.blueprint || 'N/A'})`).join('\n')}
 
 #### CORE OFFERS:
 ${offers.map((o: any) => `- **${o.name}** (${o.price || 'N/A'}): ${o.valueProp || ''}`).join('\n')}

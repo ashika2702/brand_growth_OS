@@ -19,16 +19,19 @@ export async function processCRMAutomation(type: string, leadId: string, clientI
     switch (type) {
       case 'lead.new': {
         const { email, name } = data;
-        
-        // Automation: Send a "Welcome" notification to the lead (Simulated)
-        console.log(`[CRM AUTOMATION] SENDING EXTERNAL WELCOME MESSAGE TO ${name} (${email})`);
-        
+
+        // Phase 4: Autonomous Sequence Activation
+        // Trigger the sequence runner specifically for this new lead immediately
+        console.log(`[CRM AUTOMATION] ACTIVATING NEURAL SEQUENCE FOR ${name} (${email})`);
+        const { runSequences } = require('../lib/sequences');
+        await runSequences(leadId);
+
         // Internal log
         await createNotification({
           clientId,
           type: 'crm.automation',
-          title: 'Welcome Auto-Responder',
-          message: `Sent welcome intelligence packet to ${name}.`,
+          title: 'Neural Sequence Active',
+          message: `Alex AI has drafted and sent the first outreach to ${name}.`,
           priority: 'low',
           link: `/crm/${clientId}`
         });
@@ -37,7 +40,7 @@ export async function processCRMAutomation(type: string, leadId: string, clientI
 
       case 'lead.stage_updated': {
         const { oldStage, newStage } = data;
-        
+
         // Dynamic Lead Scoring: Adjust score based on pipeline progression
         let updatedScore = lead.score;
         const stageMappings: Record<string, number> = {
@@ -53,7 +56,7 @@ export async function processCRMAutomation(type: string, leadId: string, clientI
           // We only increase the score (unless it's 'lost') to prevent logic loops
           if (newStage === 'lost' || stageMappings[newStage] > lead.score) {
             updatedScore = stageMappings[newStage];
-            
+
             await prisma.lead.update({
               where: { id: leadId },
               data: { score: updatedScore }
@@ -71,26 +74,26 @@ export async function processCRMAutomation(type: string, leadId: string, clientI
 
         // Automation: If moved to "quoted" (or the legacy "proposal"), trigger notifications
         if (newStage === 'quoted' || newStage === 'proposal') {
-           await createNotification({
-             clientId,
-             type: 'crm.automation',
-             title: 'High-Value Intent',
-             message: `Lead ${lead.name} moved to Quoted. Score boosted to ${updatedScore}.`,
-             priority: 'medium',
-             link: `/crm/${clientId}`
-           });
+          await createNotification({
+            clientId,
+            type: 'crm.automation',
+            title: 'High-Value Intent',
+            message: `Lead ${lead.name} moved to Quoted. Score boosted to ${updatedScore}.`,
+            priority: 'medium',
+            link: `/crm/${clientId}`
+          });
         }
 
         // Automation: If moved to "won" (or the legacy "closed_won"), fire win triggers
         if (newStage === 'won' || newStage === 'closed_won') {
-           await createNotification({
-             clientId,
-             type: 'crm.win',
-             title: 'Account Won! (100 pts)',
-             message: `Congratulations! ${lead.name} is now a client. Starting onboarding...`,
-             priority: 'high',
-             link: `/crm/${clientId}`
-           });
+          await createNotification({
+            clientId,
+            type: 'crm.win',
+            title: 'Account Won! (100 pts)',
+            message: `Congratulations! ${lead.name} is now a client. Starting onboarding...`,
+            priority: 'high',
+            link: `/crm/${clientId}`
+          });
         }
         break;
       }

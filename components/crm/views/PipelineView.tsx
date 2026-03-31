@@ -65,11 +65,7 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
               {stageLeads.length}
             </span>
           </div>
-          {(stage.id === 'quoted' || stage.id === 'won') && (
-            <p className="text-[10px] font-black text-slate-500 italic ml-5">
-              TOTAL: <span className="text-white">${stageTotalVal.toLocaleString()}</span>
-            </p>
-          )}
+
         </div>
 
         <button className="text-slate-600 hover:text-white transition-colors">

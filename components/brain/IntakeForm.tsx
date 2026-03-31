@@ -8,7 +8,8 @@ import {
   Trash2,
   ChevronRight,
   ChevronLeft,
-  Rocket
+  Rocket,
+  Clock
 } from 'lucide-react';
 import VoiceGuideEditor from './VoiceGuideEditor';
 
@@ -22,8 +23,9 @@ const STEPS: Step[] = [
   { id: 2, title: 'Personas' },
   { id: 3, title: 'Offers' },
   { id: 4, title: 'Brand Voice' },
-  { id: 5, title: 'Agent Setup' },
-  { id: 6, title: 'Confirm' },
+  { id: 5, title: 'Blueprints' },
+  { id: 6, title: 'Agent Setup' },
+  { id: 7, title: 'Confirm' },
 ];
 
 interface IntakeFormProps {
@@ -39,7 +41,18 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
     clientId: `client_${Math.random().toString(36).substr(2, 9)}`,
     clientName: '',
     domain: '',
-    personas: [{ id: '1', name: '', description: '', painPoints: [], desires: [] }],
+    personas: [{
+      id: '1',
+      name: '',
+      description: '',
+      painPoints: [] as string[],
+      desires: [] as string[],
+      blueprint: {
+        name: '',
+        universalGoal: '',
+        steps: [{ delayDays: 0, strategy: 'Initial personalized outreach focusing on the primary pain point.', name: 'Initial Pulse', goal: 'Establish connection' }]
+      }
+    }],
     offers: [{ id: '1', name: '', valueProposition: '', price: '' }],
     onlineChannels: [] as string[],
     offlineChannels: [] as string[],
@@ -91,8 +104,8 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
           <React.Fragment key={step.id}>
             <div className={`flex items-center gap-3 shrink-0 transition-all duration-500 ${currentStep >= step.id ? 'opacity-100' : 'opacity-40'}`}>
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all duration-500 ${currentStep >= step.id
-                  ? 'bg-accent-orange text-white border-accent-orange/40 shadow-[0_0_20px_rgba(255,127,0,0.4)]'
-                  : 'bg-white/5 border-white/10 text-slate-500'
+                ? 'bg-accent-orange text-white border-accent-orange/40 shadow-[0_0_20px_rgba(255,127,0,0.4)]'
+                : 'bg-white/5 border-white/10 text-slate-500'
                 }`}>
                 {currentStep > step.id ? <CheckCircle2 size={16} /> : <span className="text-[10px] font-black">{step.id}</span>}
               </div>
@@ -147,7 +160,18 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                 <button
                   onClick={() => setFormData({
                     ...formData,
-                    personas: [...formData.personas, { id: Date.now().toString(), name: '', description: '', painPoints: [], desires: [] }]
+                    personas: [...formData.personas, {
+                      id: Date.now().toString(),
+                      name: '',
+                      description: '',
+                      painPoints: [] as string[],
+                      desires: [] as string[],
+                      blueprint: {
+                        name: '',
+                        universalGoal: '',
+                        steps: [{ delayDays: 0, strategy: '', name: '', goal: '' }]
+                      }
+                    }]
                   })}
                   className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent-orange hover:text-accent-yellow transition-colors bg-accent-orange/10 px-3 py-1.5 rounded-lg border border-accent-orange/20"
                 >
@@ -185,8 +209,8 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                       <div className="space-y-1">
                         <label className="text-[8px] font-black uppercase tracking-widest text-slate-600">Strategic Profile</label>
                         <textarea
-                          placeholder="Describe their mindset, priorities, and pain points..."
-                          className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-xs h-24 outline-none focus:border-accent-orange/50 transition-all text-white placeholder:text-slate-700"
+                          placeholder="Describe their mindset and priorities..."
+                          className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-xs h-20 outline-none focus:border-accent-orange/50 transition-all text-white placeholder:text-slate-700"
                           value={persona.description}
                           onChange={(e) => {
                             const newPersonas = [...formData.personas];
@@ -194,6 +218,36 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
                             setFormData({ ...formData, personas: newPersonas });
                           }}
                         />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black uppercase tracking-widest text-slate-600">Pain Points (comma separated)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. High churn, Low ROI"
+                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs outline-none focus:border-accent-orange/50 transition-all text-white placeholder:text-slate-700"
+                            value={Array.isArray(persona.painPoints) ? persona.painPoints.join(', ') : persona.painPoints}
+                            onChange={(e) => {
+                              const newPersonas = [...formData.personas];
+                              newPersonas[idx].painPoints = e.target.value.split(',').map(p => p.trim());
+                              setFormData({ ...formData, personas: newPersonas });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black uppercase tracking-widest text-slate-600">Primary Desires (comma separated)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Scalability, Automation"
+                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs outline-none focus:border-accent-orange/50 transition-all text-white placeholder:text-slate-700"
+                            value={Array.isArray(persona.desires) ? persona.desires.join(', ') : persona.desires}
+                            onChange={(e) => {
+                              const newPersonas = [...formData.personas];
+                              newPersonas[idx].desires = e.target.value.split(',').map(d => d.trim());
+                              setFormData({ ...formData, personas: newPersonas });
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -284,6 +338,179 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
           )}
 
           {currentStep === 5 && (
+            <div className="space-y-6">
+              <div className="space-y-1 mb-8">
+                <p className="text-sm text-slate-500 font-medium italic">Define the Strategic Blueprints for each persona. These sequences handle multi-day outreach.</p>
+              </div>
+              <div className="space-y-12">
+                {formData.personas.map((persona, idx) => (
+                  <div key={persona.id} className="p-8 bg-white/5 border border-white/5 rounded-[2.5rem] relative group backdrop-blur-md">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-14 h-14 rounded-2xl bg-accent-blue/10 flex items-center justify-center text-accent-blue border border-accent-blue/20">
+                        <Rocket size={28} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Sequence Name "
+                            className="bg-transparent text-xl font-black text-white tracking-tighter uppercase italic outline-none focus:text-accent-blue transition-colors w-full"
+                            value={persona.blueprint?.name || persona.name || ''}
+                            onChange={(e) => {
+                              const newPersonas = [...formData.personas];
+                              const blueprint = newPersonas[idx].blueprint || { steps: [] };
+                              blueprint.name = e.target.value;
+                              newPersonas[idx].blueprint = blueprint;
+                              setFormData({ ...formData, personas: newPersonas });
+                            }}
+                          />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Neural Sequence Architect</p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-6 mb-8">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Universal Goal</label>
+                        <textarea
+                          placeholder="What is the singular objective of this entire sequence? (e.g. Book a discovery call with the CTO)"
+                          className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-xs h-20 outline-none focus:border-accent-blue/30 transition-all text-white placeholder:text-slate-700 italic font-medium"
+                          value={persona.blueprint?.universalGoal || ''}
+                          onChange={(e) => {
+                            const newPersonas = [...formData.personas];
+                            const blueprint = newPersonas[idx].blueprint || { steps: [] };
+                            blueprint.universalGoal = e.target.value;
+                            newPersonas[idx].blueprint = blueprint;
+                            setFormData({ ...formData, personas: newPersonas });
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue/60">Execution Timeline</h5>
+                        <button
+                          onClick={() => {
+                            const newPersonas = [...formData.personas];
+                            const blueprint = newPersonas[idx].blueprint || { steps: [] };
+                            blueprint.steps.push({ delayDays: 3, strategy: '', name: '', goal: '' });
+                            newPersonas[idx].blueprint = blueprint;
+                            setFormData({ ...formData, personas: newPersonas });
+                          }}
+                          className="text-[9px] font-black uppercase text-accent-blue hover:text-white transition-all bg-accent-blue/10 px-4 py-2 rounded-xl border border-accent-blue/20 hover:bg-accent-blue hover:border-accent-blue hover:shadow-[0_0_20px_rgba(0,123,255,0.4)]"
+                        >
+                          + Add Sequence Step
+                        </button>
+                      </div>
+
+                      <div className="space-y-6">
+                        {(persona.blueprint?.steps || []).map((step: any, sIdx: number) => (
+                          <div key={sIdx} className="p-6 bg-black/40 border border-white/5 rounded-3xl space-y-5 relative group/step shadow-2xl overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-accent-blue/20" />
+
+                            <button
+                              onClick={() => {
+                                const newPersonas = [...formData.personas];
+                                newPersonas[idx].blueprint!.steps = newPersonas[idx].blueprint!.steps.filter((_, i) => i !== sIdx);
+                                setFormData({ ...formData, personas: newPersonas });
+                              }}
+                              className="absolute top-6 right-6 text-slate-600 hover:text-red-500 opacity-0 group-hover/step:opacity-100 transition-opacity"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                              <div className="md:col-span-3 space-y-4">
+                                <div className="flex items-center gap-3 bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                                  <Clock size={12} className="text-accent-blue" />
+                                  <div className="flex flex-col">
+                                    <span className="text-[8px] font-black uppercase text-slate-600 leading-none mb-1">Wait Time</span>
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={step.delayDays}
+                                        onChange={(e) => {
+                                          const val = Math.max(0, parseInt(e.target.value) || 0);
+                                          const newPersonas = [...formData.personas];
+                                          newPersonas[idx].blueprint!.steps[sIdx].delayDays = val;
+                                          setFormData({ ...formData, personas: newPersonas });
+                                        }}
+                                        className="w-10 bg-transparent text-sm font-black text-white outline-none"
+                                      />
+                                      <span className="text-[10px] font-black text-slate-400 uppercase">Days</span>
+                                    </div>
+                                    <p className="text-[7px] text-slate-600 font-bold uppercase mt-1 italic leading-none whitespace-nowrap">since {sIdx === 0 ? 'start' : 'previous step'}</p>
+                                  </div>
+                                </div>
+                                {sIdx === 0 && (
+                                  <div className="px-3 py-1.5 bg-accent-green/10 border border-accent-green/20 rounded-lg">
+                                    <span className="text-[9px] font-black uppercase text-accent-green italic tracking-widest">Initial Pulse</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="md:col-span-9 space-y-4">
+                                <div className="grid gap-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <label className="text-[8px] font-black uppercase tracking-widest text-slate-500 ml-1">Step Name</label>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g. The 'Authority' Angle"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-black text-white outline-none focus:border-accent-blue/40 transition-all placeholder:text-slate-800"
+                                        value={step.name || ''}
+                                        onChange={(e) => {
+                                          const newPersonas = [...formData.personas];
+                                          newPersonas[idx].blueprint!.steps[sIdx].name = e.target.value;
+                                          setFormData({ ...formData, personas: newPersonas });
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[8px] font-black uppercase tracking-widest text-slate-500 ml-1">Step Goal</label>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g. Establish credibility"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-medium text-white outline-none focus:border-accent-blue/40 transition-all placeholder:text-slate-800 italic"
+                                        value={step.goal || ''}
+                                        onChange={(e) => {
+                                          const newPersonas = [...formData.personas];
+                                          newPersonas[idx].blueprint!.steps[sIdx].goal = e.target.value;
+                                          setFormData({ ...formData, personas: newPersonas });
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-500 ml-1">AI Outreach Strategy</label>
+                                    <textarea
+                                      placeholder="Specific instructions for the AI engine regarding tone, angle, and core message for this step..."
+                                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[11px] h-24 outline-none focus:border-accent-blue/40 transition-all text-white placeholder:text-slate-800 font-medium italic leading-relaxed"
+                                      value={step.strategy}
+                                      onChange={(e) => {
+                                        const newPersonas = [...formData.personas];
+                                        newPersonas[idx].blueprint!.steps[sIdx].strategy = e.target.value;
+                                        setFormData({ ...formData, personas: newPersonas });
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 6 && (
             <div className="space-y-8">
               <div className="space-y-1">
                 <p className="text-sm text-slate-500 font-medium">Configure the Neural Agent's identity and communication channel.</p>
@@ -328,7 +555,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
             </div>
           )}
 
-          {currentStep === 6 && (
+          {currentStep === 7 && (
             <div className="flex flex-col items-center justify-center h-[350px] text-center">
               <div className="w-20 h-20 bg-accent-orange/10 rounded-[2rem] flex items-center justify-center text-accent-orange mb-6 shadow-2xl border border-accent-orange/20 relative">
                 <div className="absolute inset-0 bg-accent-orange/20 blur-2xl rounded-full animate-pulse" />
@@ -344,7 +571,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
         <div className="pt-8 border-t border-white/5 flex justify-between items-center mt-8 relative z-10">
           <button
             onClick={handleBack}
-            className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all ${currentStep === 1 ? 'invisible' : ''}`}
+            className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all ${currentStep === 1 || isLoading ? 'invisible' : ''}`}
           >
             <ChevronLeft size={16} /> Previous
           </button>
@@ -369,6 +596,7 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
           ) : (
             <button
               onClick={handleNext}
+              disabled={isLoading}
               className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all flex items-center gap-3 group"
             >
               Next Phase <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />

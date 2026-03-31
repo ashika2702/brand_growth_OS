@@ -102,6 +102,32 @@ export async function POST(request: Request) {
       },
     });
 
+    // 3. Automate Sequence Blueprints for Personas
+    if (validated.personas) {
+      for (const persona of validated.personas) {
+        if (persona.blueprint?.steps?.length > 0) {
+          await prisma.neuralSequence.upsert({
+            where: {
+              clientId_name: {
+                clientId: client.id,
+                name: persona.blueprint.name || `${persona.name} Blueprint`
+              }
+            },
+            update: {
+              steps: persona.blueprint.steps as any,
+              description: persona.blueprint.universalGoal || `Targeting: ${persona.name}. Focus: ${(persona.desires || []).join(', ')}`
+            },
+            create: {
+              clientId: client.id,
+              name: persona.blueprint.name || `${persona.name} Blueprint`,
+              steps: persona.blueprint.steps as any,
+              description: persona.blueprint.universalGoal || `Targeting: ${persona.name}. Focus: ${(persona.desires || []).join(', ')}`
+            }
+          });
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, brain });
   } catch (error) {
     console.error('Upsert error:', error);

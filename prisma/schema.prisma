@@ -264,6 +264,7 @@ model NeuralSequence {
   leads       LeadSequence[]
 
   @@index([clientId])
+  @@unique([clientId, name])
 }
 
 model LeadSequence {

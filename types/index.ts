@@ -38,6 +38,17 @@ export interface Persona {
   description: string;
   painPoints: string[];
   desires: string[];
+  blueprint?: {
+    name?: string;
+    universalGoal?: string;
+    steps: {
+      name?: string;
+      delayDays: number;
+      strategy: string;
+      goal?: string;
+      offerId?: string;
+    }[];
+  };
 }
 
 export interface Offer {

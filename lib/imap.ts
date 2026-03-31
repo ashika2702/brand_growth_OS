@@ -1,6 +1,8 @@
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import prisma from './db';
+import { analyzeLeadIntent, generateAutoReply, generateHandoffReply } from './sentiment';
+import { sendLeadEmail } from './mail';
 
 async function syncClientInbox(client: any) {
     const imapConfig = {
@@ -50,7 +52,8 @@ async function syncClientInbox(client: any) {
                                     where: {
                                         clientId: client.id,
                                         email: { equals: fromEmail, mode: 'insensitive' }
-                                    }
+                                    },
+                                    orderBy: { updatedAt: 'desc' }
                                 });
 
                                 if (lead) {
@@ -79,28 +82,98 @@ async function syncClientInbox(client: any) {
                                             }
                                         });
 
-                                        if (lead.stage === 'new' || lead.stage === 'contacted') {
+                                        // Phase 5: Neural Sentiment & Auto-Responder
+                                        const snippet = mail.text?.substring(0, 500) || '';
+                                        const intent = await analyzeLeadIntent(lead, snippet);
+
+                                        // Update the activity we just created with the intent
+                                        const latestActivity = await prisma.leadActivity.findFirst({
+                                            where: { leadId: lead.id, type: 'email_reply' },
+                                            orderBy: { createdAt: 'desc' }
+                                        });
+
+                                        if (latestActivity) {
+                                            const metadata = (latestActivity.metadata as any) || {};
+                                            await prisma.leadActivity.update({
+                                                where: { id: latestActivity.id },
+                                                data: { metadata: { ...metadata, intent } }
+                                            });
+                                        }
+
+                                        // Check if lead is already being handled manually or already qualified
+                                        const isAlreadyQualified = lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'won';
+
+                                        if (intent === 'INTERESTED') {
+                                            const replyContent = isAlreadyQualified 
+                                                ? await generateHandoffReply(lead, snippet) 
+                                                : await generateAutoReply(lead, snippet);
+
+                                            await sendLeadEmail({
+                                                to: lead.email,
+                                                subject: `Re: ${mail.subject}`,
+                                                html: replyContent,
+                                                leadId: lead.id,
+                                                clientId: client.id
+                                            });
+
+                                            await prisma.leadActivity.create({
+                                                data: {
+                                                    leadId: lead.id,
+                                                    type: 'email_sent',
+                                                    description: isAlreadyQualified ? 'Handoff Confirmation Sent' : 'Autonomous AI Reply Sent',
+                                                    metadata: { content: replyContent, isAutoReply: true }
+                                                }
+                                            });
+
+                                            // Only notify admin if this is the FIRST time they show interest (transition to qualified)
+                                            if (!isAlreadyQualified) {
+                                                await prisma.notification.create({
+                                                    data: {
+                                                        clientId: client.id,
+                                                        type: 'lead.interested',
+                                                        title: `High Intent: ${lead.name}`,
+                                                        message: `Lead is interested! AI has sent a tailored reply.`,
+                                                        link: `/crm/${client.id}?leadId=${lead.id}`,
+                                                        priority: 'high'
+                                                    }
+                                                });
+
+                                                // Update Stage to Qualified and kill automation
+                                                await prisma.lead.update({
+                                                    where: { id: lead.id },
+                                                    data: {
+                                                        stage: 'qualified',
+                                                        isAutoPilotActive: false,
+                                                        currentSequenceId: null,
+                                                        lastActivityAt: new Date()
+                                                    }
+                                                });
+                                            }
+                                        } else if (intent === 'UNSUBSCRIBE') {
                                             await prisma.lead.update({
                                                 where: { id: lead.id },
-                                                data: {
-                                                    stage: 'qualified',
-                                                    isAutoPilotActive: false, // Kill sequence on reply
+                                                data: { 
+                                                    stage: 'lost', 
+                                                    emailOptOut: true,
+                                                    isAutoPilotActive: false,
                                                     currentSequenceId: null,
                                                     lastActivityAt: new Date()
                                                 }
                                             });
                                         }
 
-                                        await prisma.notification.create({
-                                            data: {
-                                                clientId: client.id,
-                                                type: 'lead.reply',
-                                                title: `Reply from ${lead.name}`,
-                                                message: mail.subject || 'New email reply received',
-                                                link: `/crm/${client.id}?leadId=${lead.id}`,
-                                                priority: 'high'
-                                            }
-                                        });
+                                        // For negative or clarifying replies, just update activity and kill auto-pilot to prevent annoying the lead
+                                        if ((intent === 'NOT_INTERESTED' || intent === 'NEUTRAL') && (lead.stage === 'new' || lead.stage === 'contacted')) {
+                                            await prisma.lead.update({
+                                                where: { id: lead.id },
+                                                data: {
+                                                    stage: 'contacted', // Move from 'new' to 'contacted'
+                                                    isAutoPilotActive: false,
+                                                    currentSequenceId: null,
+                                                    lastActivityAt: new Date()
+                                                }
+                                            });
+                                        }
                                     }
                                 }
 

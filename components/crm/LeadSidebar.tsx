@@ -8,6 +8,7 @@ interface Activity {
   type: string;
   description: string;
   createdAt: string;
+  metadata?: any;
 }
 
 interface Task {
@@ -53,9 +54,16 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [isSendingAutoPilot, setIsSendingAutoPilot] = useState(false);
   const [sequences, setSequences] = useState<any[]>([]);
-  const [isAutoPilotActive, setIsAutoPilotActive] = useState(lead.isAutoPilotActive || false);
-  const [selectedSequenceId, setSelectedSequenceId] = useState(lead.currentSequenceId || '');
+  const [isAutoPilotActive, setIsAutoPilotActive] = useState(lead?.isAutoPilotActive || false);
+  const [selectedSequenceId, setSelectedSequenceId] = useState(lead?.currentSequenceId || '');
   const [isUpdatingSequence, setIsUpdatingSequence] = useState(false);
+
+  React.useEffect(() => {
+    if (lead) {
+      setIsAutoPilotActive(lead.isAutoPilotActive || false);
+      setSelectedSequenceId(lead.currentSequenceId || '');
+    }
+  }, [lead]);
 
   const fetchSequences = async () => {
     try {
@@ -186,10 +194,13 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
     } catch (e) { console.error('Failed to update task') }
   };
 
-  const getActivityIcon = (type: string) => {
+  const getActivityIcon = (type: string, metadata?: any) => {
     switch (type) {
       case 'call': return <Phone size={12} />;
-      case 'email': return <Mail size={12} />;
+      case 'email':
+      case 'email_reply': return <Mail size={12} />;
+      case 'email_sent':
+        return metadata?.isAutoReply ? <Zap size={12} className="text-accent-blue" /> : <Mail size={12} />;
       case 'whatsapp': return <MessageSquare size={12} />;
       case 'note': return <PenLine size={12} />;
       case 'stage_change': return <span className="rotate-90">➔</span>;
@@ -434,28 +445,8 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
             )}
           </div>
 
-          {/* Lead Intelligence */}
-          <div className="space-y-3">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Lead Intelligence Touchpoints</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                <p className="text-[9px] text-slate-500 uppercase font-black mb-1">UTM Source / Campaign</p>
-                <p className="text-xs text-slate-300 font-medium truncate">{lead.utmSource || 'Direct'} / {lead.utmCampaign || 'None'}</p>
-              </div>
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                <p className="text-[9px] text-slate-500 uppercase font-black mb-1">Last Email Status</p>
-                <p className="text-xs font-black uppercase italic tracking-tighter">
-                  {lead.activities?.find(a => a.type === 'email_opened') ? (
-                    <span className="text-accent-green">Email Opened</span>
-                  ) : lead.activities?.find(a => a.type === 'email') ? (
-                    <span className="text-accent-yellow">Sent (Delivered)</span>
-                  ) : (
-                    <span className="text-slate-500">No Emails Sent</span>
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
+
+
 
           {/* Activity Timeline */}
           <div className="space-y-4">
@@ -464,9 +455,20 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
               {lead.activities?.map((act, i) => (
                 <div key={act.id} className="relative pb-6 last:pb-0">
                   <div className="absolute left-[-31.5px] top-1 w-5 h-5 rounded-full bg-[#12141A] border border-white/20 flex items-center justify-center text-slate-400">
-                    {getActivityIcon(act.type)}
+                    {getActivityIcon(act.type, act.metadata)}
                   </div>
-                  <p className="text-[10px] font-black text-white uppercase tracking-widest mb-0.5">{act.type.replace('_', ' ')}</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">{act.type.replace('_', ' ')}</p>
+                    {act.metadata?.intent && (
+                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border
+                        ${act.metadata.intent === 'INTERESTED' ? 'bg-accent-green/10 text-accent-green border-accent-green/20' :
+                          act.metadata.intent === 'NOT_INTERESTED' ? 'bg-accent-orange/10 text-accent-orange border-accent-orange/20' :
+                            act.metadata.intent === 'UNSUBSCRIBE' ? 'bg-accent-red/10 text-accent-red border-accent-red/20' :
+                              'bg-white/5 text-slate-500 border-white/10'}`}>
+                        {act.metadata.intent}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{act.description}</p>
                   <p className="text-[9px] font-black text-slate-600 uppercase mt-1">{new Date(act.createdAt).toLocaleString()}</p>
                 </div>
