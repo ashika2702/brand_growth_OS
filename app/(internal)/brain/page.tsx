@@ -52,9 +52,9 @@ export default function BusinessBrainPage() {
             <div className="w-10 h-10 rounded-2xl bg-accent-orange/10 flex items-center justify-center text-accent-orange border border-accent-orange/20">
               <Brain size={24} />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Agents</h1>
+            <h1 className="text-[20px] font-black text-text-primary tracking-tighter uppercase italic transition-colors">Agents</h1>
           </div>
-          <p className="text-slate-500 font-medium">Manage your brand intelligence cores and AI personas.</p>
+          <p className="text-text-muted font-medium transition-colors">Manage your brand intelligence cores and AI personas.</p>
         </div>
         <button
           onClick={() => setIsSetupOpen(true)}
@@ -65,33 +65,33 @@ export default function BusinessBrainPage() {
       </div>
 
       {/* Agents Table Area */}
-      <div className="flex-1 glass-card rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col backdrop-blur-3xl">
+      <div className="flex-1 glass-card rounded-[2.5rem] border border-border-1 overflow-hidden flex flex-col backdrop-blur-3xl transition-colors">
         <div className="overflow-y-auto no-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-black/80 backdrop-blur-xl z-10 border-b border-card-border">
+            <thead className="sticky top-0 bg-surface-1/80 backdrop-blur-xl z-10 border-b border-border-1">
               <tr>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Agent Details</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Domain</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Created</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right pr-12">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-text-muted transition-colors">Agent Details</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-text-muted transition-colors">Domain</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-text-muted transition-colors">Created</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-text-muted transition-colors text-center">Status</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-text-muted transition-colors text-right pr-12">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-border-1">
               {isLoading ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/5" />
+                        <div className="w-12 h-12 rounded-xl bg-surface-2" />
                         <div className="space-y-2">
-                          <div className="h-4 w-32 bg-white/5 rounded" />
-                          <div className="h-3 w-20 bg-white/5 rounded" />
+                          <div className="h-4 w-32 bg-surface-2 rounded" />
+                          <div className="h-3 w-20 bg-surface-2 rounded" />
                         </div>
                       </div>
                     </td>
                     <td colSpan={4} className="px-8 py-6">
-                      <div className="h-4 w-full bg-white/5 rounded" />
+                      <div className="h-4 w-full bg-surface-2 rounded transition-colors" />
                     </td>
                   </tr>
                 ))
@@ -99,7 +99,7 @@ export default function BusinessBrainPage() {
                 clients.map((agent) => (
                   <tr
                     key={agent.id}
-                    className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                    className="hover:bg-surface-2 transition-colors group cursor-pointer"
                     onClick={() => {
                       setActiveClientId(agent.id);
                       router.push(`/brain/${agent.id}`);
@@ -111,20 +111,20 @@ export default function BusinessBrainPage() {
                           <Brain size={20} />
                         </div>
                         <div>
-                          <p className="text-sm font-black text-white group-hover:text-accent-orange transition-colors uppercase tracking-tight">{agent.name}</p>
-                          <p className="text-[10px] font-medium text-slate-500">ID: {agent.id.slice(-8).toUpperCase()}</p>
+                          <p className="text-sm font-black text-text-primary group-hover:text-accent-orange transition-colors uppercase tracking-tight">{agent.name}</p>
+                          <p className="text-[10px] font-medium text-text-muted transition-colors">ID: {agent.id.slice(-8).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-slate-400">
-                        <Globe size={14} className="text-slate-600" />
+                      <div className="flex items-center gap-2 text-text-secondary transition-colors">
+                        <Globe size={14} className="text-text-dim transition-colors" />
                         <span className="text-xs font-medium">{agent.domain || 'no-domain.com'}</span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-slate-400">
-                        <Calendar size={14} className="text-slate-600" />
+                      <div className="flex items-center gap-2 text-text-secondary transition-colors">
+                        <Calendar size={14} className="text-text-dim transition-colors" />
                         <span className="text-xs font-medium">
                           {new Date(agent.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
@@ -139,7 +139,7 @@ export default function BusinessBrainPage() {
                     </td>
                     <td className="px-8 py-6 text-right pr-12">
                       <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all">
+                        <button className="p-2 hover:bg-surface-3 rounded-lg text-text-muted hover:text-text-primary transition-all">
                           <Settings size={16} />
                         </button>
                         <Link
@@ -162,9 +162,9 @@ export default function BusinessBrainPage() {
                     <div className="flex flex-col items-center max-w-md mx-auto">
                       <div className="relative mb-8">
                         <div className="absolute inset-0 bg-accent-orange/20 blur-[60px] rounded-full animate-pulse" />
-                        <div className="relative w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-accent-orange/20 to-accent-blue/10 border border-white/10 flex items-center justify-center text-accent-orange shadow-2xl">
+                        <div className="relative w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-accent-orange/20 to-accent-blue/10 border border-border-1 flex items-center justify-center text-accent-orange shadow-2xl transition-colors">
                           <Brain size={48} className="animate-float" />
-                          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-accent-blue flex items-center justify-center text-white border-4 border-black">
+                          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-accent-blue flex items-center justify-center text-white border-4 border-surface-1 transition-colors">
                             <Plus size={16} strokeWidth={3} />
                           </div>
                         </div>
@@ -174,7 +174,7 @@ export default function BusinessBrainPage() {
                       </div>
 
                       <div className="space-y-3">
-                        <h4 className="text-xl font-black text-white uppercase italic tracking-tighter">No Agent Found</h4>
+                        <h4 className="text-[15px] font-black text-text-primary uppercase italic tracking-tighter transition-colors">No Agent Found</h4>
 
                       </div>
 

@@ -61,16 +61,16 @@ export default function AddLeadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
       <div 
-        className="w-full max-w-lg bg-[#0A0D14] rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-lg bg-surface-1 rounded-[2rem] border border-border-1 shadow-2xl relative overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-blue via-accent-purple to-accent-orange" />
         
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"
+          className="absolute top-6 right-6 text-text-muted hover:text-text-primary transition-colors"
         >
           <X size={20} />
         </button>
@@ -81,63 +81,63 @@ export default function AddLeadModal({
                <UserPlus size={24} />
             </div>
             <div>
-               <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">New Lead Injection</h2>
-               <p className="text-xs text-slate-500 font-medium">Manually add a high-intent prospect to the system.</p>
+               <h2 className="text-xl font-black text-text-primary uppercase italic tracking-tighter">New Lead Injection</h2>
+               <p className="text-xs text-text-muted font-medium">Manually add a high-intent prospect to the system.</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Full Name *</label>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Full Name *</label>
               <input 
                 type="text" 
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-accent-blue/50 transition-colors"
+                className="w-full bg-surface-2 border border-border-1 rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-accent-blue/50 transition-colors placeholder:text-text-muted/50"
                 placeholder="e.g. Sarah Jenkins"
               />
             </div>
 
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Email Address *</label>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Email Address *</label>
               <input 
                 type="email" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-accent-blue/50 transition-colors"
+                className="w-full bg-surface-2 border border-border-1 rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-accent-blue/50 transition-colors placeholder:text-text-muted/50"
                 placeholder="sarah@company.com"
               />
             </div>
 
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Phone Number (Optional)</label>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Phone Number (Optional)</label>
               <input 
                 type="tel" 
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-accent-blue/50 transition-colors"
+                className="w-full bg-surface-2 border border-border-1 rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-accent-blue/50 transition-colors placeholder:text-text-muted/50"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
             
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Acquisition Source</label>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Acquisition Source</label>
               <input 
                 type="text" 
                 value={source}
                 onChange={e => setSource(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-accent-blue/50 transition-colors"
+                className="w-full bg-surface-2 border border-border-1 rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-accent-blue/50 transition-colors placeholder:text-text-muted/50"
                 placeholder="e.g. Manual Entry, Direct Message, Referral"
               />
             </div>
 
-            <div className="pt-6 mt-6 border-t border-white/5 flex gap-4">
+            <div className="pt-6 mt-6 border-t border-border-1 flex gap-4">
               <button 
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-4 rounded-xl border border-white/10 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-white/5 hover:text-white transition-colors"
+                className="flex-1 py-4 rounded-xl border border-border-1 text-text-muted font-black text-[10px] uppercase tracking-widest hover:bg-surface-2 hover:text-text-primary transition-colors"
               >
                 Cancel
               </button>

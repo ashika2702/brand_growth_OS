@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode, RefreshCw } from 'lucide-react';
 import LeadSidebar from '@/components/crm/LeadSidebar';
@@ -78,15 +78,49 @@ export default function CRMPage() {
   };
 
   const totalLeads = Array.isArray(leads) ? leads.length : 0;
-  const wonThisMonth = Array.isArray(leads)
-    ? leads.filter(l => l.stage === 'won' && new Date(l.updatedAt).getMonth() === new Date().getMonth()).length
+  const totalWon = Array.isArray(leads)
+    ? leads.filter(l => l.stage === 'won').length
     : 0;
 
   const avgScore = totalLeads
     ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / totalLeads)
     : 0;
 
-  const avgResponseTime = "1h 22m";
+  const activeSequences = Array.isArray(leads)
+    ? leads.filter(l => l.isAutoPilotActive).length
+    : 0;
+
+  const avgResponseTime = useMemo(() => {
+    if (!Array.isArray(leads) || leads.length === 0) return "Standby";
+
+    const responseTimes = leads
+      .map(lead => {
+        // Find outbound activity types
+        const outbound = (lead.activities || [])
+          .filter((a: any) => ['email', 'call', 'whatsapp'].includes(a.type))
+          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        if (outbound.length > 0) {
+          const firstContactTime = new Date(outbound[0].createdAt).getTime();
+          const creationTime = new Date(lead.createdAt).getTime();
+          return Math.max(0, firstContactTime - creationTime);
+        }
+        return null;
+      })
+      .filter((t): t is number => t !== null);
+
+    if (responseTimes.length === 0) return "N/A";
+
+    const avgMs = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+    const totalMinutes = Math.round(avgMs / 60000);
+
+    if (totalMinutes < 1) return "Just now";
+    if (totalMinutes < 60) return `${totalMinutes}m`;
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }, [leads]);
 
   const filteredLeads = Array.isArray(leads) ? leads.filter(lead => {
     if (!searchQuery.trim()) return true;
@@ -99,7 +133,7 @@ export default function CRMPage() {
     );
   }) : [];
 
-  if (loading) return <div className="p-8 text-white font-black uppercase italic animate-pulse">Synchronizing Leads...</div>;
+  if (loading) return <div className="p-8 text-text-primary font-black uppercase italic animate-pulse transition-colors">Synchronizing Leads...</div>;
 
   return (
     <div className="h-full flex flex-col gap-6 overflow-hidden">
@@ -109,14 +143,14 @@ export default function CRMPage() {
             <div className="w-10 h-10 rounded-2xl bg-accent-blue/10 flex items-center justify-center text-accent-blue border border-accent-blue/20">
               <Users size={24} />
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">Lead Pipeline</h1>
+            <h1 className="text-xl font-black text-text-primary tracking-tighter uppercase italic transition-colors">Lead Pipeline</h1>
           </div>
-          <p className="text-slate-500 font-medium">Manage and track your client acquisition infrastructure.</p>
+          <p className="text-text-muted font-medium transition-colors">Manage and track your client acquisition infrastructure.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end mr-2">
-            <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Neural Sync Status</span>
-            <span className="text-[10px] font-medium text-slate-400">
+            <span className="text-[8px] font-black uppercase tracking-widest text-text-muted transition-colors">Neural Sync Status</span>
+            <span className="text-[10px] font-medium text-text-secondary transition-colors">
               {lastSync ? `Last checked: ${lastSync.toLocaleTimeString()}` : 'Hub Standby'}
             </span>
           </div>
@@ -124,10 +158,10 @@ export default function CRMPage() {
           <button
             onClick={handleSyncHub}
             disabled={isSyncing}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 px-5 py-3 rounded-2xl transition-all group"
+            className="flex items-center gap-2 bg-surface-2 hover:bg-surface-3 border border-border-1 hover:border-border-2 px-5 py-3 rounded-2xl transition-all group"
           >
             <RefreshCw size={14} className={`text-accent-blue ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-accent-blue transition-colors">
+            <span className="text-[10px] font-black uppercase tracking-widest text-text-primary group-hover:text-accent-blue transition-colors">
               {isSyncing ? 'Syncing...' : 'Sync Hub'}
             </span>
           </button>
@@ -142,7 +176,7 @@ export default function CRMPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-6 border-b border-white/10 px-2 shrink-0">
+      <div className="flex items-center gap-6 border-b border-border-1 px-2 shrink-0 transition-colors">
         {[
           { id: 'pipeline', label: 'Pipeline', icon: AppWindow },
           { id: 'all', label: 'All Leads', icon: Users },
@@ -154,7 +188,7 @@ export default function CRMPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabView)}
             className={`flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest transition-all relative
-              ${activeTab === tab.id ? 'text-accent-blue' : 'text-slate-500 hover:text-white'}`}
+              ${activeTab === tab.id ? 'text-accent-blue' : 'text-text-muted hover:text-text-primary'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
@@ -165,53 +199,39 @@ export default function CRMPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-4 gap-4 shrink-0">
-        {[
-          { label: 'Total Leads', val: totalLeads },
-          { label: 'Won This Month', val: wonThisMonth },
-          { label: 'Avg Score', val: avgScore },
-          { label: 'Response Time', val: avgResponseTime },
-        ].map((stat, i) => (
-          <div key={i} className="glass-card p-3 rounded-xl border border-white/5 flex items-center justify-between group">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
-              <p className="text-2xl font-black text-white italic">{stat.val}</p>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-accent-green group-hover:scale-110 transition-transform">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17" /></svg>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5 backdrop-blur-md shrink-0">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search leads by name"
-            className="w-full pl-10 pr-4 py-2 bg-transparent text-sm text-white outline-none placeholder:text-slate-600 font-medium"
-          />
-        </div>
-        {/* <button className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all border border-white/5">
-          <Filter className="w-4 h-4" />
-          Filters
-        </button> */}
-      </div>
-
       <div className="flex-1 overflow-hidden">
         {activeTab === 'pipeline' && (
-          <PipelineView
-            leads={filteredLeads}
-            setLeads={setLeads}
-            onSelectLead={(l) => {
-              setSelectedLead(l);
-              setIsSidebarOpen(true);
-            }}
-            updateLeadStage={updateLeadStage}
-          />
+          <div className="h-full flex flex-col gap-6">
+            <div className="grid grid-cols-5 gap-4 shrink-0">
+              {[
+                { label: 'Total Leads', val: totalLeads },
+                { label: 'Total Won', val: totalWon },
+                { label: 'Active Sequences', val: activeSequences },
+                { label: 'Avg Score', val: avgScore },
+                { label: 'Response Time', val: avgResponseTime },
+              ].map((stat, i) => (
+                <div key={i} className="glass-card p-3 rounded-xl flex items-center justify-between group">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1 transition-colors">{stat.label}</p>
+                    <p className="text-sm font-black text-text-primary italic transition-colors">{stat.val}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center text-accent-green group-hover:scale-110 transition-transform">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17" /></svg>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <PipelineView
+              leads={filteredLeads}
+              setLeads={setLeads}
+              onSelectLead={(l) => {
+                setSelectedLead(l);
+                setIsSidebarOpen(true);
+              }}
+              updateLeadStage={updateLeadStage}
+            />
+          </div>
         )}
         {activeTab === 'all' && (
           <AllLeadsTable leads={filteredLeads} />

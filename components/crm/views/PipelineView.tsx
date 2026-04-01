@@ -25,11 +25,11 @@ import LeadCard from '../LeadCard';
 
 const STAGES = [
   { id: 'new', name: 'NEW', color: 'bg-accent-blue' },
-  { id: 'contacted', name: 'CONTACTED', color: 'bg-accent-yellow' },
-  { id: 'qualified', name: 'QUALIFIED', color: 'bg-accent-orange' },
-  { id: 'quoted', name: 'QUOTED', color: 'bg-[#A855F7]' },
+  { id: 'contacted', name: 'CONTACTED', color: 'bg-accent-red' },
+  { id: 'qualified', name: 'QUALIFIED', color: 'bg-accent-yellow' },
+  { id: 'quoted', name: 'QUOTED', color: 'bg-accent-blue' },
   { id: 'won', name: 'WON', color: 'bg-accent-green' },
-  { id: 'lost', name: 'LOST', color: 'bg-slate-500' }
+  { id: 'lost', name: 'LOST', color: 'bg-text-muted' }
 ];
 
 interface Lead {
@@ -55,19 +55,19 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
   });
 
   return (
-    <div className="w-[200px] flex flex-col h-full shrink-0">
+    <div className="flex-1 min-w-[180px] max-w-[350px] flex flex-col h-full group/column transition-all duration-300">
       <div className="flex items-center justify-between mb-3 px-2">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${stage.color} shadow-[0_0_8px_currentColor]`} />
-            <h3 className="font-black text-white uppercase text-[10px] tracking-widest">{stage.name}</h3>
-            <span className="bg-white/5 text-slate-500 px-2 py-0.5 rounded-lg text-[9px] font-black border border-white/5">
+            <h3 className="font-black text-text-primary uppercase text-[10px] tracking-widest transition-colors">{stage.name}</h3>
+            <span className="bg-surface-2 text-text-muted px-2 py-0.5 rounded-lg text-[9px] font-black border border-border-1 transition-colors">
               {stageLeads.length}
             </span>
           </div>
         </div>
 
-        <button className="text-slate-600 hover:text-white transition-colors">
+        <button className="text-text-dim hover:text-text-primary transition-colors">
           <MoreHorizontal size={14} />
         </button>
       </div>
@@ -88,8 +88,8 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
         </SortableContext>
 
         {stageLeads.length === 0 && (
-          <div className="h-24 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center text-slate-600 text-xs gap-2">
-            <Users className="w-5 h-5 opacity-20" />
+          <div className="h-24 border border-dashed border-border-1 rounded-2xl flex flex-col items-center justify-center text-text-muted text-xs gap-2 transition-colors">
+            <Users className="w-5 h-5 text-accent-orange opacity-30" />
             <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Pipeline Empty</p>
           </div>
         )}
@@ -179,7 +179,7 @@ export default function PipelineView({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar h-full pt-4 px-2">
+      <div className="flex gap-6 w-full overflow-x-auto pb-6 h-full pt-4 px-4 custom-scrollbar">
         {STAGES.map(stage => {
           const stageLeads = leads.filter(l => l.stage === stage.id);
           const stageTotalVal = stageLeads.reduce((acc, l) => acc + (l.quotedValue || 0), 0);
@@ -201,6 +201,24 @@ export default function PipelineView({
           <LeadCard lead={activeLead} isOverlay />
         ) : null}
       </DragOverlay>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: var(--surface-1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--surface-3);
+          border-radius: 10px;
+          border: 1px solid var(--border-1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: var(--accent-blue);
+          opacity: 0.5;
+        }
+      `}</style>
     </DndContext>
   );
 }

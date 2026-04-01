@@ -35,26 +35,31 @@ export default function ClientSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-4 py-2 bg-[#111111] border border-[#1F1F1F] rounded-xl hover:bg-[#141414] hover:border-accent-blue/30 transition-all group backdrop-blur-md"
+        className="flex items-center gap-4 px-5 py-2.5 bg-surface-1 border border-border-1 rounded-2xl h-12 hover:bg-surface-2 hover:border-accent-blue/20 transition-all group shadow-sm hover:shadow-lg hover:shadow-accent-blue/5"
       >
-        <div className="w-6 h-6 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue">
-          <Globe size={14} />
+        <div className="w-8 h-8 rounded-xl bg-accent-blue/10 flex items-center justify-center text-accent-blue shadow-inner group-hover:scale-110 transition-transform">
+          <Globe size={16} strokeWidth={2.5} />
         </div>
-        <div className="text-left">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 leading-none mb-1">Active Brand</p>
-          <p className="text-sm font-black text-white leading-none tracking-tight">{activeClient?.name || 'Select Client'}</p>
+        <div className="text-left hidden sm:block">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted leading-tight mb-1">Active Brand</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-black text-text-primary leading-none tracking-tight">{activeClient?.name || 'Select Client'}</p>
+            <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
+          </div>
         </div>
-        <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/5"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full left-0 mt-2 w-72 bg-[#111111] border border-[#1F1F1F] rounded-2xl shadow-2xl shadow-black/80 z-50 p-2 animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
-            <div className="max-h-60 overflow-y-auto no-scrollbar">
+          <div className="absolute top-full left-0 mt-3 w-80 bg-surface-1 border border-border-1 rounded-[28px] shadow-2xl z-50 p-3 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 backdrop-blur-3xl">
+            <div className="px-2 py-2 mb-2 border-b border-border-1/50">
+               <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Organization Switcher</h4>
+            </div>
+            <div className="max-h-72 overflow-y-auto no-scrollbar space-y-1">
               {clients.map((client) => (
                 <button
                   key={client.id}
@@ -62,24 +67,24 @@ export default function ClientSwitcher() {
                     setActiveClientId(client.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeClientId === client.id
-                      ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/20'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-black transition-all group ${activeClientId === client.id
+                      ? 'bg-accent-blue text-white shadow-xl shadow-accent-blue/25'
+                      : 'text-text-muted hover:bg-surface-2 hover:text-text-primary border border-transparent hover:border-border-1'
                     }`}
                 >
-                  {client.name}
-                  {activeClientId === client.id && <Check size={14} />}
+                  <span className="truncate">{client.name}</span>
+                  {activeClientId === client.id && <Check size={14} strokeWidth={3} />}
                 </button>
               ))}
             </div>
 
-            <div className="border-t border-white/5 mt-2 pt-2">
+            <div className="mt-3 pt-3 border-t border-border-1/50">
               <Link
                 href="/brain/setup"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-accent-blue hover:bg-accent-blue/5 transition-all"
+                className="flex items-center gap-3 w-full px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-text-muted hover:text-accent-blue hover:bg-accent-blue/5 transition-all border border-dashed border-border-1 hover:border-accent-blue/30"
               >
-                <Plus size={14} /> Add New Brand
+                <Plus size={16} className="text-accent-blue" /> Add New Brand
               </Link>
             </div>
           </div>
