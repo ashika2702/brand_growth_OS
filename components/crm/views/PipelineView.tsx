@@ -45,10 +45,11 @@ interface Lead {
   lastActivityAt: string;
   quotedValue?: number | null;
   lossReason?: string | null;
+  humanGates?: any[];
 }
 
 // Helper component to make the column a droppable zone
-function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any) {
+function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead, onResolveGate }: any) {
   const { setNodeRef } = useDroppable({
     id: stage.id,
     data: { type: 'Column', stage }
@@ -83,6 +84,7 @@ function PipelineColumn({ stage, stageLeads, stageTotalVal, onSelectLead }: any)
               key={lead.id}
               lead={lead}
               onSelect={onSelectLead}
+              onResolveGate={onResolveGate}
             />
           ))}
         </SortableContext>
@@ -102,12 +104,14 @@ export default function PipelineView({
   leads,
   setLeads,
   onSelectLead,
-  updateLeadStage
+  updateLeadStage,
+  onResolveGate
 }: {
   leads: Lead[],
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>,
   onSelectLead: (lead: Lead) => void,
-  updateLeadStage: (id: string, stage: string) => void
+  updateLeadStage: (id: string, stage: string) => void,
+  onResolveGate?: (lead: Lead) => void
 }) {
   const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
   const [activeLeadOriginalStage, setActiveLeadOriginalStage] = React.useState<string | null>(null);
@@ -167,6 +171,10 @@ export default function PipelineView({
     }
 
     if (originStage && originStage !== newStage) {
+      // Logic from USER: Moving to 'contacted' should automatically enable 'Email Sent' (resolve gate)
+      if (newStage === 'contacted' && activeLead?.humanGates && activeLead.humanGates.length > 0) {
+        if (onResolveGate) onResolveGate(activeLead);
+      }
       updateLeadStage(active.id as string, newStage);
     }
   };
@@ -191,6 +199,7 @@ export default function PipelineView({
               stageLeads={stageLeads}
               stageTotalVal={stageTotalVal}
               onSelectLead={onSelectLead}
+              onResolveGate={onResolveGate}
             />
           );
         })}

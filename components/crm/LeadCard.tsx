@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Mail, Phone, MessageSquare, Star } from 'lucide-react';
+import { Mail, Phone, MessageSquare, Star, Check } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -18,9 +18,10 @@ interface Lead {
   lastActivityAt: string;
   quotedValue?: number | null;
   lossReason?: string | null;
+  humanGates?: any[];
 }
 
-export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: Lead; onSelect?: (lead: Lead) => void; isOverlay?: boolean }) {
+export default function LeadCard({ lead, onSelect, onResolveGate, isOverlay = false }: { lead: Lead; onSelect?: (lead: Lead) => void; onResolveGate?: (lead: Lead) => void; isOverlay?: boolean }) {
   const {
     attributes,
     listeners,
@@ -35,6 +36,8 @@ export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: 
     transition,
     opacity: isDragging && !isOverlay ? 0.4 : 1,
   };
+
+  const hasPendingGate = lead.humanGates && lead.humanGates.length > 0;
 
   // Score Color and Visuals
   const getScoreColor = (score: number) => {
@@ -79,6 +82,7 @@ export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: 
       {...listeners}
       className={`relative p-3 rounded-xl border transition-all group overflow-visible
         ${lead.stage === 'lost' ? 'bg-surface-1/40 border-border-1 opacity-60 grayscale' : 'glass-card border-border-1 hover:border-border-2 cursor-grab active:cursor-grabbing'}
+        ${hasPendingGate ? 'border-accent-red/50 shadow-[0_0_15px_rgba(255,100,100,0.3)]' : ''}
         ${isOverlay ? 'shadow-2xl scale-105 rotate-2 z-50 bg-surface-1/90 backdrop-blur-3xl' : ''}
       `}
     >
@@ -170,9 +174,23 @@ export default function LeadCard({ lead, onSelect, isOverlay = false }: { lead: 
 
         <div className="flex items-center justify-between pt-1.5 mt-0.5 border-t border-border-1 transition-colors">
           <div className="flex gap-4">
-            <Mail className="w-3 h-3 text-text-dim hover:text-accent-blue transition-colors pointer-events-auto" />
+            <Mail className={`w-3 h-3 ${hasPendingGate ? 'text-accent-red animate-pulse' : 'text-text-dim'} hover:text-accent-blue transition-colors pointer-events-auto`} />
             <Phone className="w-3 h-3 text-text-dim hover:text-accent-blue transition-colors pointer-events-auto" />
             <MessageSquare className="w-3 h-3 text-text-dim hover:text-accent-blue transition-colors pointer-events-auto" />
+            
+            {hasPendingGate && (
+              <button
+                title="Mark as Sent (Resolve AI Draft)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onResolveGate) onResolveGate(lead);
+                }} 
+                className="flex items-center gap-1 text-[7px] font-black uppercase text-accent-red hover:text-accent-green transition-colors pointer-events-auto"
+              >
+                <Check size={10} />
+                Sent
+              </button>
+            )}
           </div>
           <div className="w-5 h-5 rounded-md bg-surface-1 border border-border-1 flex items-center justify-center font-black text-[7px] text-text-muted uppercase transition-colors">
             {lead.name[0]}

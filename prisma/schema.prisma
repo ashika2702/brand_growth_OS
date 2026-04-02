@@ -54,6 +54,36 @@ model Client {
   contentRequests    ContentRequest[]
   intelligence       ContentIntelligence?
   sequences          NeuralSequence[]
+  humanGates         HumanGate[]
+
+  autoPilotMode      String   @default("manual") // 'manual' | 'autopilot'
+}
+
+model HumanGate {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  leadId          String?
+  lead            Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  agentId         String?  // 'CD'|'CP'|'A3'|'sequence' etc
+  gateType        String   // 'information'|'approval'|'threshold'|'confidence'
+  
+  question        String?
+  contextJson     Json?    // e.g. { draftSubject, draftHtml, leadId, sequenceId }
+  optionsJson     Json?    
+  
+  status          String   @default("pending") // 'pending'|'approved'|'declined'|'overridden'
+  
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  resolutionNote  String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clientId, status])
 }
 
 model ContentRequest {
@@ -208,6 +238,7 @@ model Lead {
   isAutoPilotActive Boolean @default(false)
   currentSequenceId String?
   sequences         LeadSequence[]
+  humanGates        HumanGate[]
 }
 
 model LeadActivity {

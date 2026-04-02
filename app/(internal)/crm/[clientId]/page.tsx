@@ -77,6 +77,23 @@ export default function CRMPage() {
     }
   };
 
+  const handleResolveGate = async (lead: any) => {
+    if (!lead.humanGates || lead.humanGates.length === 0) return;
+    
+    // Optimistic UI: remove the shadow locally
+    setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, humanGates: [] } : l));
+
+    const gateId = lead.humanGates[0].id;
+    try {
+      const res = await fetch(`/api/crm/gates/${gateId}/resolve`, { method: 'POST' });
+      if (res.ok) {
+        await fetchLeads();
+      }
+    } catch (error) {
+      console.error('Failed to resolve gate:', error);
+    }
+  };
+
   const totalLeads = Array.isArray(leads) ? leads.length : 0;
   const totalWon = Array.isArray(leads)
     ? leads.filter(l => l.stage === 'won').length
@@ -230,6 +247,7 @@ export default function CRMPage() {
                 setIsSidebarOpen(true);
               }}
               updateLeadStage={updateLeadStage}
+              onResolveGate={handleResolveGate}
             />
           </div>
         )}

@@ -1,6 +1,7 @@
 import prisma from './db';
 import { callAI } from './ai';
 import { sendLeadEmail } from './mail';
+import { appendGmailDraft } from './imap';
 
 export async function runSequences(targetLeadId?: string) {
     const now = new Date();
@@ -77,30 +78,80 @@ export async function runSequences(targetLeadId?: string) {
             });
 
             const subject = `Re: Your interest in ${lead.client.name}`;
-            await sendLeadEmail({
-                to: lead.email,
-                subject,
-                html: content.replace(/\n/g, '<br/>'),
-                leadId: lead.id,
-                clientId: lead.clientId
-            });
+            
+            // --- NEW: HUMAN GATE LOGIC ---
+            if (lead.client.autoPilotMode === 'manual') {
+                console.log(`[HUMAN GATE] Drafting Gmail email for ${lead.name} (Manual Mode)`);
+                
+                // 1. Append Draft to Gmail
+                await appendGmailDraft(lead.client, {
+                    to: lead.email,
+                    subject,
+                    html: content.replace(/\n/g, '<br/>')
+                });
 
-            // 3. Log Activity
-            await prisma.leadActivity.create({
-                data: {
-                    leadId: lead.id,
-                    type: 'email_sent',
-                    description: `Autonomous Sequence "${sequence.name}" - Step ${currentStep + 1} Sent`,
-                    metadata: {
-                        sequenceName: sequence.name,
-                        step: currentStep + 1,
-                        subject,
-                        method: 'neural-sequence',
-                        content,
-                        isAutoReply: true
+                // 2. Create Gate in DB
+                await prisma.humanGate.create({
+                    data: {
+                        clientId: lead.clientId,
+                        leadId: lead.id,
+                        agentId: 'sequence',
+                        gateType: 'approval',
+                        question: `Approve AI-drafted reply to ${lead.name}?`,
+                        contextJson: {
+                            leadId: lead.id,
+                            sequenceId: sequence.id,
+                            draftSubject: subject,
+                            draftHtml: content.replace(/\n/g, '<br/>'),
+                            stepIndex: currentStep
+                        }
                     }
-                }
-            });
+                });
+
+                // 3. Log Activity as Drafted
+                await prisma.leadActivity.create({
+                    data: {
+                        leadId: lead.id,
+                        type: 'email_draft',
+                        description: `AI Drafted Sequence "${sequence.name}" - Step ${currentStep + 1} (Synced to Gmail)`,
+                        metadata: {
+                            sequenceName: sequence.name,
+                            step: currentStep + 1,
+                            subject,
+                            method: 'neural-sequence',
+                            content,
+                            isAutoReply: true,
+                            isGated: true
+                        }
+                    }
+                });
+            } else {
+                // --- EXISTING: AUTOPILOT LOGIC ---
+                await sendLeadEmail({
+                    to: lead.email,
+                    subject,
+                    html: content.replace(/\n/g, '<br/>'),
+                    leadId: lead.id,
+                    clientId: lead.clientId
+                });
+
+                // Log Activity as Sent
+                await prisma.leadActivity.create({
+                    data: {
+                        leadId: lead.id,
+                        type: 'email_sent',
+                        description: `Autonomous Sequence "${sequence.name}" - Step ${currentStep + 1} Sent`,
+                        metadata: {
+                            sequenceName: sequence.name,
+                            step: currentStep + 1,
+                            subject,
+                            method: 'neural-sequence',
+                            content,
+                            isAutoReply: true
+                        }
+                    }
+                });
+            }
 
             // 4. Update the enrollment for the next step
             const nextStepIdx = currentStep + 1;
@@ -125,12 +176,16 @@ export async function runSequences(targetLeadId?: string) {
                 });
             }
 
-            // Update lead's last activity
+            // 5. Update lead's last activity
+            // ONLY move to 'contacted' if we are in autopilot mode.
+            // In 'manual' mode, lead remains in their current stage (usually 'new') for visual grouping.
+            const shouldChangeStage = lead.client.autoPilotMode !== 'manual' && lead.stage === 'new';
+            
             await prisma.lead.update({
                 where: { id: lead.id },
                 data: {
                     lastActivityAt: new Date(),
-                    stage: lead.stage === 'new' ? 'contacted' : lead.stage
+                    stage: shouldChangeStage ? 'contacted' : lead.stage
                 }
             });
 

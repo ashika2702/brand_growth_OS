@@ -1,12 +1,10 @@
 import { syncLeadReplies } from './imap';
-import { runSequences } from './sequences';
-import { auditLeads } from './auditor';
 
 let isRunning = false;
 
 /**
  * Neural Sales Automator
- * Periodically syncs inboxes, processes AI replies, and runs autonomous sequences.
+ * Periodically syncs inboxes and processes AI replies in the background.
  */
 export async function startBackgroundSync() {
     // Prevent multiple intervals in dev (HMR can sometimes trigger this twice)
@@ -16,31 +14,16 @@ export async function startBackgroundSync() {
     console.log('🚀 [AUTOMATOR] Starting Neural Sales Background Sync (Interval: 5 mins)');
 
     // Initial sync on startup
-    const initialSync = async () => {
-        try {
-            await syncLeadReplies();
-            await runSequences();
-            await auditLeads();
-        } catch (err) {
-            console.error('❌ [AUTOMATOR] Initial background sync failed:', err);
-        }
-    };
-    initialSync();
+    syncLeadReplies().catch(err => {
+        console.error('❌ [AUTOMATOR] Initial background sync failed:', err);
+    });
 
     // Setup periodic sync
     setInterval(async () => {
-        console.log('📥 [AUTOMATOR] Triggering Periodic Sync Cycle...');
+        console.log('📥 [AUTOMATOR] Triggering Periodic Inbox Sync...');
         try {
-            // 1. Sync Inbound (Replies & Leads)
-            const inbound = await syncLeadReplies();
-            
-            // 2. Run Outbound Sequences (Auto-Pilot)
-            const outbound = await runSequences();
-            
-            // 3. Proactive Audit (Scoring & Dormancy)
-            const audit = await auditLeads();
-
-            console.log('✅ [AUTOMATOR] Cycle Complete:', { inbound, outbound, audit });
+            const results = await syncLeadReplies();
+            console.log('✅ [AUTOMATOR] Sync Cycle Complete:', results);
         } catch (error) {
             console.error('❌ [AUTOMATOR] Background Sync Error:', error);
         }

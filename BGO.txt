@@ -1,0 +1,1215 @@
+
+STEDAXIS  ·  BRAND GROWTH OS
+Master Developer Document
+v3.0 — Complete & Current
+All modules · All agents · All flows · All integrations · Full architecture
+April 2026  ·  Stedaxis Internal  ·  Confidential  ·  For the Development Team
+
+
+IMPORTANT — Read This First
+This document replaces ALL previous BGO developer documents. Do not refer to older versions.
+The product has evolved significantly. New agents, new visual system, new AI model stack, new accountability architecture. Everything is in here.
+Structure: Section 1 = What BGO is and how it works. Section 2 = The Two Laws (most important rules). Section 3 = Architecture. Section 4 = All modules with flows. Section 5 = All agents. Section 6 = New features (Brain Graph, Mission Control, Simulator, Creative Director). Section 7 = Code patterns. Section 8 = Build order.
+When you are stuck on what to build — find the module or agent in this document. The flow tells you exactly what happens at every layer when a user does something.
+Version: v3.0. Everything before this is superseded.
+
+
+Section 1 — What Is BGO
+
+The One Paragraph Explanation
+BGO is a living autonomous intelligence system that manages a business's entire marketing operation. It watches, thinks, creates content, manages leads, tracks SEO, monitors competitors, manages reviews, runs campaigns, and learns — 24 hours a day, 7 days a week.
+There are two modes: Manual Mode (the Account Manager uses the platform like a cockpit — clicks, configures, approves) and Autopilot Mode (BGO Intelligence operates the system autonomously — navigating screens, creating content, making decisions — and asks the human only when it needs judgment or approval).
+The human is always the governor. Nothing that touches the outside world — publishing, sending, posting, spending money — happens without a human gate. BGO prepares everything. The human releases it.
+
+The Real Business Problem BGO Solves
+A marketing agency managing 8 clients today uses: a spreadsheet for leads, Google Docs for briefs, a separate SEO tool, a separate ads tool, a separate scheduling tool, a separate reporting tool. None of them talk to each other. An insight from the ads tool never reaches the content brief. A competitor move spotted on Monday is forgotten by Friday. The account manager spends 70% of their time on operational tasks that add no strategic value.
+BGO replaces all of that. One platform. Everything connected. AI agents handle the monitoring, drafting, scheduling, scoring, and reporting. The account manager focuses on judgment and client relationships.
+
+The Three Users
+User	Who They Are	What They Do
+Account Manager	Marketing team member — manages clients day to day	Uses Command Centre every morning, manages CRM, approves content, runs Content Tap, uses AI Assist panel, sets autopilot per client
+Client	The business owner — plumber, café, kitchen company	Logs into Client Portal on phone. Approves content, reads reports, sees lead count and keyword rankings. Simple view. No jargon.
+Founder / Admin	Thiru — sees everything	Oracle view (all client margins), all agent logs, all AI costs, platform settings, white-label config, override history
+
+The Two Operating Modes
+MODE 1 — MANUAL (AM drives)
+The AM uses the platform directly. Clicks to generate a brief. Drags leads through the pipeline. Approves content. Configures campaigns. The AI assists and suggests — but the AM initiates every action.
+The Guardian Agent watches every action the AM takes and surfaces smart suggestions in real time. It never blocks. It always informs. Think of it as the most experienced colleague sitting next to you.
+
+MODE 2 — AUTOPILOT (BGO Intelligence drives)
+BGO Intelligence takes the controls. It navigates the platform autonomously — opening modules, reading data, creating content, editing video, managing campaigns, drafting responses. The AM watches it work on Mission Control.
+Every action streams to the Live Action Feed. Every decision is logged with reasoning. Nothing that touches the outside world executes without a Human Gate — the AM approves, provides information, or overrides.
+Autopilot is per-client and per-task. One client on full autopilot, another on manual, another on hybrid. The AM sets it.
+
+
+Section 2 — The Two Laws
+
+THE TWO LAWS — Read this before writing any AI feature. This is the most important rule in the codebase.
+LAW 1: Every single Claude or Qwen call must include getBrainContext(clientId) in the system prompt.
+LAW 2: Every single Claude or Qwen call must include getRoleContext(userId, moduleName) in the system prompt.
+These two functions together form the system prompt for every AI call. If either is missing, the AI output will be generic, wrong, and off-brand. This is the most common bug. Check both on every AI feature you build.
+The pattern is always: system = getRoleContext(userId, module) + newline + newline + getBrainContext(clientId)
+
+getBrainContext() — What It Is and What It Returns
+The Business Brain is a detailed intelligence file about each client. getBrainContext() reads it from the database and returns it as a string that Claude reads before doing anything for that client. With a rich Brain, Claude knows exactly who the client is, what they sell, how they speak, what their customers care about, and what has worked in the past. Without it, Claude is guessing.
+
+// lib/brain.ts
+export async function getBrainContext(clientId: string): Promise<string> {
+  const { data: brain } = await supabase
+    .from('business_brain')
+    .select('*')
+    .eq('client_id', clientId)
+    .single();
+
+  return `
+  ## BUSINESS: ${brain.business_name}
+  Industry: ${brain.industry} | Location: ${brain.service_areas}
+  Unique value: ${brain.unique_value_proposition}
+
+  ## PERSONAS
+  ${brain.personas.map(p => `
+    ${p.name} (${p.age}): Pain = ${p.pain_points}. Proof type = ${p.proof_type}.`,
+  ).join('')}
+
+  ## OFFERS
+  ${brain.offers.map(o => `${o.name}: ${o.price_range} — ${o.margin_tier} margin`).join('\n')}
+
+  ## VOICE GUIDE
+  Tone: ${brain.voice_guide.tone_adjectives.join(', ')}
+  Never say: ${brain.voice_guide.words_to_avoid.join(', ')}
+  Sample approved content: '${brain.voice_guide.sample_approved[0]}'
+
+  ## WHAT WORKS FOR THIS AUDIENCE (learned from performance data)
+  ${brain.content_patterns?.works ?? 'Not yet collected — grows after 30 days'}
+
+  ## WHAT DOES NOT WORK
+  ${brain.content_patterns?.avoid ?? 'Not yet collected'}
+
+  ## COMPETITIVE LANDSCAPE
+  ${brain.competitor_intel?.summary ?? 'Not yet scanned — A2 runs Sunday 11pm'}
+  `;
+}
+
+// EXAMPLE OUTPUT for a kitchen renovation client:
+// BUSINESS: Sydney Kitchen Co | Industry: Kitchen Renovation | Location: Western Sydney
+// PERSONA Sarah 42: Pain = budget anxiety. Proof type = before/after photos.
+// VOICE: warm, direct, no jargon. Never say: 'leverage', 'seamless', 'cutting-edge'
+// WHAT WORKS: Pain hook Instagram Reels outperform all formats. Best CTA: 'Call us today'
+// COMPETITOR: Competitor A running pain→price ads for 47 days (proven winner). GAP: no one using transformation angle.
+
+getRoleContext() — What It Is and What It Returns
+This function returns the AI persona and instructions based on who is asking and which module they are in. Alex is the Account Manager persona. Max is the Content Strategist. Quinn is the client-facing assistant. Nova is the SEO and data analyst. Oracle is the founder-level strategist. The AI sounds different in each module because it is playing a different role.
+
+// lib/roles.ts
+export async function getRoleContext(userId: string, module: string): Promise<string> {
+  const user = await getUser(userId);
+  const persona = PERSONA_MAP[module] ?? PERSONA_MAP['default'];
+  return `You are ${persona.name}, ${persona.role}.
+  You are helping ${user.name} (${user.role}) with ${module}.
+  ${persona.instructions}
+  Always be direct, specific, and actionable. Never generic.`;
+}
+
+const PERSONA_MAP = {
+  crm:         { name:'Alex',   role:'Growth Account Manager'         },
+  content:     { name:'Max',    role:'Content Strategist'              },
+  seo:         { name:'Nova',   role:'SEO & AEO Specialist'            },
+  analytics:   { name:'Nova',   role:'Data Analyst'                    },
+  competitive: { name:'Forge',  role:'Competitive Intelligence Analyst'},
+  portal:      { name:'Quinn',  role:'Client Success Manager'          },
+  strategy:    { name:'Oracle', role:'Growth Strategist'               },
+  pr:          { name:'Alex',   role:'PR & Reputation Manager'         },
+  budget:      { name:'Oracle', role:'Financial Intelligence'          },
+  default:     { name:'Alex',   role:'Growth Account Manager'          },
+}
+
+// HOW TO USE — copy this pattern for EVERY AI call:
+const roleCtx  = await getRoleContext(userId, 'content');
+const brainCtx = await getBrainContext(clientId);
+const system   = `${roleCtx}\n\n${brainCtx}`;       // THE TWO LAWS COMBINED
+const result   = await llm('brief', userPrompt, system);
+
+
+Section 3 — Full System Architecture
+
+3.1 — All Layers
+┌──────────────────────────────────────────────────────────────┐
+│              BROWSER / CLIENT (what the user sees)          │
+│   Next.js App Router · React · Tailwind · Framer Motion     │
+│   React Flow (Brain Graph, Playbooks)                       │
+│   Recharts (all data visualisation)                         │
+│   @dnd-kit (kanban drag and drop)                           │
+└────────────────────────┬─────────────────────────────────────┘
+                         │ HTTP / WebSocket / Supabase Realtime
+┌────────────────────────▼─────────────────────────────────────┐
+│              NEXT.JS API ROUTES (/api/.../)                 │
+│   Validates request (Zod) · Checks auth (Supabase session)  │
+│   Calls DB · Calls AI · Calls external services · Returns   │
+└──────┬────────────────┬──────────────────┬───────────────────┘
+       │                │                  │
+┌──────▼──────┐  ┌──────▼──────┐  ┌───────▼───────────────────┐
+│  SUPABASE   │  │  AI LAYER   │  │  EXTERNAL SERVICES        │
+│             │  │             │  │                           │
+│ PostgreSQL  │  │ LiteLLM     │  │ Canva Connect API         │
+│ Auth + RLS  │  │  ├ Claude   │  │ DALL-E 3 / Ideogram       │
+│ Storage     │  │  ├ Qwen 2.5 │  │ ElevenLabs (voiceover)    │
+│ Realtime    │  │  └ NemoClaw │  │ OpusClip (video clips)    │
+│             │  │             │  │ Meta Ad Library API       │
+│             │  │ getBrain()  │  │ Google Veo / Sora (AI vid)│
+│             │  │ getRole()   │  │ DataForSEO                │
+│             │  │             │  │ Perplexity (research)     │
+└──────┬──────┘  └─────────────┘  │ Brand24 (PR monitoring)   │
+       │                          │ Google GBP API            │
+┌──────▼──────────────────────┐   │ Resend (email)            │
+│    BULLMQ + REDIS           │   │ Google Stitch             │
+│ Background job queue        │   │ Remotion (video editor)   │
+│ Cron scheduler (all agents) │   └───────────────────────────┘
+│ Delayed jobs (workflows)    │
+│ Real-time agent monitoring  │
+└─────────────────────────────┘
+
+3.2 — The AI Model Stack — When to Use What
+Model	Hosted Where	Task Types in LiteLLM	Use For
+Claude Sonnet	Anthropic API	analyse, synthesise, brief, recommend, create	All strategic thinking, content generation, insights, complex reasoning
+Qwen 2.5	Ollama (self-hosted server)	classify, extract, score, summarise_bulk	Any bulk task with 50+ items — classification, tagging, scoring at scale. Free.
+NemoClaw	Ollama or API	deep_reason, simulate, evaluate, plan	Simulator predictions, multi-step planning, confidence interval calculations
+Perplexity Sonar	Perplexity API	web_search (tool)	A2 research, AEO tracking, competitor PR, real-time market data
+
+// lib/llm.ts — The unified router. Copy this exactly.
+import LiteLLM from 'litellm';
+
+export type TaskType = 'classify'|'extract'|'score'|'summarise_bulk'  // → Qwen
+                     | 'analyse'|'synthesise'|'brief'|'recommend'|'create'  // → Claude
+                     | 'deep_reason'|'simulate'|'evaluate'|'plan';  // → NemoClaw
+
+const MODEL_MAP: Record<TaskType, string> = {
+  classify:       'ollama/qwen2.5:14b',
+  extract:        'ollama/qwen2.5:14b',
+  score:          'ollama/qwen2.5:14b',
+  summarise_bulk: 'ollama/qwen2.5:14b',
+  analyse:        'claude-sonnet-4-20250514',
+  synthesise:     'claude-sonnet-4-20250514',
+  brief:          'claude-sonnet-4-20250514',
+  recommend:      'claude-sonnet-4-20250514',
+  create:         'claude-sonnet-4-20250514',
+  deep_reason:    'ollama/nemoclaw:latest',
+  simulate:       'ollama/nemoclaw:latest',
+  evaluate:       'ollama/nemoclaw:latest',
+  plan:           'ollama/nemoclaw:latest',
+};
+
+export async function llm(task: TaskType, prompt: string, system?: string) {
+  const model = MODEL_MAP[task];
+  const isLocal = model.startsWith('ollama');
+  const response = await LiteLLM.completion({
+    model,
+    messages: [
+      ...(system ? [{ role:'system', content:system }] : []),
+      { role:'user', content:prompt }
+    ],
+    api_base: isLocal ? process.env.OLLAMA_BASE_URL : undefined,
+  });
+  return response.choices[0].message.content;
+}
+
+3.3 — The Universal Interaction Pattern
+Every user action in BGO follows this exact pattern. Learn this once — you can build any feature.
+
+USER CLICKS / SUBMITS SOMETHING IN THE UI
+  │
+  ▼
+UI: show loading state (spinner on button, skeleton on cards)
+  │
+  ▼
+fetch() → POST or GET /api/[module]/[action]
+  │
+  ▼
+API ROUTE:
+  1. Parse body (Zod validation)
+  2. Check auth (supabase.auth.getSession())
+  3. If data only: query Supabase → return JSON
+  4. If AI needed:
+       roleCtx  = await getRoleContext(userId, module)   ← LAW 1
+       brainCtx = await getBrainContext(clientId)         ← LAW 2
+       system   = roleCtx + '\n\n' + brainCtx
+       result   = await llm(taskType, prompt, system)     ← LiteLLM routes
+       save result to Supabase
+       return result
+  │
+  ▼
+UI: receives response → update state → re-render
+  ├── Success: show result / toast('Success') / navigate
+  └── Error:   toast('Error message') / show retry button
+
+// BACKGROUND PATTERN (agents — no user trigger):
+BullMQ cron fires → agent function runs →
+reads from Supabase → calls llm() → writes result to Supabase →
+createNotification() → Supabase Realtime fires →
+UI updates automatically without page refresh
+
+3.4 — Supabase Realtime — How Live Updates Work
+// In any React component that needs live data:
+useEffect(() => {
+  const channel = supabase
+    .channel('my-channel-' + clientId)
+    .on('postgres_changes', {
+      event:  '*',          // INSERT | UPDATE | DELETE | * (all)
+      schema: 'public',
+      table:  'notifications',
+      filter: `client_id=eq.${clientId}`
+    }, (payload) => {
+      // payload.new = the new row, payload.old = previous row
+      setNotifications(prev => [payload.new, ...prev]);
+      toast.success(payload.new.title);
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);  // cleanup
+}, [clientId]);
+
+// This is how: agent runs at 6am → writes notification → AM's screen
+// updates automatically without refresh. Real-time. Live.
+
+
+Section 4 — All Modules: Complete Interaction Flows
+
+For every module: what it is, who uses it, and exact step-by-step flows broken down by layer (UI / API / DB / AI / EXT / BG / GATE). The layer tells you exactly what your code does at that step.
+
+Layer Key
+UI = what the user sees and does in the browser
+API = your Next.js route handler
+DB = Supabase database read or write
+AI = Claude, Qwen, or NemoClaw call
+EXT = external service (Canva, DALL-E, Meta API, Brand24, etc.)
+BG = BullMQ background job / workflow trigger
+GATE = Human Gate — system pauses and asks the AM to approve or provide information
+
+M01	Business Brain
+The client intelligence profile. Foundation of every AI call. All agents read this.
+
+What it is: A detailed file about each client that Claude reads before doing anything for them. Personas, offers, voice guide, competitors, what content works. Without it, all AI is generic. With it, all AI is specific and on-brand.
+Who uses it: AM sets it up during client onboarding. A2 and A3 agents enrich it automatically over time.
+
+Flow: AM fills in a persona
+UI	AM clicks 'Add Persona'. Form expands. Fills: name, age, location, pain points, desires, proof type, trigger moment, objections. Clicks Save.
+API	POST /api/brain/personas { clientId, persona: { name, age, pains, desires, proof_type } }
+DB	UPDATE business_brain SET personas = [...existing, newPersona] WHERE client_id = X
+
+Flow: AM clicks 'Enrich Brain with AI'
+UI	AM clicks [▶ Enrich Brain]. Loading spinner. Streaming text panel opens.
+API	POST /api/brain/enrich { clientId }
+EXT	Perplexity API: query = '[business_name] [industry] [city] competitors reviews trends 2026'
+AI	[CLAUDE] system = getRoleContext('strategy') + getBrainContext(clientId). Prompt = 'Read these web findings. Update the business intelligence. Return: emerging trends, competitor moves, new proof to add.' Returns JSON.
+DB	UPDATE business_brain SET competitor_intel = {...}, enriched_at = now()
+UI	Panel shows what changed. Brain Health Score updates.
+
+M02	Content Tap
+Content pipeline — Request → Brief → Produce → Approve → Publish.
+
+What it is: Where all content is requested, briefed by AI, produced, reviewed, and tracked. Kanban board with stages. Every content piece for every client goes through this pipeline.
+Who uses it: AM requests and approves. Content team picks up 'In Production' cards. Client approves from their portal.
+
+Flow: AM creates a new content request and generates AI brief
+UI	AM opens 'New Request' panel. Selects type (IG Reel), platform (Instagram). Types rough brief: 'Reel about kitchen reno for western Sydney homeowners'. Clicks [▶ Generate AI Brief].
+API	POST /api/content/brief { clientId, userId, type:'reel', platform:'instagram', rawBrief }
+AI	[CLAUDE] system = getRoleContext(userId,'content') + getBrainContext(clientId). Includes platform format rules: IG Reel = hook < 3 seconds, no full stop on line 1, tension in first frame. Returns: { hooks[], script, captions[], ctas[], image_prompt, voice_direction }
+AI	[A6 INLINE] Voice score check. getBrainContext voice guide used. If score < threshold: auto-correct before returning. Sets was_corrected = true.
+DB	INSERT content_requests { client_id, type, platform, brief_raw, brief_ai, voice_score, status='briefed' }
+UI	Brief renders in panel — each section editable. Voice score badge. Kanban card appears in Briefed column.
+
+Flow: AM clicks 'Generate Design' (Canva)
+UI	AM opens brief modal. Clicks [▶ Generate Design].
+API	POST /api/content/design { contentRequestId, clientId }
+EXT	Canva Connect API: reads client brand kit (logo, colours, fonts from brands table). Fills text layers on matching template with brief_ai.headline and brief_ai.captions[0].
+DB	UPDATE content_requests SET canva_design_url = '...', status = 'in_production'
+UI	Canva preview iframe appears. [Download] and [Open in Canva] buttons.
+
+Flow: AM clicks 'Generate Image' (DALL-E)
+UI	AM clicks [▶ Generate Image]. Loading state.
+API	POST /api/content/image { contentRequestId, clientId }
+AI	[CLAUDE] Enhances brief_ai.image_prompt with Business Brain brand details: 'Professional kitchen renovation, warm Sydney home, young couple, natural light...'
+EXT	DALL-E 3 (photorealistic scenes) or Ideogram (if image needs text overlay — ad creative with headline). Returns 3 variants.
+DB	UPDATE content_requests SET ai_image_urls = ['url1','url2','url3']
+UI	3 image cards appear. Click one to select. Selected becomes hero image.
+
+Flow: AM drags card to 'Approved'
+UI	Drag with @dnd-kit. Optimistic update — card moves immediately without waiting for API.
+API	PATCH /api/content/requests/[id] { status:'approved', approved_by:userId, approved_at:now() }
+DB	UPDATE content_requests SET status='approved', approved_by=..., approved_at=...
+BG	Workflow Engine fires: 'content.approved' → BullMQ schedules publish job at publish_at time
+UI	Toast: 'Content approved. Scheduled for [date]'. Card badge updates.
+
+M03	CRM — Lead Pipeline
+All leads, activities, scoring, follow-up automation.
+
+What it is: Tracks every lead for every BGO client from first contact to won deal. Leads arrive from Google Ads webhooks, Meta forms, landing page forms, QR scans, or manual entry. System scores them, tags them to a persona, and places them on the kanban pipeline.
+
+Flow: Google Ad lead arrives via webhook
+EXT	Google Ads lead form submission fires webhook to POST /api/webhooks/google-lead { name, email, phone, campaign_id, utm_source, utm_campaign }
+API	Webhook handler: validates payload → identifies client from campaign_id → extracts UTM params
+AI	[QWEN] Score lead: match against business_brain.personas (persona_match). Classify source quality. Return { score:72, persona_tag:'sarah', source_quality:'high' }
+DB	INSERT leads { client_id, name, email, phone, source='google_ads', persona_tag:'sarah', score:72, stage:'new', campaign_id }
+DB	INSERT activities { lead_id, type:'created', note:'Lead created from Google Ads' }
+BG	Workflow Engine fires 'lead.created' → queues WhatsApp intro message job (5 min delay)
+UI	Supabase Realtime: Command Centre lead count increments. CRM kanban: new card appears in NEW column. Notification bell increments. All without page refresh.
+
+Flow: Lead arrives from BGO Landing Page (Way 2 — most common)
+UI	User fills contact form on /p/[clientSlug]/kitchen-reno. Clicks Submit.
+API	POST /api/leads/capture { name, email, phone, source:'landing_page', page_slug, utm_source, utm_campaign, utm_medium }
+AI	[QWEN] Score and tag. Same as above.
+DB	INSERT leads — same as above. source='landing_page'. Includes page_slug and UTM data.
+BG	Same workflow trigger as above.
+
+Flow: AM clicks WhatsApp icon on lead card
+UI	AM clicks WhatsApp icon. Slide panel opens with AI-drafted opening message already in textarea.
+API	GET /api/crm/leads/[id]/draft-message { channel:'whatsapp' }
+AI	[CLAUDE] system = getRoleContext(userId,'crm') + getBrainContext(clientId). Prompt = 'Draft a warm WhatsApp intro for this lead. Persona: Sarah. Source: Google Ads. Pain: budget anxiety. Under 160 chars.' Returns draft.
+UI	Message in textarea. AM edits if needed. Clicks [Send].
+EXT	WhatsApp Business API: sends message
+DB	INSERT activities { type:'whatsapp_sent', note:messageText, sent_by:userId }
+
+Flow: AM drags lead to 'Won'
+UI	Drag to Won column. Optimistic update.
+API	PATCH /api/crm/leads/[id] { stage:'won', stage_updated_at:now() }
+DB	UPDATE leads SET stage='won'. INSERT activities { type:'stage_change', from:'quoted', to:'won' }
+BG	Workflow Engine fires 'lead.stage=won' → BullMQ delayed job: send review request SMS in 48 hours
+AI	Lead score updated: stage_velocity bonus. M20 Social Proof: review request queued.
+
+M04	Workflow Engine
+All automation — triggers, actions, cron schedules, job queue.
+
+What it is: The automation backbone. When something happens (lead created, content approved, video uploaded, stage changed), Workflow Engine checks if there is an automation rule and executes it. Also manages all cron jobs for the 8 agents.
+
+// workers/automation.ts — all automation triggers
+
+// TRIGGER: lead.created
+automation.on('lead.created', async ({ leadId, clientId }) => {
+  await whatsappQueue.add('send-intro', { leadId, clientId }, { delay: 5 * 60 * 1000 });
+});
+
+// TRIGGER: content.approved
+automation.on('content.approved', async ({ contentRequestId, publishAt }) => {
+  await publishQueue.add('publish', { contentRequestId }, { delay: publishAt - Date.now() });
+});
+
+// TRIGGER: asset.video_uploaded  (if video > 5 minutes → OpusClip)
+automation.on('asset.video_uploaded', async ({ assetId, duration }) => {
+  if (duration > 300) await opusclipQueue.add('clip', { assetId });
+});
+
+// TRIGGER: lead.stage=won  (review request 48hr later)
+automation.on('lead.stage=won', async ({ leadId, clientId }) => {
+  await reviewQueue.add('request', { leadId, clientId }, { delay: 48 * 60 * 60 * 1000 });
+});
+
+// CRON JOBS — all 8 agents registered here in BO4
+cron.schedule('0 6 * * *',   () => a3Queue.add('run', {}));   // A3 daily 6am
+cron.schedule('0 23 * * 0',  () => a2Queue.add('run', {}));   // A2 Sunday 11pm
+cron.schedule('0 7 * * 1',   () => a5Queue.add('run', {}));   // A5 Monday 7am
+cron.schedule('0 8 * * *',   () => a8Queue.add('run', {}));   // A8 daily 8am
+cron.schedule('0 * * * *',   () => a7Queue.add('run', {}));   // A7 every hour
+cron.schedule('0 22 * * 0',  () => m23Queue.add('run', {}));  // M23 Sunday 10pm
+cron.schedule('0 6 1 * *',   () => a1Queue.add('run', {}));   // A1 1st of month
+cron.schedule('0 8 * * 1',   () => a4Queue.add('run', {}));   // A4 Monday 8am
+cron.schedule('*/15 * * * *',() => cpQueue.add('run', {}));   // Campaign Pilot every 15min
+
+M05	Analytics
+Traffic, conversions, lead attribution, PostHog events, Clarity behaviour.
+
+Flow: PostHog event tracking — how it works on landing pages
+UI	User visits landing page /p/[clientSlug]/kitchen. Page loads with PostHog script.
+EXT	posthog.capture('page_viewed', { client_id, page_slug, utm_source, utm_medium })
+UI	User starts filling the form.
+EXT	posthog.capture('form_started', { client_id, page_slug })
+UI	User submits form. Lead is created.
+EXT	posthog.capture('form_submitted', { client_id, lead_id: newLeadId })
+BG	A3 daily 6am: reads PostHog funnel data → writes to page_behaviour table → Analytics module shows conversion funnel
+
+Flow: Clarity heatmap setup on a landing page
+BG	When client is onboarded: Clarity API creates project for client → stores clarity_project_id in clients table
+EXT	All hosted pages /p/[clientSlug]/* inject Clarity script from clients.clarity_project_id
+BG	A3 daily 3am: getClarityData(clientId) → reads scroll depth, rage clicks, session data → writes to page_behaviour table
+UI	Analytics module shows: heatmap embed, scroll depth bar chart, rage click alerts, behaviour insight from A3
+
+M06	Reporting
+Weekly AI-generated performance reports. Auto-emailed to clients.
+
+Flow: Weekly report auto-generates Monday 7am
+BG	cron('0 7 * * 1') fires for all active clients
+DB	SELECT: campaign performance last 7d, new leads count, content published, SEO rank changes, reviews received, top keyword movement, health score
+AI	[CLAUDE] system = getRoleContext('strategy') + getBrainContext(clientId). Prompt = 'Write a plain-English weekly performance report. Highlight what went well, what needs attention, 3 action items for next week. Tone: warm, direct, no jargon.' Streams response.
+DB	INSERT weekly_reports { client_id, week_of, content_md, generated_at }
+EXT	Resend API: emails report to AM. If client_portal enabled: report visible in portal.
+UI	M06 Reports list shows new report. AM can edit before sending to client.
+
+M07	SEO Engine
+Keyword tracking, rank history, audits, content briefs for rankings.
+
+Flow: Weekly keyword rank update
+BG	cron('0 2 * * 1') Monday 2am. For each client and each tracked keyword:
+EXT	DataForSEO API: fetch current Google rank for keyword + location
+DB	INSERT seo_rankings { keyword_id, client_id, position, date:today }
+DB	Calculate delta vs last week. If rank drops > 5: INSERT notifications (severity='warning')
+UI	SEO module shows updated positions with delta arrows. Command Centre: alert if major drop.
+
+Flow: AM generates SEO content brief
+UI	AM clicks [Generate Brief] on keyword 'kitchen renovation Parramatta' at position 14.
+API	POST /api/seo/brief { clientId, keyword, currentPosition:14, targetUrl:'/kitchen' }
+EXT	DataForSEO: fetch top 10 ranking URLs for this keyword. Extract their word counts, headings, entities.
+AI	[CLAUDE] system = getRoleContext(userId,'seo') + getBrainContext(clientId). 'Current rank 14. Competitors at rank 1-3 have: [analysis]. Write content brief to reach top 3: word count, headings, entities to include, internal links, schema type.'
+DB	INSERT seo_briefs { keyword, client_id, brief_content }
+UI	Brief in slide panel. [Push to Content Tap] button creates content_request with SEO brief.
+
+M08	Local SEO / GBP
+Google Business Profile, review management, local pack tracking.
+
+Flow: Negative review arrives → auto-drafted response
+EXT	Google GBP webhook: new review posted (rating=2, text='Took 3 weeks and...')
+API	POST /api/webhooks/google-review { clientId, rating:2, text, reviewerName }
+DB	INSERT reviews { client_id, rating:2, text, source:'google', status:'new' }
+AI	[CLAUDE] system = getRoleContext('pr') + getBrainContext(clientId). 'A 2-star review was posted: [text]. Draft a professional, empathetic response addressing the concern and offering resolution. Under 150 words. Sound like the business owner.' Returns draft.
+DB	INSERT review_responses { review_id, draft_text, status:'pending' }
+BG	createNotification(severity='urgent', '⭐ Negative review needs response — [client]')
+UI	GBP module: review appears in queue with draft response. AM edits if needed. Clicks [✓ Approve & Post].
+EXT	Google GBP API: posts reply to the review.
+
+M09	AI SEO / AEO
+Brand tracking in AI search answers — Perplexity, Google AI Overviews.
+
+What it is: AEO = Answer Engine Optimisation. Tracks whether the client's business appears when someone asks an AI tool a question like 'Who are the best kitchen renovation companies in western Sydney?' and generates briefs to improve their presence.
+
+Flow: AEO tracking check — every Sunday with A2
+BG	A2 runs Sunday 11pm. Includes AEO check for all tracked queries per client.
+EXT	Perplexity API: query = 'best kitchen renovation company western Sydney 2026'. Returns AI answer + citations.
+AI	[QWEN] Parse response: is client brand mentioned? At what position? Which competitors cited? Which sources?
+DB	INSERT aeo_tracking_results { query, client_mentioned:true, position:2, competitors_cited:['CompA','CompB'], snapshot_text, checked_at }
+UI	AEO module: Brand Visibility Score gauge updates. Table shows each query status. Queries where brand is not mentioned show [Generate AEO Brief] button.
+
+M10	Campaign Strategy
+Ad campaigns, budgets, A/B tests, performance dashboard.
+
+Flow: Campaign Pilot (new agent) detects CPL spike and acts
+BG	Campaign Pilot runs every 15 minutes for all active campaigns.
+DB	SELECT ad_creative_performance WHERE campaign.status='active' AND date > 24h ago
+AI	[QWEN] For each creative: calculate CPL trend vs 7-day average. Flag if CPL > avg*1.3
+BG	CPL spike detected on 'Kitchen Pain Hook Ad': CPL $89 vs avg $52 (+71%)
+AI	[CLAUDE] Analyse: is this a creative issue or audience saturation or budget pacing? Recommend: pause creative, adjust bid, or expand audience.
+DB	createNotification(severity='urgent', 'CPL spike +71% — Kitchen Pain Hook Ad — Client A')
+GATE	Campaign Pilot cannot pause ad autonomously without AM approval. Creates Human Gate: 'CPL spiked 71%. Recommend pausing this creative. [✓ Pause] [✎ Adjust bid] [✕ Keep running]'
+UI	AM sees gate in Mission Control. Makes decision. Campaign Pilot executes.
+
+M11	Client Portal
+Client-facing view — approvals, reports, rankings. Mobile-first.
+
+What it is: What the client (plumber, café owner) sees when they log in on their phone. Simple. No jargon. One job: approve content, read reports, see leads and rankings.
+
+Flow: Client opens portal on iPhone and approves content
+UI	Client opens portal URL on iPhone. Sees: 'Good morning! 3 items need your approval.' Large preview image. Copy below. Big [✓ Approve] button.
+UI	Client taps [✓ Approve]. Green animation. Card disappears.
+API	POST /api/portal/approve { contentRequestId, clientId, approvedBy:clientUserId }
+DB	UPDATE content_requests SET status='approved', client_approved=true, client_approved_at=now()
+BG	Workflow fires 'content.client_approved' → AM notification: 'Client approved: IG Reel — Kitchen'
+UI	AM's Content Tap: card moves to Approved column via Supabase Realtime. No refresh needed.
+
+M12	Command Centre
+The morning dashboard — all clients, all agents, all alerts.
+
+What it is: First thing the AM sees every day. Shows all clients with health scores, alerts, next actions, and AI-suggested action. The Start Session modal streams a Claude-generated morning brief that the AM reads in 90 seconds.
+
+Flow: AM logs in — Start Session modal appears
+DB	Check: SELECT FROM team_sessions WHERE user_id=X AND date=today. If none: show modal.
+API	POST /api/command/morning-brief { userId }. Reads: overnight agent_runs, severity=urgent notifications, leads created last 24h, content pending approval > 2 days, SEO rank changes, health score drops.
+AI	[CLAUDE] system = getRoleContext(userId,'strategy') + (all client getBrainContexts). 'You are Alex. It is 8am. Brief this AM in 200 words. Use client names. Highlight urgent items first. Each item = a deep-link.' Streams character by character.
+UI	Modal: streaming text renders live. Each item = clickable chip linking to the relevant screen. AM reads in 90 seconds.
+UI	AM clicks [Enter Dashboard]. Modal closes.
+DB	INSERT team_sessions { user_id, date:today, started_at:now() }. Modal does not appear again today.
+
+Flow: Guardian Agent flags a mistake in real time
+BG	Guardian Agent subscribes to all AM actions via event stream while AM is logged in.
+UI	AM types a content brief with 'leverage seamless cutting-edge synergy' — words on the avoid list.
+AI	[QWEN] Scans brief text against voice_guide.words_to_avoid. Finds violations.
+UI	Guardian panel (right side, always visible): 'This brief uses 3 words on the avoid list: leverage, seamless, cutting-edge. These don't match this client's voice. Fix before generating?' [Fix now] [Ignore]
+UI	AM clicks [Fix now]. Violations highlighted in brief textarea. AM corrects them.
+
+M13	Landing Page Builder
+Build, host, and optimise client landing pages. CRM-connected.
+
+Flow: AM builds a landing page section with AI content
+UI	AM drags 'Hero' section from sidebar onto canvas. Click [▶ Fill with AI].
+API	POST /api/pages/section/ai-fill { clientId, sectionType:'hero', pageGoal:'kitchen reno leads' }
+AI	[CLAUDE] Returns 3 variants: { headline:'Western Sydney's Most Trusted Kitchen Renovators', subheadline:'...', cta:'Get Your Free Quote' }
+UI	3 variant cards appear. AM clicks one. Fills into section instantly.
+UI	AM clicks [▶ Generate Hero Image]. DALL-E generates image from brief_ai.image_prompt.
+DB	Page auto-saves every 30 seconds: UPDATE pages SET sections_json=[...]
+UI	AM clicks [Publish]. Page goes live at /p/[clientSlug]/[slug]. Clarity script auto-injected.
+
+M14	Email + SMS Builder
+Broadcasts, sequences, AI copy, audience segmentation.
+
+Flow: AM generates an AI email campaign
+UI	AM clicks [+ New Email Campaign]. Selects goal: 'Promote kitchen offer'. Selects persona: 'Sarah'. Clicks [▶ Generate Email].
+API	POST /api/email/generate { clientId, userId, goal, persona:'sarah' }
+AI	[CLAUDE] system = getRoleContext(userId,'content') + getBrainContext(clientId). Max persona rules: subject < 50 chars, one idea, one CTA. Returns 3 variants: { subject, preheader, body, cta }
+UI	3 email variant cards. AM clicks one. Email builder populates.
+UI	AM builds segment: stage=qualified AND persona_tag=sarah. Live count: '124 contacts'.
+EXT	Resend API: sends emails. Returns message IDs.
+DB	UPDATE email_campaigns SET status='sent', sent_at=now(), sent_count=124
+
+Flow: Sequence Builder — automated follow-up sequence
+UI	AM opens Sequence Builder (React Flow node editor). Adds nodes: Trigger → Email 1 → Wait 3 days → Condition (opened?) → Email 2 or SMS nudge → End.
+DB	INSERT sequences { client_id, name, steps_json:[...nodes] }
+BG	When trigger fires (lead.created): BullMQ executes sequence steps. Delays handled by delayed jobs.
+AI	Each message node: [CLAUDE] generates copy from getBrainContext. Pre-generated at sequence creation, not at send time.
+
+M15	Lead Scoring & Attribution
+AI scoring, multi-touch attribution, ROI by source.
+
+// Lead Score Formula — 5 factors, configurable weights
+function calculateLeadScore(lead, brain) {
+  const personaMatch    = matchPersona(lead, brain.personas);     // 0-30 pts
+  const sourceQuality   = SOURCE_SCORES[lead.source];             // 0-25 pts
+  const behaviourScore  = lead.pages_visited * 3;                 // 0-20 pts
+  const stageVelocity   = getStageVelocity(lead.stage_history);  // 0-15 pts
+  const offerFit        = matchOffer(lead, brain.offers);         // 0-10 pts
+  return personaMatch + sourceQuality + behaviourScore + stageVelocity + offerFit;
+}
+
+// SOURCE_SCORES:
+// google_ads=22, referral=25, organic=18, meta_ads=20, qr_code=15, manual=10
+
+// Score thresholds:
+// 80-100 = HOT (red card border, immediate notification to AM)
+// 60-79  = WARM (amber border)
+// 40-59  = COOL (blue border)
+// 0-39   = COLD (grey border)
+
+M16	Brand Voice System
+Voice guide, A6 quality gate, consistency scoring.
+
+Flow: AM tests a piece of content against the voice guide
+UI	AM opens Voice Tester. Pastes content text. Clicks [Score Voice].
+API	POST /api/voice/score { clientId, text }
+AI	[QWEN] Reads business_brain.voice_guide. Scores text: { score:62, violations:['leverage','seamless'], corrections:['change lever age to use', 'change seamless to smooth'] }
+UI	Score gauge animates to 62 (below 70 threshold = amber). Violations underlined red in text. [Auto-correct] button appears.
+UI	AM clicks [Auto-correct].
+AI	[CLAUDE] Rewrites text to match voice guide.
+UI	Side-by-side diff: original vs corrected. AM accepts or further edits.
+
+M17	Notification Centre
+All real-time alerts. Bell icon, inbox, digest emails.
+
+// lib/notifications.ts — use this function everywhere
+export async function createNotification({
+  clientId, recipientId, type, title, body, severity, actionUrl
+}: NotificationInput) {
+  await supabase.from('notifications').insert({
+    client_id:    clientId,
+    recipient_id: recipientId,
+    type,          // format: 'module.event' e.g. 'ads.fatigue', 'crm.hot_lead'
+    title,
+    body,
+    severity,      // 'info' | 'warning' | 'urgent'
+    action_url:   actionUrl,  // where to go when clicked
+    created_at:   new Date()
+  });
+  // Supabase Realtime automatically fires to subscribed clients.
+  // Bell icon increments. Toast appears. Command Centre risk bar updates.
+  // No extra code needed after this insert.
+}
+
+M18	Asset Library
+Media files, Canva templates, AI images, OpusClip clips.
+
+Flow: AM uploads a long video → OpusClip auto-generates short clips
+UI	AM drags video file into Asset Library upload zone. Progress bar shows.
+API	POST /api/assets/upload. Supabase Storage: stores file. Returns file_url, duration_seconds.
+DB	INSERT assets { client_id, type:'video', url, file_size, duration_seconds }
+BG	Workflow fires 'asset.video_uploaded'. IF duration > 300 seconds: queue OpusClip job.
+EXT	OpusClip API: submit video URL. Returns job_id. Status = 'processing'.
+DB	UPDATE assets SET opusclip_job_id=..., clipping_status='processing'
+EXT	OpusClip webhook (10-20 min later): POST /api/webhooks/opusclip { job_id, clips:[{url, score, caption}] }
+DB	INSERT assets for each clip: { type:'video_clip', parent_asset_id, url, opusclip_score }
+UI	Asset Library shows original video + generated clips with scores. Best clip has gold badge.
+
+M19	Budget Intelligence
+Ad spend, AI costs, team hours, gross margin per client.
+
+Flow: Founder opens Oracle view
+UI	Founder logs in. Budget Intelligence shows Oracle tab (only visible to role=founder).
+DB	SELECT clients JOIN monthly_costs JOIN ad_spend JOIN ai_costs WHERE month=current. Calculate: margin = retainer - ad_spend - ai_costs - team_hours_cost.
+UI	Portfolio table: all clients, columns: CLIENT | RETAINER | AD SPEND | AI COST | TEAM HRS | MARGIN $ | MARGIN %. Sorted by margin % ascending. Worst performing clients at top.
+UI	Row colour: margin > 60% = green, 40-60% = amber, < 40% = red. Founder sees immediately which clients need attention.
+
+M20	Social Proof Engine
+Review request automation, testimonial pipeline, proof assets.
+
+Flow: Lead won → review request sends 48 hours later automatically
+BG	Lead dragged to WON. Workflow fires. BullMQ delayed job: 48 hours delay.
+BG	48 hours later: job fires. Reads lead details and getBrainContext.
+AI	[CLAUDE] 'Draft a warm review request SMS for [lead.name]. They just completed [service]. Under 160 chars. Include Google review link. Sound like the business owner, not an agency.'
+EXT	SMS API (Twilio): sends to lead.phone
+DB	INSERT review_requests { lead_id, sent_at, channel:'sms', message_text }
+EXT	If 4-5 star review received (Google webhook): INSERT reviews. Create content brief automatically using proof as asset.
+EXT	If 1-3 star review: urgent notification + A8 drafts response immediately.
+
+M21	Playbook Builder + White-Label
+Visual automation flows, multi-brand support.
+
+Playbook Builder uses React Flow. Nodes: Trigger, Message (WhatsApp/SMS/Email), Delay, Condition, Task, End. Each message node has [▶ Generate with AI] button — Claude writes message from getBrainContext. White-label: all colours, logos, domains come from brands table. No Stedaxis references hardcoded anywhere.
+
+M22	Digital PR Engine
+Brand monitoring, response queue, journalist opportunities, press releases.
+
+Flow: Brand24 detects negative mention → A8 drafts response → AM approves
+EXT	Brand24 webhook fires: POST /api/webhooks/brand24 { mention:{ text, url, sentiment:'negative', authority_score:72, source:'google_reviews' } }
+API	Identifies client from Brand24 project ID. Validates.
+AI	[QWEN] Classify: { sentiment:'negative', source_type:'review', authority_score:72 }
+AI	[CLAUDE] system = getRoleContext('pr') + getBrainContext(clientId). 'Negative review posted: [text]. Draft professional empathetic response. Address the concern. Offer resolution. Under 150 words. Sound like the business owner.'
+DB	INSERT pr_mentions. INSERT pr_responses { draft_text, status:'pending' }
+BG	createNotification(severity='urgent', 'Negative review needs response — [client]')
+UI	AM sees urgent notification. Opens PR Engine → Response Queue. Reads mention + AI draft. Edits if needed. Clicks [✓ Approve & Post].
+EXT	Google GBP API or platform API: posts reply.
+DB	UPDATE pr_responses SET status='posted', posted_at=now()
+
+M23	Competitive Intelligence
+Competitor ad monitoring, Qwen classification, Claude analysis, approved insights → briefs.
+
+Flow: Full weekly competitive intelligence loop
+// SUNDAY 10PM — cron fires for all active clients
+
+STEP 1: DATA COLLECTION
+  For each competitor in business_brain.competitors[]:
+  EXT: Meta Ad Library API → all active ads, date started, copy, creative type
+  EXT: DataForSEO → Google search ads from competitor domain
+  EXT: Perplexity → '[competitor] new campaign OR promotion this week'
+
+STEP 2: QWEN CLASSIFICATION (bulk, free — runs on self-hosted Ollama)
+  For each ad (could be 200+ ads across all competitors):
+  [QWEN] classify: { hook_type, offer_angle, emotion_trigger, has_price, has_proof }
+  Calculate traction_tier from days_running:
+    < 8d = 'testing' | 8-21d = 'early' | 22-45d = 'scaling' | 45+d = 'proven_winner'
+  DB: UPDATE competitor_ads SET hook_type, offer_angle, traction_tier
+
+STEP 3: CLAUDE STRATEGIC ANALYSIS
+  Pull all proven_winner ads (45+ days = these are profitable, nobody runs a losing ad)
+  [CLAUDE] system = getRoleContext('competitive') + getBrainContext(clientId)
+  'What gaps exist in this market? What angles are overdone? What should this client do?'
+  Returns 3-5 insights: { type, title, summary, evidence, recommendation, urgency }
+  DB: INSERT competitor_insights { status:'pending' }
+  createNotification: 'New competitive insights ready — Client A'
+
+STEP 4: AM APPROVES (Monday morning)
+  AM reads insight card. Adds optional note. Clicks [✓ Approve & Brief].
+
+STEP 5: CONTENT REQUESTS AUTO-CREATED
+  [CLAUDE] generates full content brief from approved insight + getBrainContext
+  INSERT content_requests for each suggested content type
+  Content team picks them up in Content Tap — brief already written
+
+
+Section 5 — All Agents: Complete Specifications
+
+There are 12 agents total: 8 original + 4 new (Guardian, Creative Director, Campaign Pilot, Simulator). All run via BullMQ. All are registered in workers/cron.ts in BO4. Individual logic is built when the relevant module is built.
+
+G	Guardian Agent — Always-On Co-Pilot
+Schedule: Active whenever AM is logged in
+
+What it does: Watches every AM action in Manual Mode. Surfaces smart suggestions, warnings, and flags in real time. Never blocks. Always informs. Feels like the most experienced colleague sitting next to you.
+
+// HOW IT WORKS:
+// 1. AM actions emit events to a client-side event stream
+// 2. Guardian subscribes to this stream
+// 3. Qwen classifies each action for potential issues (fast, local)
+// 4. If issue detected: Guardian panel shows suggestion
+
+// WHAT IT WATCHES AND SAYS:
+// Content brief with voice violations:
+//   'This brief has 3 voice violations: leverage, seamless, cutting-edge.'
+// Ad about to be paused that is outperforming:
+//   'This ad is tracking 40% below CPL target but ROAS is 6.2x. Pause anyway?'
+// Lead not contacted in 4 hours:
+//   'James Chen (score 88) was created 4 hours ago with no contact. Response time matters.'
+// About to send email to wrong segment:
+//   'This segment includes 3 leads that already received this email last week.'
+// Competitor just launched new ad (from M23 scan):
+//   'Competitor A launched 4 new ads in the last 24h. You may want to see these before briefing.'
+
+// UI: Compact panel on right edge. Not intrusive. Expandable.
+// AM can: Accept suggestion | Dismiss | Tell Guardian to stop flagging this type
+// Guardian learns from dismissals — stops flagging if AM consistently dismisses
+
+CD	Creative Director Agent
+Schedule: Triggered when content_request needs production
+
+What it does: Autonomously produces complete content packages — selects assets, edits video, generates images, assembles the final creative — and submits for human review. Streams every action to Mission Control.
+
+// CREATIVE DIRECTOR FLOW:
+
+TRIGGER: content_request status='briefed' AND autopilot=true for this client
+         OR AM clicks [▶ Auto-produce] on a briefed card
+
+STEP 1: Read brief_ai from content_request
+
+STEP 2: ASSET SELECTION
+  [CLAUDE] 'Given this brief, what existing video in the Asset Library best fits?'
+  DB: search Asset Library for matching videos by tags and description
+  → Match found: select video
+  → No match:
+       Option A: Generate AI video (Google Veo / Sora from brief_ai.video_direction)
+       Option B: GATE — 'I need footage of [X]. Can you provide or approve AI generation?'
+
+STEP 3: VIDEO PRODUCTION (Remotion — browser-based video editor)
+  Trim to platform length (IG Reel < 30s, YouTube < 60s, Story < 15s)
+  Add text overlay frame 1-3s: brief_ai.hooks[0]
+  Add caption track: brief_ai.captions[0]
+  Layer licensed background music (from music library)
+  Add CTA overlay at end: brief_ai.ctas[0]
+  Export: 9:16 (Reel/Story) + 1:1 (Feed Post) + 16:9 (YouTube)
+
+STEP 4: IMAGE GENERATION
+  [DALL-E 3] for photorealistic scenes
+  [Ideogram] if image needs text overlay (e.g. ad with headline baked in)
+  3 variants generated. Best scored by Qwen based on brief alignment.
+
+STEP 5: DESIGN ASSEMBLY (Canva Connect API)
+  Client brand kit applied. Templates populated.
+  Formats: Feed Post + Story + Ad Banner + Email Header
+
+STEP 6: VOICE PRODUCTION (ElevenLabs)
+  Script: brief_ai.script. Client voice clone or brand voice.
+
+STEP 7: A6 VOICE GATE — all copy auto-checked. Below threshold = auto-corrected.
+
+STEP 8: HUMAN REVIEW GATE
+  AM receives: Reel preview + Feed image + 3 image variants + voiceover player + all copy
+  Nothing publishes until AM approves
+  Stream: every action above logged to Mission Control Live Feed
+
+CP	Campaign Pilot Agent
+Schedule: Every 15 minutes for active campaigns
+
+What it does: Manages live ad campaigns autonomously. Monitors every 15 minutes. Adjusts bids, pauses fatigued creatives, scales winners. All financial decisions above threshold require Human Gate.
+
+// CAMPAIGN PILOT RULES:
+
+FATIGUE DETECTION:
+  IF creative.ctr < (7d_avg_ctr * 0.75) AND days_running > 14:
+    → GATE: 'Creative fatiguing. Pause and launch Variant B?' [Approve] [Skip]
+    → Creative Director briefed for replacement simultaneously
+
+CPL SPIKE:
+  IF cpl > (target_cpl * 1.3):
+    → GATE: 'CPL spiked [%]. Pause / adjust bid / keep monitoring?'
+
+SCALING WINNER:
+  IF roas > target AND cpl < target AND days_running < 21:
+    → IF budget_increase < $200: auto-increase 15% (no gate needed)
+    → IF budget_increase >= $200: GATE required
+
+BID ADJUSTMENT (autonomous, no gate):
+  Time-of-day performance patterns: reduce bids 11pm-6am if CPL worsens
+  Day-of-week: adjust based on historical performance per day
+
+// All actions logged to action_log with:
+// { agent:'campaign_pilot', action, reasoning, data_used, confidence, human_approved }
+
+SIM	Simulator Agent
+Schedule: On-demand — triggered when AM opens Simulator or BGO Intelligence runs scenario
+
+What it does: Models campaign outcomes using NemoClaw before money is spent. Reads client history, competitor data, market signals, seasonal data. Returns probability distributions — not single numbers. Like a wind tunnel before the race.
+
+// SIMULATOR INPUT:
+{ budget: 3000, duration: 30, channels: ['meta:60%','google:40%'],
+  content_types: ['instagram_reel','facebook_ad'],
+  offer: 'Kitchen Renovation $18K-40K', persona: 'sarah',
+  target_suburbs: ['Parramatta','Blacktown','Penrith'] }
+
+// SIMULATOR READS:
+✅ content_intelligence: pain hook reels outperform for this client (30d learned)
+✅ competitor_ads: gap — no competitor using transformation angle
+✅ seo_rankings: 'kitchen renovation Parramatta' rank 4 — near top
+✅ Perplexity: March-May = peak renovation season Sydney
+✅ historical_performance: avg CPL $52, conversion rate 14%, avg deal $24K
+
+// [NEMO] processes all data points, returns:
+{ leads_range: [22,38], leads_likely: 29,
+  cpl_range: [42,68], cpl_likely: 52,
+  roas_range: [4.2, 7.8], roas_likely: 5.6,
+  confidence: 71,
+  key_drivers: ['Seasonal uplift +18%','Competitor gap +12%','Proven format +8%'],
+  key_risks: ['Easter week -15%','Competitor scaling -8%','Creative fatigue wk2 -5%'],
+  recommendation: 'Run this campaign. Pause Fri-Sun week 3 (Easter). Launch variant B week 2.' }
+
+// UI: probability distribution curves (not bar charts)
+// Scenario comparison: run 3 variants side by side
+// After campaign: accuracy report. Simulator model improves with every campaign.
+
+A1	Strategy Agent
+Schedule: 1st of every month + manual trigger
+
+Reads all client data for past 30 days. Produces 90-day strategic roadmap per client. Uses NemoClaw for multi-variable planning. Feeds into Simulator for validation.
+
+A2	Research Agent
+Schedule: Every Sunday 11pm
+
+Scans internet per client: competitor activity, industry trends, PR mentions, keyword changes, AEO check. Enriches business_brain.competitor_intel. AM walks in Monday with intelligence ready.
+
+A3	Performance Monitor
+Schedule: Daily 6am + real-time anomaly watch
+
+Checks all campaigns and content for anomalies: CPL spike, keyword drop, ad fatigue, low conversion rate, rage clicks from Clarity. Also runs the 7-day content intelligence analysis loop — performance data from published content feeds back into getBrainContext() WHAT WORKS section.
+
+A4	Content Orchestrator
+Schedule: Monday 8am + on-demand when AM clicks 'Fill Gaps'
+
+Finds gaps in content calendar. Uses content_intelligence to suggest what type of content to fill each gap. Returns suggestions to AM — AM accepts or skips. Accepted suggestions become content_requests. Nothing created without AM choice.
+
+A5	Client Health Agent
+Schedule: Every Monday 7am
+
+Calculates health score 0-100 for every client: content (20pts), leads (20pts), SEO (20pts), campaigns (20pts), reviews (20pts). Score < 40 = urgent notification + churn risk note from Claude. Score visible in Command Centre client table.
+
+A6	Brand Voice Gate
+Schedule: Inline — runs on every content generation call
+
+Not scheduled. Called inside every content generation function. Scores every piece of copy against voice guide before AM sees it. Below threshold = auto-corrects first. AM always sees voice-checked content. was_corrected flag shows when correction happened.
+
+A7	Ad Optimisation
+Schedule: Every hour for active campaigns
+
+Detects creative fatigue (days_running > 21, CTR dropped). Checks budget pacing. Classifies ad creative attributes with Qwen. Feeds fatigue detection to Campaign Pilot for action. Creates replacement briefs in Content Tap when fatigue detected.
+
+A8	PR Agent
+Schedule: Daily 8am + real-time Brand24 webhook
+
+Reads all Brand24 mentions for all clients. Negative mentions → Claude drafts response → to PR Engine review queue. HARO opportunities → Claude drafts pitch. High-authority negative mention (score > 60) → urgent notification fires immediately, does not wait for 8am.
+
+
+Section 6 — New Visual Features to Build
+
+These are the evolved visual features described in the product vision. They are built in later phases but the architecture should support them from day one.
+
+6.1 — Brain Graph (React Flow)
+The Business Brain is not just a form. It is a living node graph. When fully built, the AM sees the client's business as a connected system of nodes.
+
+// BRAIN GRAPH — React Flow implementation
+
+// NODE TYPES:
+BusinessNode:    centre node — client business. Pulses at health score rate.
+PersonaNode:     one per persona. Shows name, age, pain, proof type.
+OfferNode:       one per offer. Shows price range, margin, best-fit personas.
+CompetitorNode:  orbits outside. Shows days of proven ads, threat level.
+VoiceNode:       shows tone, sample quote, score.
+ContentPatterns: shows WHAT WORKS and WHAT DOES NOT WORK. Updates when A3 learns.
+ProofNode:       shows review count, star rating, case study count.
+
+// CONNECTIONS:
+Persona → Offer:    'Sarah is best fit for Kitchen Reno offer'
+Competitor → Gap:   'No competitor using transformation angle — this is a gap'
+Pattern → Persona:  'Pain hook reels work best for Sarah persona'
+
+// ANIMATIONS:
+// Connections: animated dashed line with moving dots when data flows
+// BusinessNode: pulse rate = health score (fast=healthy, slow=at risk)
+// CompetitorNode: glows red when new proven winner detected
+// ContentPatterns: glows green when new learning recorded
+
+// INTERACTIONS:
+// Click any node: expand to detail panel on right
+// Click connection: shows what data flows through it
+// [▶ Simulate]: opens Simulator with this client pre-loaded
+// [▶ Enrich]: triggers A2 research scan for this client
+
+6.2 — Mission Control
+When Autopilot is active, AM watches Mission Control. Multiple agents working simultaneously.
+
+// MISSION CONTROL — React component structure
+
+// LEFT PANEL: Agent Monitor Table
+// Columns: AGENT | CLIENT | CURRENT ACTION | PROGRESS BAR | STATUS
+// Status: ● Running (pulsing purple) | ✓ Done (green) | ⚠ Waiting Gate (amber) | ✕ Error (red)
+// Progress: animated fill bar showing job completion %
+
+// CENTRE: Live Action Feed
+// Newest action at top. Auto-scrolls.
+// Timestamped lines showing every agent action
+// Colour-coded by agent
+// Click any line: expand to show full reasoning and data used
+
+// RIGHT PANEL: Human Gates Queue
+// All pending gates across all clients
+// Priority sorted: urgent gates first
+// Each gate: context + specific question + action buttons
+// Gate types: Information | Approval | Threshold | Confidence
+
+// DATA SOURCE:
+// Supabase Realtime subscription on: agent_runs, action_log, human_gates
+// Updates every action without page refresh
+// AM can pause any agent from this screen
+
+6.3 — Human Gate System
+// Four gate types — know when to use each:
+
+// GATE TYPE 1: INFORMATION GATE
+// When: Agent needs data only a human has
+// Example: 'What is the client's preferred posting time?'
+// UI: Text input field. Submit → agent continues.
+
+// GATE TYPE 2: APPROVAL GATE
+// When: Action needs human sign-off
+// Example: 'Approve publishing this Instagram Reel at 6pm?'
+// UI: Preview of action + [✓ Approve] [✎ Modify] [✕ Decline]
+
+// GATE TYPE 3: THRESHOLD GATE
+// When: Financial or reputational threshold exceeded
+// Default thresholds: $200 spend change, 20% budget shift
+// UI: Shows predicted impact + risk + options
+
+// GATE TYPE 4: CONFIDENCE GATE
+// When: Agent confidence < 60%
+// Example: 'I am 48% confident. Want to review before I proceed?'
+// UI: Shows what it knows, what it doesn't. AM can override (logged).
+
+// DB TABLE: human_gates
+// { id, agent_id, client_id, gate_type, question, context_json,
+//   options_json, status:'pending'|'approved'|'declined'|'overridden',
+//   resolved_by, resolved_at, resolution_note }
+
+// OVERRIDE SYSTEM:
+// AM can always override any gate. One click.
+// Override logged: who, when, what was overridden, optional reason.
+// Repeated overrides on same gate type: agent learns → adjusts threshold.
+
+
+Section 7 — Copy-Paste Code Patterns
+
+These are the patterns you will use again and again. When starting a new feature, find the closest pattern here and adapt it.
+
+Pattern 1 — Any AI Call (Use This Every Time)
+// API Route — copy this for every AI feature
+export async function POST(request: Request) {
+  const { clientId, userId, userInput } = await request.json();
+
+  // THE TWO LAWS — always both, always first:
+  const roleCtx  = await getRoleContext(userId, 'content');  // ← change module
+  const brainCtx = await getBrainContext(clientId);
+  const system   = `${roleCtx}\n\n${brainCtx}`;
+
+  // Choose task type — this determines which model runs:
+  const result = await llm('brief', userInput, system);       // → Claude
+  // const result = await llm('classify', userInput);          // → Qwen (no system)
+  // const result = await llm('simulate', userInput, system);  // → NemoClaw
+
+  // Save result:
+  await supabase.from('your_table').insert({ client_id:clientId, result });
+
+  return Response.json({ result });
+}
+
+Pattern 2 — Create a Notification
+// Use this whenever something important happens:
+import { createNotification } from '@/lib/notifications';
+
+await createNotification({
+  clientId:    'uuid-here',
+  recipientId: 'am-user-uuid',
+  type:        'ads.fatigue',         // module.event format
+  title:       'Ad fatigue detected',
+  body:        'Kitchen Before/After ad running 28 days. CTR down 40%.',
+  severity:    'warning',             // 'info' | 'warning' | 'urgent'
+  actionUrl:   '/campaigns/client-a'  // where to go when clicked
+});
+// After this: Supabase Realtime fires → bell increments → toast → Command Centre updates
+
+Pattern 3 — Supabase Realtime Subscription
+useEffect(() => {
+  const channel = supabase
+    .channel('leads-' + clientId)
+    .on('postgres_changes', {
+      event:  'INSERT',
+      schema: 'public',
+      table:  'leads',
+      filter: `client_id=eq.${clientId}`
+    }, (payload) => {
+      setLeads(prev => [payload.new, ...prev]);
+      toast.success('New lead: ' + payload.new.name);
+    })
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}, [clientId]);
+
+Pattern 4 — BullMQ Delayed Job
+// Schedule something to happen in the future:
+await reviewQueue.add(
+  'send-review-request',
+  { leadId, clientId },
+  { delay: 48 * 60 * 60 * 1000 }  // 48 hours
+);
+
+// Process it (in workers/review.ts):
+reviewQueue.process('send-review-request', async (job) => {
+  const { leadId, clientId } = job.data;
+  // do the work here
+});
+
+Pattern 5 — Optimistic Kanban Drag
+const handleDragEnd = async (event: DragEndEvent) => {
+  const { active, over } = event;
+  if (!over || active.id === over.id) return;
+
+  const newStage = over.id as string;
+  const leadId   = active.id as string;
+  const prevStage = active.data.current.stage;  // save for rollback
+
+  // 1. Update UI immediately (optimistic)
+  setLeads(prev => prev.map(l => l.id===leadId ? {...l, stage:newStage} : l));
+
+  // 2. Save to DB
+  const { error } = await supabase.from('leads')
+    .update({ stage:newStage, stage_updated_at:new Date() })
+    .eq('id', leadId);
+
+  // 3. If error: revert
+  if (error) {
+    setLeads(prev => prev.map(l => l.id===leadId ? {...l, stage:prevStage} : l));
+    toast.error('Could not update. Please try again.');
+  }
+
+  // 4. Fire workflow event
+  if (!error) await automation.emit(`lead.stage=${newStage}`, { leadId, clientId });
+};
+
+Pattern 6 — Streaming AI Response to UI
+// API Route — stream Claude response:
+export async function POST(request: Request) {
+  const { clientId, userId, prompt } = await request.json();
+  const system = `${await getRoleContext(userId,'content')}\n\n${await getBrainContext(clientId)}`;
+
+  const stream = await anthropic.messages.stream({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    system,
+    messages: [{ role:'user', content:prompt }]
+  });
+
+  return new Response(stream.toReadableStream(), {
+    headers: { 'Content-Type': 'text/event-stream' }
+  });
+}
+
+// React component — receive stream:
+const [text, setText] = useState('');
+const response = await fetch('/api/ai/generate', { method:'POST', body:JSON.stringify({...}) });
+const reader = response.body.getReader();
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  setText(prev => prev + new TextDecoder().decode(value));
+}
+// This is the <StreamingText> component — characters appear one by one as Claude writes
+
+
+Section 8 — Key Database Tables
+
+Know these 10 tables. Every module reads or writes to at least one of them.
+
+// 1. business_brain — ONE ROW PER CLIENT. Most important table.
+{ id, client_id, business_name, industry, service_areas,
+  unique_value_proposition,
+  personas        JSONB,   // array of persona objects
+  offers          JSONB,   // array of offer objects
+  voice_guide     JSONB,   // { tone_adjectives[], words_to_avoid[], sample_approved[], threshold }
+  competitors     JSONB,   // [{ name, meta_page_id, domain, priority }]
+  competitor_intel JSONB,  // populated by A2 weekly
+  content_patterns JSONB,  // { works[], avoid[] } populated by A3 after 30 days
+  proof_assets    JSONB,   // reviews, case studies, before/after
+  enriched_at, updated_at }
+
+// 2. clients — one row per BGO client
+{ id, name, slug, status, owner_id, brand_id,
+  onboarded_at, retainer_amount, clarity_project_id, autopilot_enabled BOOLEAN }
+
+// 3. leads — every lead for every client
+{ id, client_id, name, email, phone, source, campaign_id,
+  stage, score, persona_tag, assigned_to,
+  stage_updated_at, last_activity_at }
+
+// 4. content_requests — every content piece
+{ id, client_id, type, platform, status,
+  brief_raw, brief_ai JSONB,  voice_score,
+  canva_design_url, ai_image_urls TEXT[], voiceover_url,
+  publish_at, published_at, source, source_insight_id, priority_score }
+
+// 5. notifications — all alerts. Realtime subscription.
+{ id, client_id, recipient_id, type, title, body,
+  severity, action_url, read_at, dismissed_at, created_at }
+
+// 6. agent_runs — every agent execution log
+{ id, agent_id, client_id, started_at, completed_at,
+  status, output JSONB, actions_taken, qwen_tokens, claude_tokens, total_cost_usd }
+
+// 7. competitor_ads — M23 data
+{ id, client_id, competitor_name, platform, ad_copy, headline,
+  creative_url, date_started, days_running, traction_tier,
+  hook_type, offer_angle, emotion_trigger, is_active }
+
+// 8. content_intelligence — what works for each client. Feeds getBrainContext()
+{ id, client_id, content_request_id, platform, content_type,
+  hook_style, performance_tier, key_metrics JSONB, learned_patterns JSONB }
+
+// 9. human_gates — autopilot gates queue
+{ id, agent_id, client_id, gate_type, question, context_json,
+  options_json, status, resolved_by, resolved_at, resolution_note }
+
+// 10. action_log — full audit trail of every agent action
+{ id, agent_id, client_id, action_type, description, reasoning,
+  data_used JSONB, outcome, confidence, human_approved BOOLEAN,
+  approved_by, created_at }
+
+
+Section 9 — Build Order
+
+13 sprints. Do not skip ahead. Each sprint builds the foundation for the next one.
+
+BO	What to Build	Key Milestone — How to Know It's Done
+1	Supabase schema (ALL tables including new ones: human_gates, action_log) + Auth + RLS + M1 Business Brain UI + Design System (all global components, colour tokens) + LiteLLM + Ollama setup (Qwen running, NemoClaw ready)	getBrainContext() returns a full string for a test client. Qwen classifies a test prompt locally. Design tokens apply to all components.
+2	M3 CRM (kanban, lead cards, activities, lead detail panel, QR capture) + M17 Notifications (bell icon, inbox, createNotification() function, Supabase Realtime subscription)	QR form creates a tagged lead. Lead appears in kanban via Realtime. createNotification() fires and bell increments.
+3	M2 Content Tap (kanban, brief generation, voice score, Canva design, DALL-E image) + M16 Brand Voice (voice guide editor, A6 inline gate, sample tester)	AM requests content → Claude generates brief using getBrainContext → A6 scores it → voice score badge visible on card.
+4	M4 Workflow Engine (all automation triggers, BullMQ queues) + All 8 original agent cron slots registered + 4 new agent slots (G, CD, CP, SIM) registered + getRoleContext() all personas + AIAssistPanel in all screens + Guardian Agent basic version	All 12 agent slots registered in workers/cron.ts. getRoleContext returns correct persona per module. AIAssistPanel visible in every module. Guardian watches AM actions.
+5	M5 Analytics (traffic, funnels, conversion) + M15 Lead Scoring (score formula, attribution model) + Clarity integration (script on pages, daily cron) + PostHog self-hosted (event tracking, funnel analysis)	Leads have scores visible on cards. Analytics shows traffic sources. Clarity heatmap data appears in page_behaviour table.
+6	M10 Campaigns + Agents A3+A5+A7+A8 + Campaign Pilot Agent + M22 PR Engine + Content Intelligence Loop (A3 7-day analysis, getBrainContext What Works section)	Hourly Campaign Pilot scanning. Daily PR agent running. A3 7-day content analysis writing to content_intelligence. getBrainContext WHAT WORKS section populated after first week.
+7	M12 Command Centre (full UI, Start Session modal, risk bar, Guardian integration) + M6 Reporting (auto-generation, email delivery)	Start Session modal streams morning brief. Risk bar shows AT RISK clients. Monday 7am: report auto-generated and emailed.
+8	M7 SEO + M8 Local SEO/GBP + M9 AEO + M23 Competitive Intelligence Engine (full pipeline: Meta API → Qwen classify → Claude analyse → insight cards)	Rankings tracked weekly. GBP reviews auto-drafted. AEO brand visibility score shown. First competitive insights appear after Sunday scan.
+9	Agents A1+A2+A4 + M11 Client Portal (approvals, reports, rankings) + Simulator Agent (basic version with NemoClaw)	All 12 agents running on schedule. Client approves content from phone. Simulator returns prediction for a test campaign.
+10	M13 Landing Pages (builder, hosting, CRM-connected forms) + M14 Email+SMS (builder, sequences, segmentation) + Ad and Email Intelligence loops	Campaign has live landing page capturing leads. First email campaign sent from platform. Ad creative attributes classified by Qwen.
+11	M18 Asset Library + Canva API + DALL-E + ElevenLabs + OpusClip + Creative Director Agent (video production pipeline) + Google Stitch integration	Content brief generates Canva design automatically. Long video → OpusClip clips. Creative Director Agent produces a complete content package without AM doing production work.
+12	M20 Social Proof + M19 Budget Intelligence + Mission Control UI + Brain Graph (React Flow) + Human Gate UI system	First auto-review request sent. Founder sees per-client margin. Mission Control shows live agent activity. Brain Graph renders client as node network. Human Gates appear in Mission Control.
+13	M21 Playbook Builder + White-Label config + Simulator full version + QA + First Real Client on Full Platform	Platform white-labelable. Simulator shows probability distributions. First real client's Business Brain fully populated. AM using platform daily for real work.
+
+The Rule Before Writing Any Feature
+1. Does it read from or write to Supabase? → Check RLS is set. Users only see their own data.
+2. Does it call AI? → Both getRoleContext() AND getBrainContext() must be in the system prompt. No exceptions.
+3. Does it create an important event? → Call createNotification().
+4. Does it change data that could update in the background? → Add Supabase Realtime subscription.
+5. Does it trigger automation? → Call automation.emit('event.name', payload).
+6. Is it an agent autonomous action? → Log to action_log. If it touches the outside world, create a Human Gate first.
+
+External Services — When Each Is Called
+Service	When Called	What It Does
+Canva Connect API	AM clicks Generate Design in Content Tap	Auto-fills client brand kit into matching template. Returns design URL.
+DALL-E 3	AM clicks Generate Image in brief modal	Photorealistic image generation. 3 variants from image_prompt.
+Ideogram	When brief needs text-in-image (ad creative with headline)	Better than DALL-E for images that include readable text.
+ElevenLabs	AM clicks Generate Voiceover in brief modal	Script → audio file using client's voice clone.
+OpusClip	Automatically when video > 5 min uploaded to Asset Library	Long video → 5-10 short-form clips with performance scores.
+Google Veo / Sora	Creative Director when no raw footage available	AI-generated video from video_direction in brief.
+Google Stitch	Creative Director assembling multi-asset campaign packages	Assembles ads, graphics, video into campaign-ready package.
+Brand24 API	A8 daily 8am + real-time webhook on urgent mention	Monitors brand and competitor mentions across news, web, social, forums.
+Meta Ad Library API	M23 weekly Sunday 10pm scan	All active competitor ads. Free, official, no scraping.
+DataForSEO	Weekly SEO rank update + M23 Google ads scan	Keyword positions + competitor Google ad intelligence.
+Perplexity Sonar	A2 Sunday 11pm + AEO checks + brain enrichment	Real-time web intelligence. Industry trends. Competitor PR.
+Google GBP API	M08 review replies + GBP posts + stats fetch	Read and post to client's Google Business Profile.
+Resend	Report emails + notification digests + email campaigns	All outbound email from the platform.
+Microsoft Clarity	Script on all hosted pages — data read daily by A3	Heatmaps, scroll depth, rage clicks, session recordings. Free.
+PostHog (self-hosted)	Event tracking on all platform and hosted pages	Funnel analysis, retention, A/B test results.
+
+BGO Master Developer Document v3.0 — Stedaxis Internal — April 2026 — Confidential

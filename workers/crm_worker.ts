@@ -31,7 +31,7 @@ export async function processCRMAutomation(type: string, leadId: string, clientI
           clientId,
           type: 'crm.automation',
           title: 'Neural Sequence Active',
-          message: `Alex AI has drafted and sent the first outreach to ${name}.`,
+          message: `Alex AI has drafted the message for ${name}. Please approve and send.`,
           priority: 'low',
           link: `/crm/${clientId}`
         });

@@ -72,7 +72,8 @@ export async function GET(
       where: { id: leadId },
       include: {
         activities: { orderBy: { createdAt: 'desc' } },
-        tasks: { orderBy: { dueDate: 'asc' } }
+        tasks: { orderBy: { dueDate: 'asc' } },
+        humanGates: { where: { status: 'pending' } }
       }
     });
 

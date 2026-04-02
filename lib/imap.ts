@@ -3,6 +3,7 @@ import { simpleParser } from 'mailparser';
 import prisma from './db';
 import { analyzeLeadIntent, generateAutoReply, generateHandoffReply } from './sentiment';
 import { sendLeadEmail } from './mail';
+import MailComposer from 'nodemailer/lib/mail-composer';
 
 async function syncClientInbox(client: any) {
     const imapConfig = {
@@ -56,7 +57,7 @@ async function syncClientInbox(client: any) {
                                     orderBy: { updatedAt: 'desc' }
                                 });
 
-                                if (lead) {
+                                if (lead && mail.date && mail.date > lead.createdAt) {
                                     const messageId = mail.messageId || `date-${mail.date?.getTime()}`;
 
                                     const existingActivity = await prisma.leadActivity.findFirst({
@@ -203,6 +204,68 @@ async function syncClientInbox(client: any) {
             resolve({ synced: 0, error: err.message });
         });
 
+        imap.connect();
+    });
+}
+
+export async function appendGmailDraft(client: any, { to, subject, html }: { to: string, subject: string, html: string }) {
+    const imapConfig = {
+        user: client.imapUser || client.smtpUser!,
+        password: client.imapPass || client.smtpPass!,
+        host: client.imapHost || 'imap.gmail.com',
+        port: client.imapPort || 993,
+        tls: true,
+        tlsOptions: { rejectUnauthorized: false }
+    };
+
+    const composer = new MailComposer({
+        from: `"${client.fromName || 'Brand Growth OS'}" <${client.smtpUser}>`,
+        to,
+        subject,
+        html,
+    });
+
+    const rawContent = await composer.compile().build();
+
+    return new Promise((resolve, reject) => {
+        const imap = new Imap(imapConfig);
+        imap.once('ready', () => {
+            // Gmail Drafts folder name can vary. Usually '[Gmail]/Drafts'
+            // We search for a folder containing 'Draft' to be safe
+            imap.getBoxes((err, boxes) => {
+                if (err) {
+                    imap.end();
+                    return reject(err);
+                }
+
+                let draftsFolder = 'Drafts'; // Fallback
+                
+                // Common Gmail/Outlook folder names
+                const commonDrafts = ['[Gmail]/Drafts', 'Drafts', 'INBOX.Drafts', 'Drafts Folder'];
+                
+                // Check if any of the common ones exist
+                for (const folder of commonDrafts) {
+                    if (boxes[folder]) {
+                        draftsFolder = folder;
+                        break;
+                    }
+                    // Some providers put it inside [Gmail]
+                    if (boxes['[Gmail]']?.children?.[folder]) {
+                        draftsFolder = `[Gmail]/${folder}`;
+                        break;
+                    }
+                }
+
+                imap.append(rawContent, { mailbox: draftsFolder, flags: ['\\Draft'] }, (appendErr) => {
+                    imap.end();
+                    if (appendErr) reject(appendErr);
+                    else resolve(true);
+                });
+            });
+        });
+        imap.once('error', (err: Error) => {
+            reject(err);
+        });
         imap.connect();
     });
 }

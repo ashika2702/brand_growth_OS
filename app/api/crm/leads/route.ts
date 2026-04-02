@@ -25,6 +25,9 @@ export async function GET(request: Request) {
         },
         tasks: {
           orderBy: { dueDate: 'asc' }
+        },
+        humanGates: {
+          where: { status: 'pending' }
         }
       },
       orderBy: { createdAt: 'desc' }
