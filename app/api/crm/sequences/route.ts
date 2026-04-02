@@ -26,8 +26,22 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { clientId, name, description, steps } = body;
 
-        const sequence = await prisma.neuralSequence.create({
-            data: {
+        if (!clientId || !name) {
+            return NextResponse.json({ error: 'Missing clientId or name' }, { status: 400 });
+        }
+
+        const sequence = await prisma.neuralSequence.upsert({
+            where: {
+                clientId_name: {
+                    clientId,
+                    name
+                }
+            },
+            update: {
+                description,
+                steps: steps || []
+            },
+            create: {
                 clientId,
                 name,
                 description,
@@ -37,7 +51,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(sequence);
     } catch (error) {
-        console.error('Failed to create sequence:', error);
-        return NextResponse.json({ error: 'Failed to create sequence' }, { status: 500 });
+        console.error('Failed to save sequence:', error);
+        return NextResponse.json({ error: 'Failed to save sequence' }, { status: 500 });
     }
 }

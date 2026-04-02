@@ -22,10 +22,21 @@ export async function GET(
             }
         });
 
-        // Also update lead's last activity
+        // 2. Proactive Scoring (+5 on every email open)
+        // Also update lead's last activity to reset the dormancy clock
+        const currentLead = await prisma.lead.findUnique({
+            where: { id: leadId },
+            select: { score: true }
+        });
+
+        const newScore = Math.min(100, (currentLead?.score || 0) + 5);
+
         await prisma.lead.update({
             where: { id: leadId },
-            data: { lastActivityAt: new Date() }
+            data: { 
+                lastActivityAt: new Date(),
+                score: newScore
+            }
         });
 
         // Return a 1x1 transparent GIF
