@@ -55,11 +55,13 @@ export async function POST(
       }
     });
 
-    // 3. Move Lead to 'contacted'
+    // 3. Move Lead to 'contacted' (ONLY IF IN NEW STAGE)
+    const newStage = lead.stage === 'new' ? 'contacted' : lead.stage;
+    
     await prisma.lead.update({
         where: { id: lead.id },
         data: { 
-            stage: 'contacted',
+            stage: newStage,
             lastActivityAt: new Date()
         }
     });

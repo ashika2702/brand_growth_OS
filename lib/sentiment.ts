@@ -83,7 +83,8 @@ export async function generateHandoffReply(lead: any, message: string): Promise<
     
     TASK:
     - Draft a very short, polite acknowledgement.
-    - Inform them that the team has been notified and will be in touch shortly.
+    - Inform them that the team has been notified and will be in touch shortly to discuss next steps.
+    - Use the phrasing: "One of our team members will be in touch with you shortly."
     - DO NOT ask any new questions or suggest new calls.
     - Keep it to 1-2 sentences max.
     

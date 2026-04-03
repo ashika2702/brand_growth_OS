@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { callAI } from '@/lib/ai';
 import { createNotification } from '@/lib/notifications';
+import { addCRMJob } from '@/lib/queue';
 
 export async function POST(
   req: Request,
@@ -27,6 +28,12 @@ export async function POST(
 
     const compiledSource = `${source} (${campaign})`.trim();
 
+    // 0. Find first active sequence for this client to auto-enroll
+    const defaultSequence = await prisma.neuralSequence.findFirst({
+        where: { clientId, isActive: true },
+        orderBy: { createdAt: 'asc' }
+    });
+
     // 1. Create the Lead with initial data
     const lead = await prisma.lead.create({
       data: {
@@ -38,6 +45,8 @@ export async function POST(
         intent: intent || null,
         stage: 'new',
         score: 0, // Placeholder, will update with AI
+        isAutoPilotActive: !!defaultSequence,
+        currentSequenceId: defaultSequence?.id || null,
         scoreFactors: {
           behavior: 50,
           velocity: 80,
@@ -45,6 +54,19 @@ export async function POST(
         }
       }
     });
+
+    // 1b. Create LeadSequence record if auto-enrolled
+    if (defaultSequence) {
+        await prisma.leadSequence.create({
+            data: {
+                leadId: lead.id,
+                sequenceId: defaultSequence.id,
+                status: 'active',
+                currentStep: 0,
+                nextStepAt: new Date() // Trigger immediately
+            }
+        });
+    }
 
     // 2. Trigger AI Persona Tagging & Scoring
     try {
@@ -73,11 +95,17 @@ export async function POST(
       const score = scoreRaw ? (parseInt(scoreRaw.trim()) || 0) : 0;
 
       // 3. Update the lead with AI results
-      await prisma.lead.update({
+      const updatedLead = await prisma.lead.update({
         where: { id: lead.id },
         data: { personaTag, score }
       });
       
+      // 4. Trigger background auto-responder/drafting
+      await addCRMJob('lead.new', updatedLead.id, clientId, {
+          email: updatedLead.email,
+          name: updatedLead.name
+      });
+
       // Update local variable for notification
       lead.score = score;
     } catch (aiError) {
@@ -89,7 +117,7 @@ export async function POST(
       });
     }
 
-    // 4. Log initial acquisition activity
+    // 5. Log initial acquisition activity
     await prisma.leadActivity.create({
       data: {
         leadId: lead.id,
@@ -98,7 +126,7 @@ export async function POST(
       }
     });
 
-    // 5. Fire Internal Notification
+    // 6. Fire Internal Notification
     await createNotification({
       clientId,
       type: 'lead.new',

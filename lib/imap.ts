@@ -1,5 +1,5 @@
 import Imap from 'imap';
-import { simpleParser } from 'mailparser';
+import { simpleParser, ParsedMail } from 'mailparser';
 import prisma from './db';
 import { analyzeLeadIntent, generateAutoReply, generateHandoffReply } from './sentiment';
 import { sendLeadEmail } from './mail';
@@ -43,7 +43,7 @@ async function syncClientInbox(client: any) {
 
                     f.on('message', (msg) => {
                         msg.on('body', (stream) => {
-                            simpleParser(stream as any, async (err, mail) => {
+                            simpleParser(stream as any, async (err, mail: ParsedMail) => {
                                 if (err) return;
 
                                 const fromEmail = mail.from?.value[0]?.address?.toLowerCase();
@@ -69,6 +69,9 @@ async function syncClientInbox(client: any) {
                                     });
 
                                     if (!existingActivity) {
+                                        const snippet = mail.text?.substring(0, 500) || '';
+                                        const intent = await analyzeLeadIntent(lead, snippet);
+
                                         await prisma.leadActivity.create({
                                             data: {
                                                 leadId: lead.id,
@@ -77,100 +80,96 @@ async function syncClientInbox(client: any) {
                                                 metadata: {
                                                     messageId,
                                                     subject: mail.subject,
-                                                    snippet: mail.text?.substring(0, 500),
-                                                    receivedAt: mail.date
+                                                    snippet,
+                                                    receivedAt: mail.date,
+                                                    intent
                                                 }
                                             }
                                         });
 
-                                        // Phase 5: Neural Sentiment & Auto-Responder
-                                        const snippet = mail.text?.substring(0, 500) || '';
-                                        const intent = await analyzeLeadIntent(lead, snippet);
-
-                                        // Update the activity we just created with the intent
-                                        const latestActivity = await prisma.leadActivity.findFirst({
-                                            where: { leadId: lead.id, type: 'email_reply' },
-                                            orderBy: { createdAt: 'desc' }
-                                        });
-
-                                        if (latestActivity) {
-                                            const metadata = (latestActivity.metadata as any) || {};
-                                            await prisma.leadActivity.update({
-                                                where: { id: latestActivity.id },
-                                                data: { metadata: { ...metadata, intent } }
-                                            });
-                                        }
-
-                                        // Check if lead is already being handled manually or already qualified
                                         const isAlreadyQualified = lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'won';
 
-                                        if (intent === 'INTERESTED') {
-                                            const replyContent = isAlreadyQualified 
-                                                ? await generateHandoffReply(lead, snippet) 
-                                                : await generateAutoReply(lead, snippet);
+                                        // --- GLOBAL DRAFTS-ONLY ENFORCEMENT ---
+                                        // Unified logic: AI never sends replies directly. Always drafts + Human Gate.
+                                        if (!isAlreadyQualified) {
+                                            if (intent === 'INTERESTED') {
+                                                const replyContent = await generateHandoffReply(lead, snippet);
+                                                const subject = `Re: ${mail.subject}`;
 
-                                            await sendLeadEmail({
-                                                to: lead.email,
-                                                subject: `Re: ${mail.subject}`,
-                                                html: replyContent,
-                                                leadId: lead.id,
-                                                clientId: client.id
-                                            });
+                                                console.log(`[HUMAN GATE] Drafting Gmail reply for ${lead.name} (Global Draft Mandatory)`);
+                                                
+                                                await appendGmailDraft(client, {
+                                                    to: lead.email,
+                                                    subject,
+                                                    html: replyContent.replace(/\n/g, '<br/>')
+                                                });
 
-                                            await prisma.leadActivity.create({
-                                                data: {
-                                                    leadId: lead.id,
-                                                    type: 'email_sent',
-                                                    description: isAlreadyQualified ? 'Handoff Confirmation Sent' : 'Autonomous AI Reply Sent',
-                                                    metadata: { content: replyContent, isAutoReply: true }
-                                                }
-                                            });
+                                                await prisma.humanGate.create({
+                                                    data: {
+                                                        clientId: client.id,
+                                                        leadId: lead.id,
+                                                        agentId: 'inbox_sync',
+                                                        gateType: 'approval',
+                                                        question: `${lead.name} replied with interest. Approve this response?`,
+                                                        contextJson: {
+                                                            leadId: lead.id,
+                                                            draftSubject: subject,
+                                                            draftHtml: replyContent.replace(/\n/g, '<br/>'),
+                                                            originalMessageId: messageId
+                                                        }
+                                                    }
+                                                });
 
-                                            // Only notify admin if this is the FIRST time they show interest (transition to qualified)
-                                            if (!isAlreadyQualified) {
+                                                await prisma.leadActivity.create({
+                                                    data: {
+                                                        leadId: lead.id,
+                                                        type: 'email_draft',
+                                                        description: `AI Drafted Interested Reply (Synced to Gmail)`,
+                                                        metadata: { subject, content: replyContent, isAutoReply: true, isGated: true }
+                                                    }
+                                                });
+
                                                 await prisma.notification.create({
                                                     data: {
                                                         clientId: client.id,
                                                         type: 'lead.interested',
-                                                        title: `High Intent: ${lead.name}`,
-                                                        message: `Lead is interested! AI has sent a tailored reply.`,
+                                                        title: `High Intent (Pending): ${lead.name}`,
+                                                        message: `Lead is interested! AI has drafted a reply in Gmail. Please approve.`,
                                                         link: `/crm/${client.id}?leadId=${lead.id}`,
                                                         priority: 'high'
                                                     }
                                                 });
 
-                                                // Update Stage to Qualified, update score to 60, and kill automation
                                                 await prisma.lead.update({
                                                     where: { id: lead.id },
                                                     data: {
                                                         stage: 'qualified',
-                                                        score: 60, // Standardize score for qualified leads
+                                                        score: 60,
+                                                        isAutoPilotActive: false,
+                                                        currentSequenceId: null,
+                                                        lastActivityAt: new Date()
+                                                    }
+                                                });
+                                            } else if ((intent === 'NOT_INTERESTED' || intent === 'NEUTRAL') && (lead.stage === 'new' || lead.stage === 'contacted')) {
+                                                await prisma.lead.update({
+                                                    where: { id: lead.id },
+                                                    data: {
+                                                        stage: 'contacted',
+                                                        score: 40,
                                                         isAutoPilotActive: false,
                                                         currentSequenceId: null,
                                                         lastActivityAt: new Date()
                                                     }
                                                 });
                                             }
-                                        } else if (intent === 'UNSUBSCRIBE') {
+                                        }
+
+                                        if (intent === 'UNSUBSCRIBE') {
                                             await prisma.lead.update({
                                                 where: { id: lead.id },
                                                 data: { 
                                                     stage: 'lost', 
                                                     emailOptOut: true,
-                                                    isAutoPilotActive: false,
-                                                    currentSequenceId: null,
-                                                    lastActivityAt: new Date()
-                                                }
-                                            });
-                                        }
-
-                                        // For negative or clarifying replies, just update activity and kill auto-pilot to prevent annoying the lead
-                                        if ((intent === 'NOT_INTERESTED' || intent === 'NEUTRAL') && (lead.stage === 'new' || lead.stage === 'contacted')) {
-                                            await prisma.lead.update({
-                                                where: { id: lead.id },
-                                                data: {
-                                                    stage: 'contacted',
-                                                    score: 40,
                                                     isAutoPilotActive: false,
                                                     currentSequenceId: null,
                                                     lastActivityAt: new Date()
@@ -230,26 +229,20 @@ export async function appendGmailDraft(client: any, { to, subject, html }: { to:
     return new Promise((resolve, reject) => {
         const imap = new Imap(imapConfig);
         imap.once('ready', () => {
-            // Gmail Drafts folder name can vary. Usually '[Gmail]/Drafts'
-            // We search for a folder containing 'Draft' to be safe
             imap.getBoxes((err, boxes) => {
                 if (err) {
                     imap.end();
                     return reject(err);
                 }
 
-                let draftsFolder = 'Drafts'; // Fallback
-                
-                // Common Gmail/Outlook folder names
+                let draftsFolder = 'Drafts';
                 const commonDrafts = ['[Gmail]/Drafts', 'Drafts', 'INBOX.Drafts', 'Drafts Folder'];
                 
-                // Check if any of the common ones exist
                 for (const folder of commonDrafts) {
                     if (boxes[folder]) {
                         draftsFolder = folder;
                         break;
                     }
-                    // Some providers put it inside [Gmail]
                     if (boxes['[Gmail]']?.children?.[folder]) {
                         draftsFolder = `[Gmail]/${folder}`;
                         break;
@@ -277,7 +270,6 @@ export async function syncLeadReplies(clientId?: string) {
         return await syncClientInbox(client);
     }
 
-    // Full Sync: All clients with email config
     const clients = await prisma.client.findMany({
         where: {
             smtpUser: { not: null }

@@ -32,24 +32,33 @@ export async function POST(
 
     const context = gate.contextJson as any;
     if (context && context.leadId) {
-        // 2. Move lead to 'contacted'
-        await prisma.lead.update({
-            where: { id: context.leadId },
-            data: { stage: 'contacted', lastActivityAt: new Date() }
+        // Fetch current lead state to prevent stage demotion
+        const lead = await prisma.lead.findUnique({
+            where: { id: context.leadId }
         });
 
-        // 3. Log Activity
-        await prisma.leadActivity.create({
-            data: {
-                leadId: context.leadId,
-                type: 'email_sent',
-                description: `Gated AI Draft marked as SENT manually.`,
-                metadata: {
-                    releasedFromGate: gateId,
-                    manual: true
+        if (lead) {
+            // 2. Move lead to 'contacted' ONLY IF currently 'new'
+            const newStage = lead.stage === 'new' ? 'contacted' : lead.stage;
+
+            await prisma.lead.update({
+                where: { id: context.leadId },
+                data: { stage: newStage, lastActivityAt: new Date() }
+            });
+
+            // 3. Log Activity
+            await prisma.leadActivity.create({
+                data: {
+                    leadId: context.leadId,
+                    type: 'email_sent',
+                    description: `Gated AI Draft marked as SENT manually.`,
+                    metadata: {
+                        releasedFromGate: gateId,
+                        manual: true
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     return NextResponse.json({ success: true });

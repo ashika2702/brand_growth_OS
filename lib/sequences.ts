@@ -25,6 +25,9 @@ export async function runSequences(targetLeadId?: string) {
                             brain: true,
                             assignedUsers: { select: { id: true } }
                         }
+                    },
+                    humanGates: {
+                        where: { status: 'pending' }
                     }
                 }
             },
@@ -37,6 +40,13 @@ export async function runSequences(targetLeadId?: string) {
     for (const enrollment of dueSequences) {
         try {
             const { lead, sequence, currentStep } = enrollment;
+
+            // --- SPAM GUARD: Skip if there is a pending Human Gate for this lead ---
+            if (lead.humanGates && lead.humanGates.length > 0) {
+                console.log(`[SEQUENCE GUARD] Skipping ${lead.name} - Pending Human Gate exists.`);
+                continue;
+            }
+
             const steps = (sequence.steps as any) || [];
             const step = steps[currentStep];
 
@@ -79,79 +89,51 @@ export async function runSequences(targetLeadId?: string) {
 
             const subject = `Re: Your interest in ${lead.client.name}`;
             
-            // --- NEW: HUMAN GATE LOGIC ---
-            if (lead.client.autoPilotMode === 'manual') {
-                console.log(`[HUMAN GATE] Drafting Gmail email for ${lead.name} (Manual Mode)`);
-                
-                // 1. Append Draft to Gmail
-                await appendGmailDraft(lead.client, {
-                    to: lead.email,
-                    subject,
-                    html: content.replace(/\n/g, '<br/>')
-                });
+            // --- FIXED: GLOBAL HUMAN GATE ENFORCEMENT ---
+            console.log(`[HUMAN GATE] Drafting Gmail email for ${lead.name} (Global Mandatory Gate)`);
+            
+            // 1. Append Draft to Gmail
+            await appendGmailDraft(lead.client, {
+                to: lead.email,
+                subject,
+                html: content.replace(/\n/g, '<br/>')
+            });
 
-                // 2. Create Gate in DB
-                await prisma.humanGate.create({
-                    data: {
-                        clientId: lead.clientId,
-                        leadId: lead.id,
-                        agentId: 'sequence',
-                        gateType: 'approval',
-                        question: `Approve AI-drafted reply to ${lead.name}?`,
-                        contextJson: {
-                            leadId: lead.id,
-                            sequenceId: sequence.id,
-                            draftSubject: subject,
-                            draftHtml: content.replace(/\n/g, '<br/>'),
-                            stepIndex: currentStep
-                        }
-                    }
-                });
-
-                // 3. Log Activity as Drafted
-                await prisma.leadActivity.create({
-                    data: {
-                        leadId: lead.id,
-                        type: 'email_draft',
-                        description: `AI Drafted Sequence "${sequence.name}" - Step ${currentStep + 1} (Synced to Gmail)`,
-                        metadata: {
-                            sequenceName: sequence.name,
-                            step: currentStep + 1,
-                            subject,
-                            method: 'neural-sequence',
-                            content,
-                            isAutoReply: true,
-                            isGated: true
-                        }
-                    }
-                });
-            } else {
-                // --- EXISTING: AUTOPILOT LOGIC ---
-                await sendLeadEmail({
-                    to: lead.email,
-                    subject,
-                    html: content.replace(/\n/g, '<br/>'),
+            // 2. Create Gate in DB
+            await prisma.humanGate.create({
+                data: {
+                    clientId: lead.clientId,
                     leadId: lead.id,
-                    clientId: lead.clientId
-                });
-
-                // Log Activity as Sent
-                await prisma.leadActivity.create({
-                    data: {
+                    agentId: 'sequence',
+                    gateType: 'approval',
+                    question: `Approve AI-drafted reply to ${lead.name}?`,
+                    contextJson: {
                         leadId: lead.id,
-                        type: 'email_sent',
-                        description: `Autonomous Sequence "${sequence.name}" - Step ${currentStep + 1} Sent`,
-                        metadata: {
-                            sequenceName: sequence.name,
-                            step: currentStep + 1,
-                            subject,
-                            method: 'neural-sequence',
-                            content,
-                            isAutoReply: true
-                        }
+                        sequenceId: sequence.id,
+                        draftSubject: subject,
+                        draftHtml: content.replace(/\n/g, '<br/>'),
+                        stepIndex: currentStep
                     }
-                });
-            }
+                }
+            });
+
+            // 3. Log Activity as Drafted
+            await prisma.leadActivity.create({
+                data: {
+                    leadId: lead.id,
+                    type: 'email_draft',
+                    description: `AI Drafted Sequence "${sequence.name}" - Step ${currentStep + 1} (Synced to Gmail)`,
+                    metadata: {
+                        sequenceName: sequence.name,
+                        step: currentStep + 1,
+                        subject,
+                        method: 'neural-sequence',
+                        content,
+                        isAutoReply: true,
+                        isGated: true
+                    }
+                }
+            });
 
             // 4. Update the enrollment for the next step
             const nextStepIdx = currentStep + 1;
