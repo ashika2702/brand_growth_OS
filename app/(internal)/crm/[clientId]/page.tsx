@@ -2,16 +2,17 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode, RefreshCw } from 'lucide-react';
+import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode, RefreshCw, Share2 } from 'lucide-react';
 import LeadSidebar from '@/components/crm/LeadSidebar';
 import PipelineView from '@/components/crm/views/PipelineView';
 import AllLeadsTable from '@/components/crm/views/AllLeadsTable';
 import QRCapture from '@/components/crm/views/QRCapture';
 import GlobalActivitiesFeed from '@/components/crm/views/GlobalActivitiesFeed';
 import GlobalTasksList from '@/components/crm/views/GlobalTasksList';
+import IntegrationsView from '@/components/crm/views/IntegrationsView';
 import AddLeadModal from '@/components/crm/AddLeadModal';
 
-type TabView = 'pipeline' | 'all' | 'activities' | 'tasks' | 'qr';
+type TabView = 'pipeline' | 'all' | 'activities' | 'tasks' | 'qr' | 'integrations';
 
 export default function CRMPage() {
   const params = useParams();
@@ -199,7 +200,8 @@ export default function CRMPage() {
           { id: 'all', label: 'All Leads', icon: Users },
           { id: 'activities', label: 'Activities', icon: Activity },
           { id: 'tasks', label: 'Tasks', icon: ListTodo },
-          { id: 'qr', label: 'QR Capture', icon: QrCode }
+          { id: 'qr', label: 'QR Capture', icon: QrCode },
+          { id: 'integrations', label: 'Integrations', icon: Share2 }
         ].map(tab => (
           <button
             key={tab.id}
@@ -262,6 +264,9 @@ export default function CRMPage() {
         )}
         {activeTab === 'qr' && (
           <QRCapture clientId={clientId} />
+        )}
+        {activeTab === 'integrations' && (
+          <IntegrationsView clientId={clientId} />
         )}
       </div>
 

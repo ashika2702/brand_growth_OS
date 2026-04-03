@@ -57,6 +57,12 @@ model Client {
   humanGates         HumanGate[]
 
   autoPilotMode      String   @default("manual") // 'manual' | 'autopilot'
+
+  // Direct Ad Webhooks (M03)
+  googleAdsKey       String?
+  metaAccessToken    String?
+  metaPageId         String?
+  linkedInAccessToken String?
 }
 
 model HumanGate {

@@ -102,8 +102,8 @@ export async function POST(
       await createNotification({
         clientId,
         type: 'lead.new',
-        title: `[${scoreStyle.label}] New Lead Captured (QR)`,
-        message: `${name} (Score: ${total}/100) just scanned the QR code. Interest: ${intent?.slice(0, 50) || 'General'}${intent?.length > 50 ? '...' : ''}`,
+        title: `[${scoreStyle.label}] New Lead via ${source || 'Public'}`,
+        message: `${name} (Score: ${total}/100) just submitted a form. Interest: ${intent?.slice(0, 50) || 'General'}${intent?.length > 50 ? '...' : ''}`,
         priority: scoreStyle.priority,
         link: `/crm/${clientId}`
       });
@@ -117,10 +117,37 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ success: true, leadId: lead.id }, { status: 201 });
+    return NextResponse.json(
+      { success: true, leadId: lead.id }, 
+      { 
+        status: 201,
+        headers: {
+          'Access-Control-Allow-Origin': '*', // For lead capture from any origin safely
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        }
+      }
+    );
 
   } catch (error) {
     console.error('[PUBLIC_CAPTURE_POST]', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal error' }, 
+      { status: 500 }
+    );
   }
+}
+
+// Add OPTIONS handler for CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json(
+    {},
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    }
+  );
 }
