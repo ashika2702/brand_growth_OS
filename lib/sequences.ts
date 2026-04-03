@@ -69,10 +69,8 @@ export async function runSequences(targetLeadId?: string) {
             Context:
             - Source: ${lead.source || 'General'}
             - Persona: ${lead.personaTag || 'General'}
-            - Brain Offers: ${JSON.stringify(lead.client.brain?.offers || [])}
             
             Guidelines:
-            - Follow the brand voice strictly.
             - Keep it under 150 words.
             - End with a low-friction question.
             - Do not mention this is an automated sequence.`;
@@ -83,7 +81,7 @@ export async function runSequences(targetLeadId?: string) {
                 provider: 'nemoclaw',
                 userId,
                 clientId: lead.clientId,
-                moduleName: 'Neural Sequence Runner',
+                moduleName: 'crm',
                 prompt
             });
 

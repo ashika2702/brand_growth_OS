@@ -27,12 +27,10 @@ export async function GET(
       .join('\n');
 
     const prompt = `
-      You are a Sales Intelligence Agent for Brand Growth OS.
-      
       Analyze this lead's state and history:
       Name: ${lead.name}
       Stage: ${lead.stage}
-      Score: ${lead.score}
+      Score: ${lead.score}/100
       Persona: ${lead.personaTag}
       
       RECENT HISTORY:
@@ -52,12 +50,12 @@ export async function GET(
       provider: 'llama',
       userId: 'system',
       clientId: lead.clientId,
-      moduleName: 'CRM',
+      moduleName: 'crm',
       prompt,
       maxTokens: 100
     });
 
-    const suggestions = (aiResponse.content || "").split('|').map(s => s.trim());
+    const suggestions = (aiResponse.content || "").split('|').map((s: string) => s.trim());
 
     return NextResponse.json({ suggestions });
   } catch (error: any) {

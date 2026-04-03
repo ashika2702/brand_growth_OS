@@ -4,7 +4,6 @@ export type LeadIntent = 'INTERESTED' | 'NOT_INTERESTED' | 'UNSUBSCRIBE' | 'NEUT
 
 export async function analyzeLeadIntent(lead: any, message: string): Promise<LeadIntent> {
     const prompt = `
-    You are a Sales Sentiment Analyst. 
     Analyze the following email reply from a lead and classify their INTENT.
     
     LEAD NAME: ${lead.name}
@@ -14,10 +13,12 @@ export async function analyzeLeadIntent(lead: any, message: string): Promise<Lea
     """
     
     CLASSIFICATION RULES:
-    - INTERESTED: Lead asks a question, wants a demo, asks for pricing, or shows positive interest.
-    - NOT_INTERESTED: Lead says "no thank you", "not interested", "not for us" but is polite.
-    - UNSUBSCRIBED: Lead says "stop", "remove me", "unsubscribe", or is aggressive about stopping.
+    - INTERESTED: Lead says "yes", "sounds good", "thanks", "okay", "great", asks a question, wants a demo, asks for pricing, or shows positive interest.
+    - NOT_INTERESTED: Lead explicitly declines, says "no thank you", "not interested", "not for us", or "don't contact me".
+    - UNSUBSCRIBE: Lead says "stop", "remove me", "unsubscribe", or is aggressive about stopping.
     - NEUTRAL: Lead asks who this is, asks why they received this, or is unclear.
+    
+    CRITICAL: "Sounds good", "Thanks", "Ok", and "I'm interested" MUST be classified as INTERESTED.
     
     RETURN ONLY ONE WORD: INTERESTED, NOT_INTERESTED, UNSUBSCRIBE, or NEUTRAL.
     `;
@@ -26,7 +27,7 @@ export async function analyzeLeadIntent(lead: any, message: string): Promise<Lea
         provider: 'nemoclaw',
         userId: 'system',
         clientId: lead.clientId,
-        moduleName: 'Lead Intelligence',
+        moduleName: 'crm',
         prompt,
         systemOverride: 'Return only the classification word. No punctuation or explanation.'
     });
@@ -40,7 +41,6 @@ export async function analyzeLeadIntent(lead: any, message: string): Promise<Lea
 
 export async function generateAutoReply(lead: any, message: string): Promise<string> {
     const prompt = `
-    You are Alex, the Neural Sales Agent for this brand. 
     A lead just replied to your outreach with interest! 
     
     LEAD NAME: ${lead.name}
@@ -63,7 +63,7 @@ export async function generateAutoReply(lead: any, message: string): Promise<str
         provider: 'nemoclaw',
         userId: 'system',
         clientId: lead.clientId,
-        moduleName: 'Lead Intelligence',
+        moduleName: 'crm',
         prompt
     });
 
@@ -72,7 +72,6 @@ export async function generateAutoReply(lead: any, message: string): Promise<str
 
 export async function generateHandoffReply(lead: any, message: string): Promise<string> {
     const prompt = `
-    You are Alex, the Neural Sales Agent for this brand. 
     A lead who is already part of our qualified pipeline just sent another message! 
     
     LEAD NAME: ${lead.name}
@@ -95,7 +94,7 @@ export async function generateHandoffReply(lead: any, message: string): Promise<
         provider: 'nemoclaw',
         userId: 'system',
         clientId: lead.clientId,
-        moduleName: 'Lead Intelligence',
+        moduleName: 'crm',
         prompt
     });
 

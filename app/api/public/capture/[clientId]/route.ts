@@ -3,6 +3,7 @@ import prisma from '@/lib/db';
 import { callAI } from '@/lib/ai';
 import { createNotification } from '@/lib/notifications';
 import { addCRMJob } from '@/lib/queue';
+import { calculateLeadScore, getScoreStyle } from '@/lib/scoring';
 
 export async function POST(
   req: Request,
@@ -68,36 +69,21 @@ export async function POST(
         });
     }
 
-    // 2. Trigger AI Persona Tagging & Scoring
+    // 2. Trigger Advanced Persona Tagging & Scoring (M15)
     try {
-      const aiResponse = await callAI({
-        provider: 'llama',
-        userId: 'system',
-        clientId,
-        moduleName: 'Lead Capture',
-        prompt: `Analyze this new lead from a QR Scan/Public Form:
-        NAME: ${name}
-        EMAIL: ${email}
-        INTENT/INTEREST: ${intent || 'N/A'}
-        SOURCE: ${compiledSource}
-        
-        TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name, 1-3 words max)
-        TASK 2: Calculate a LEAD SCORE from 0-20 based on their expressed intent and profile fit.
-        
-        CRITICAL: Output ONLY the requested format. Do not include any explanations, reasoning, introductions, or markdown.
-        REQUIRED FORMAT: EXACT_PERSONA_NAME | SCORE
-        EXAMPLE: B2B Founder | 15`,
-        maxTokens: 50
-      });
-
-      const [personaTagRaw, scoreRaw] = (aiResponse.content || "Unknown | 0").split('|');
-      const personaTag = personaTagRaw ? personaTagRaw.trim() : "Unknown";
-      const score = scoreRaw ? (parseInt(scoreRaw.trim()) || 0) : 0;
+      const { total, factors, personaName } = await calculateLeadScore(
+        { name, email, source: compiledSource, intent },
+        clientId
+      );
 
       // 3. Update the lead with AI results
       const updatedLead = await prisma.lead.update({
         where: { id: lead.id },
-        data: { personaTag, score }
+        data: { 
+          score: total,
+          personaTag: personaName,
+          scoreFactors: factors as any // Store factors breakdown
+        }
       });
       
       // 4. Trigger background auto-responder/drafting
@@ -107,34 +93,29 @@ export async function POST(
       });
 
       // Update local variable for notification
-      lead.score = score;
+      lead.score = total;
+      
+      // Get score style for prioritization (M15)
+      const scoreStyle = getScoreStyle(total);
+
+      // 5. Fire Internal Notification with Priority (M17)
+      await createNotification({
+        clientId,
+        type: 'lead.new',
+        title: `[${scoreStyle.label}] New Lead Captured (QR)`,
+        message: `${name} (Score: ${total}/100) just scanned the QR code. Interest: ${intent?.slice(0, 50) || 'General'}${intent?.length > 50 ? '...' : ''}`,
+        priority: scoreStyle.priority,
+        link: `/crm/${clientId}`
+      });
+
     } catch (aiError) {
       console.error('[PUBLIC_CAPTURE_AI_ERROR]', aiError);
-      // Fallback for AI failure
+      // Fallback for AI failure (Neutral profile)
       await prisma.lead.update({
         where: { id: lead.id },
-        data: { score: 50, personaTag: 'Unknown' }
+        data: { score: 40, personaTag: 'Neutral' }
       });
     }
-
-    // 5. Log initial acquisition activity
-    await prisma.leadActivity.create({
-      data: {
-        leadId: lead.id,
-        type: 'note',
-        description: `Lead securely acquired via physical QR code scan at ${compiledSource}. Expressed Intent: ${intent || 'None specified'}.`
-      }
-    });
-
-    // 6. Fire Internal Notification
-    await createNotification({
-      clientId,
-      type: 'lead.new',
-      title: 'New Lead Captured (QR)',
-      message: `${name} (Score: ${lead.score}/100) just scanned the QR code. Interest: ${intent?.slice(0, 50) || 'General'}${intent?.length > 50 ? '...' : ''}`,
-      priority: lead.score > 70 ? 'urgent' : 'high',
-      link: `/crm/${clientId}`
-    });
 
     return NextResponse.json({ success: true, leadId: lead.id }, { status: 201 });
 

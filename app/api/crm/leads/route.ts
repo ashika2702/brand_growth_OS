@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { callAI } from '@/lib/ai';
 import { createNotification } from '@/lib/notifications';
 import { addCRMJob } from '@/lib/queue';
+import { calculateLeadScore, getScoreStyle } from '@/lib/scoring';
 
 /**
  * GET /api/crm/leads
@@ -89,35 +89,20 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. Trigger AI Persona Tagging & Scoring
-    const aiResponse = await callAI({
-      provider: 'llama',
-      userId: 'system',
-      clientId,
-      moduleName: 'CRM',
-      prompt: `Analyze this new lead:
-      NAME: ${name}
-      EMAIL: ${email}
-      SOURCE: ${source || 'N/A'}
-      CAMPAIGN: ${utmCampaign || 'N/A'} (Source: ${utmSource || 'N/A'}, Medium: ${utmMedium || 'N/A'})
-      
-      TASK 1: From the TARGET PERSONAS in your brain context, which one matches best? (Return JUST the name, 1-3 words max)
-      TASK 2: Calculate a LEAD SCORE from 0-100 based on their origin, intent signal from source, and known persona alignment.
-      
-      CRITICAL: Output ONLY the requested format. Do not include any explanations, reasoning, introductions, or markdown.
-      REQUIRED FORMAT: EXACT_PERSONA_NAME | SCORE
-      EXAMPLE: B2B Founder | 85`,
-      maxTokens: 50
-    });
-
-    const [personaTagRaw, scoreRaw] = (aiResponse.content || "Unknown | 0").split('|');
-    const personaTag = personaTagRaw ? personaTagRaw.trim() : "Unknown";
-    const score = scoreRaw ? (parseInt(scoreRaw.trim()) || 0) : 0;
+    // 2. Trigger Advanced Persona Tagging & Scoring (M15)
+    const { total, factors, personaName } = await calculateLeadScore(
+      { name, email, source: source || 'Direct' },
+      clientId
+    );
 
     // 3. Update the lead with the tag and score
     const updatedLead = await prisma.lead.update({
       where: { id: lead.id },
-      data: { personaTag, score }
+      data: { 
+        personaTag: personaName, 
+        score: total,
+        scoreFactors: factors as any
+      }
     });
 
     // 4. Trigger background auto-responder
@@ -126,13 +111,16 @@ export async function POST(request: Request) {
       name: updatedLead.name
     });
 
-    // 5. Fire Internal Notification
+    // Get score style for prioritization (M15)
+    const scoreStyle = getScoreStyle(total);
+
+    // 5. Fire Internal Notification (M17)
     await createNotification({
       clientId,
       type: 'lead.new',
-      title: 'New Lead Captured',
-      message: `${name} (Score: ${score}/100) just entered the pipeline via ${source || 'Direct'}.`,
-      priority: score > 70 ? 'urgent' : 'high',
+      title: `[${scoreStyle.label}] New Lead Created`,
+      message: `${name} (Score: ${total}/100) just entered the pipeline via ${source || 'Direct'}. Persona: ${personaName}.`,
+      priority: scoreStyle.priority,
       link: `/crm/${clientId}`
     });
 
