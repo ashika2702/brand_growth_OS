@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus, Users, Search, Filter, AppWindow, ListTodo, Activity, QrCode, RefreshCw, Share2 } from 'lucide-react';
 import LeadSidebar from '@/components/crm/LeadSidebar';
+import LeadDetailView from '@/components/crm/views/LeadDetailView';
 import PipelineView from '@/components/crm/views/PipelineView';
 import AllLeadsTable from '@/components/crm/views/AllLeadsTable';
 import QRCapture from '@/components/crm/views/QRCapture';
@@ -254,7 +255,28 @@ export default function CRMPage() {
           </div>
         )}
         {activeTab === 'all' && (
-          <AllLeadsTable leads={filteredLeads} />
+          selectedLead ? (() => {
+            const currentIndex = filteredLeads.findIndex(l => l.id === selectedLead.id);
+            const hasNext = currentIndex >= 0 && currentIndex < filteredLeads.length - 1;
+            const hasPrev = currentIndex > 0;
+            return (
+              <LeadDetailView 
+                lead={selectedLead} 
+                onBack={() => setSelectedLead(null)} 
+                refreshLeads={fetchLeads} 
+                onUpdateLead={setSelectedLead}
+                onNextLead={hasNext ? () => setSelectedLead(filteredLeads[currentIndex + 1]) : undefined}
+                onPrevLead={hasPrev ? () => setSelectedLead(filteredLeads[currentIndex - 1]) : undefined}
+                hasNext={hasNext}
+                hasPrev={hasPrev}
+              />
+            );
+          })() : (
+            <AllLeadsTable 
+              leads={filteredLeads} 
+              onSelectLead={(l) => setSelectedLead(l)} 
+            />
+          )
         )}
         {activeTab === 'activities' && (
           <GlobalActivitiesFeed leads={leads} />

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { processWebhookLead } from '@/lib/webhooks';
+import { mapRawLeadData } from '@/lib/leads';
 
 /**
  * Meta (Instagram / Facebook) Lead Ads Webhook Receiver (M03)
@@ -56,26 +57,27 @@ export async function POST(
       return NextResponse.json({ success: true });
     }
 
-    // 4. Map Meta Field Data to BGO Lead
-    const userData: Record<string, string> = {};
+    // 4. Map Meta Field Data to BGO Lead (Core Identity + Custom Metadata)
+    const rawData: Record<string, string> = {};
     if (Array.isArray(leadJson.field_data)) {
         leadJson.field_data.forEach((field: any) => {
-            if (field.name === 'full_name' || field.name === 'name') userData.name = field.values[0];
-            if (field.name === 'email') userData.email = field.values[0];
-            if (field.name === 'phone_number' || field.name === 'phone') userData.phone = field.values[0];
+            rawData[field.name] = field.values[0];
         });
     }
 
-    if (!userData.email) {
+    const { name, email, phone, customFields } = mapRawLeadData(rawData);
+
+    if (!email) {
       return NextResponse.json({ success: true });
     }
 
     // 5. Process the Lead (Score + Notify)
     await processWebhookLead({
       clientId,
-      name: userData.name || 'Instagram/Meta Lead',
-      email: userData.email,
-      phone: userData.phone,
+      name: name || 'Instagram/Meta Lead',
+      email,
+      phone,
+      customFields,
       source: 'meta_ads',
       utmCampaign: leadJson.campaign_name || leadJson.ad_id,
       intent: `Form submission via Meta/IG Lead Ad [Name: ${leadJson.ad_name}]`

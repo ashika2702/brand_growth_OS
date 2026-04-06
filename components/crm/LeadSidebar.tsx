@@ -32,6 +32,8 @@ interface Lead {
   tasks?: Task[];
   utmSource?: string | null;
   utmCampaign?: string | null;
+  intent?: string | null;
+  customFields?: any;
   isAutoPilotActive?: boolean;
   currentSequenceId?: string | null;
 }
@@ -44,6 +46,7 @@ interface LeadSidebarProps {
 }
 
 export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: LeadSidebarProps) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline'>('overview');
   const [addingNote, setAddingNote] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [addingTask, setAddingTask] = useState(false);
@@ -204,7 +207,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
       case 'whatsapp': return <MessageSquare size={12} />;
       case 'note': return <PenLine size={12} />;
       case 'stage_change': return <span className="rotate-90">➔</span>;
-      default: return <Zap size={12} />;
+      default: return <Clock size={12} />;
     }
   };
 
@@ -215,270 +218,203 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
   return (
     <div className={`fixed inset-y-0 right-0 w-[480px] bg-surface-1/95 backdrop-blur-3xl border-l border-border-1 z-50 transform transition-transform duration-500 shadow-[0_0_50px_rgba(0,0,0,0.2)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-border-1 flex items-center justify-between bg-surface-2/30">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <svg className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] -rotate-90 transform" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeOpacity="0.05" strokeWidth="4" className="text-text-primary" />
-                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray="283" strokeDashoffset={283 - (283 * lead.score) / 100} className="text-accent-blue transition-all duration-1000 ease-out" />
-              </svg>
-              <div className="w-12 h-12 rounded-2xl bg-surface-2 border border-border-1 flex items-center justify-center text-text-primary font-black text-xl z-10 relative">
-                {lead.name[0]}
-              </div>
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-text-primary uppercase italic tracking-tighter leading-none mb-1">{lead.name}</h2>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-muted">
-                <span className="bg-[#A855F7]/10 text-[#A855F7] px-2 py-0.5 rounded-md border border-[#A855F7]/20">{lead.personaTag || 'General'}</span>
-                <span>•</span>
-                <span>{lead.source}</span>
-              </div>
-            </div>
+        {/* Zoho-Style Header */}
+        <div className="p-4 border-b border-slate-200 bg-white flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-3">
+                <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded text-slate-500">
+                   <ChevronDown className="rotate-90" size={20} />
+                </button>
+                <div className="w-10 h-10 rounded-lg bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700 font-bold text-lg uppercase">
+                   {lead.name[0]}
+                </div>
+                <div className="flex flex-col">
+                   <h2 className="text-[15px] font-bold text-slate-800 leading-none">
+                      {lead.name} <span className="text-slate-400 font-normal"> - {lead.intent || 'No Requirement'}</span>
+                   </h2>
+                </div>
+             </div>
+             <div className="flex items-center gap-2">
+                
+                <button className="px-3 py-1.5 border border-slate-300 bg-white text-slate-700 rounded text-[12px] font-medium hover:bg-slate-50 whitespace-nowrap">Convert</button>
+                <button className="px-3 py-1.5 border border-slate-300 bg-white text-slate-700 rounded text-[12px] font-medium hover:bg-slate-50 whitespace-nowrap">Edit</button>
+                <div className="w-[1px] h-4 bg-slate-300 mx-1" />
+                <button 
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-slate-100 rounded text-slate-500"><X size={16} />
+                </button>
+             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-surface-2 rounded-xl text-text-muted hover:text-text-primary transition-all">
-            <X size={20} />
-          </button>
+
+          {/* Tabs */}
+          <div className="flex gap-8 px-4">
+             {['overview', 'timeline'].map((tab) => (
+                <button
+                   key={tab}
+                   onClick={() => setActiveTab(tab as any)}
+                   className={`pb-2 text-[13px] font-medium capitalize transition-all relative ${
+                      activeTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'
+                   }`}
+                >
+                   {tab}
+                   {activeTab === tab && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600 rounded-full" />
+                   )}
+                </button>
+             ))}
+          </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8">
-
-          {/* AI Assist Chips */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleAIDraft()}
-              disabled={isDrafting}
-              className={`flex-1 relative group overflow-hidden rounded-2xl transition-all ${isDrafting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#A855F7]/20 to-accent-blue/20 opacity-50 group-hover:opacity-100 transition-opacity" />
-              <div className="relative p-4 border border-border-1 flex flex-col items-center justify-center gap-1 backdrop-blur-sm bg-surface-1/40">
-                <div className="flex items-center gap-2 text-[#A855F7]">
-                  <Zap size={14} fill="currentColor" className={isDrafting ? 'animate-pulse' : ''} />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-primary mt-0.5">
-                    {isDrafting ? 'Drafting...' : 'AI Assist'}
-                  </span>
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50">
+           {activeTab === 'overview' ? (
+              <div className="space-y-1 p-4">
+                {/* Basic Details Grid */}
+                <div className="bg-white border border-slate-200 rounded-lg p-6 grid grid-cols-2 gap-y-6 gap-x-12">
+                   <div className="space-y-1 text-left">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Owner</p>
+                      <p className="text-[13px] text-slate-800 font-medium">{(lead as any).assignedTo || '-'}</p>
+                   </div>
+                   <div className="space-y-1 text-left">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Name</p>
+                      <p className="text-[13px] text-slate-800 font-medium">{lead.name}</p>
+                   </div>
+                   <div className="space-y-1 text-left">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-tight">Email</p>
+                      <a href={`mailto:${lead.email}`} className="text-[13px] text-blue-600 hover:underline">{lead.email}</a>
+                   </div>
+                   <div className="space-y-1 text-left">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-tight">Phone No.</p>
+                      <a 
+                        href={`tel:${lead.phone}`}
+                        onClick={() => logActivity('call', 'Initiated phone call from Sidebar')}
+                        className="flex items-center gap-2 group cursor-pointer hover:text-blue-600 transition-colors"
+                      >
+                         <p className="text-[13px] text-slate-800 group-hover:text-blue-600 font-medium">{lead.phone || '—'}</p>
+                         {lead.phone && <Phone size={12} className="text-emerald-500 group-hover:scale-110 transition-transform" />}
+                      </a>
+                   </div>
+                   <div className="space-y-1 text-left">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Source</p>
+                      <p className="text-[13px] text-slate-800 font-medium uppercase tracking-tighter">{lead.source}</p>
+                   </div>
+                   <div className="space-y-1 text-left">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Status</p>
+                      <p className="text-[13px] text-slate-800 font-medium flex items-center gap-2">
+                         <span className={`${lead.stage === 'lost' ? 'bg-slate-300' : 'bg-emerald-500'} w-2 h-2 rounded-full`} />
+                         {lead.stage.toUpperCase()}
+                      </p>
+                   </div>
                 </div>
-                <p className="text-[8px] text-text-muted font-black uppercase tracking-widest">WhatsApp Draft</p>
-              </div>
-            </button>
 
-            <button
-              onClick={handleAutoPilot}
-              disabled={isSendingAutoPilot}
-              className={`flex-1 relative group overflow-hidden rounded-2xl transition-all ${isSendingAutoPilot ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/20 to-accent-green/20 opacity-50 group-hover:opacity-100 transition-opacity" />
-              <div className="relative p-4 border border-border-1 flex flex-col items-center justify-center gap-1 backdrop-blur-sm bg-surface-1/40">
-                <div className="flex items-center gap-2 text-accent-blue">
-                  <Sparkles size={14} fill="currentColor" className={isSendingAutoPilot ? 'animate-pulse' : ''} />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-primary mt-0.5">
-                    {isSendingAutoPilot ? 'Executing...' : 'Instant Fix'}
-                  </span>
-                </div>
-                <p className="text-[8px] text-text-muted font-black uppercase tracking-widest">Manual SMTP Send</p>
-              </div>
-            </button>
-          </div>
-
-          {/* Autonomous Sequence Control */}
-          <div className="p-6 bg-accent-blue/5 border border-accent-blue/20 rounded-[2rem] space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Zap size={14} className="text-accent-blue" fill="currentColor" />
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-text-primary">Neural Auto-Pilot</h3>
-              </div>
-              <button
-                onClick={toggleAutoPilot}
-                className={`w-10 h-5 rounded-full relative transition-colors ${isAutoPilotActive ? 'bg-accent-blue' : 'bg-surface-3'}`}
-              >
-                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-md ${isAutoPilotActive ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[8px] font-black uppercase tracking-widest text-text-muted ml-1">Active Campaign Blueprint</label>
-              <select
-                value={selectedSequenceId}
-                onChange={(e) => handleSequenceChange(e.target.value)}
-                disabled={isUpdatingSequence}
-                className="w-full bg-surface-2 border border-border-1 rounded-xl px-4 py-3 text-xs text-text-primary outline-none focus:border-accent-blue/30 transition-all appearance-none italic"
-              >
-                <option value="" className="bg-surface-1">No Active Sequence</option>
-                {sequences.map(seq => (
-                  <option key={seq.id} value={seq.id} className="bg-surface-1">{seq.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {isAutoPilotActive && (
-              <div className="flex items-center gap-2 text-[9px] font-black text-accent-green uppercase tracking-widest bg-accent-green/10 px-3 py-1.5 rounded-lg border border-accent-green/20">
-                <Clock size={12} />
-                Autonomous Mode Engaged
-              </div>
-            )}
-          </div>
-
-          {/* AI Strategic Suggestions */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-[#A855F7]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Sales Intelligence Suggestions</h3>
-            </div>
-
-            {loadingSuggestions ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-8 bg-white/5 rounded-xl border border-white/5" />
-                <div className="h-8 bg-white/5 rounded-xl border border-white/5" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {suggestions.map((suggestion, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleAIDraft(suggestion)}
-                    disabled={isDrafting}
-                    className="w-full group p-3 bg-surface-2 border border-border-1 rounded-xl hover:border-[#A855F7]/30 transition-all flex items-center justify-between text-left disabled:opacity-50"
-                  >
-                    <span className="text-xs text-text-primary font-medium">{suggestion}</span>
-                    <ExternalLink size={10} className="text-text-muted group-hover:text-[#A855F7] transition-colors" />
-                  </button>
-                ))}
-                {suggestions.length === 0 && (
-                  <p className="text-[10px] text-text-muted italic">No specific suggestions for this stage yet.</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions Row */}
-          <div className="grid grid-cols-5 gap-2">
-            {[
-              { id: 'call', icon: Phone, label: 'Call', action: () => { window.location.href = `tel:${lead.phone}`; logActivity('call', 'Initiated phone call') } },
-              { id: 'email', icon: Mail, label: 'Email', action: () => { window.location.href = `mailto:${lead.email}`; logActivity('email', 'Initiated email draft') } },
-              { id: 'wa', icon: MessageSquare, label: 'WhatsApp', action: () => handleAIDraft() },
-              { id: 'note', icon: PenLine, label: 'Note', action: () => setAddingNote(!addingNote) },
-              { id: 'task', icon: CheckSquare, label: 'Task', action: () => setAddingTask(!addingTask) }
-            ].map(action => (
-              <button key={action.id} onClick={action.action} className="flex flex-col items-center justify-center gap-2 p-3 bg-surface-2 hover:bg-surface-3 border border-border-1 rounded-2xl transition-all group">
-                <action.icon size={16} className="text-text-muted group-hover:text-text-primary" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-text-muted group-hover:text-text-secondary">{action.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Add Note Inline Form */}
-          {addingNote && (
-            <div className="p-4 bg-surface-2 border border-border-1 rounded-2xl">
-              <textarea
-                value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-                placeholder="Type your note here..."
-                className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-muted/50 outline-none resize-none min-h-[60px]"
-                autoFocus
-              />
-              <div className="flex justify-end mt-2">
-                <button
-                  onClick={() => { logActivity('note', noteText); setNoteText(''); setAddingNote(false); }}
-                  className="bg-accent-blue text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-colors shadow-lg shadow-accent-blue/20"
-                >
-                  Save Note
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Follow-up Tasks */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between cursor-pointer" onClick={() => setTasksExpanded(!tasksExpanded)}>
-              <div className="flex items-center gap-2">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Follow-up Tasks</h3>
-                {lead.tasks && lead.tasks.filter(t => !t.isCompleted).length > 0 && (
-                  <span className="bg-accent-orange/20 text-accent-orange px-1.5 rounded text-[9px] font-black">
-                    {lead.tasks.filter(t => !t.isCompleted).length} Due
-                  </span>
-                )}
-              </div>
-              {tasksExpanded ? <ChevronUp size={14} className="text-slate-600" /> : <ChevronDown size={14} className="text-slate-600" />}
-            </div>
-
-            {tasksExpanded && (
-              <div className="space-y-2">
-                {lead.tasks?.map(task => {
-                  const isDueToday = new Date(task.dueDate).toDateString() === new Date().toDateString();
-                  return (
-                    <div key={task.id} className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${task.isCompleted ? 'bg-surface-2 border-border-1 opacity-50' : isDueToday ? 'bg-accent-orange/10 border-accent-orange/30' : 'bg-surface-2 border-border-1'}`}>
-                      <button onClick={() => completeTask(task.id, task.isCompleted)} className="mt-0.5 text-text-muted hover:text-text-primary">
-                        {task.isCompleted ? <CheckSquare size={14} className="text-accent-green" /> : <div className="w-3.5 h-3.5 rounded-sm border border-text-muted/30" />}
-                      </button>
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium ${task.isCompleted ? 'line-through text-text-muted' : 'text-text-primary'}`}>{task.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Clock size={10} className={isDueToday && !task.isCompleted ? "text-accent-orange" : "text-text-muted"} />
-                          <span className={`text-[9px] font-black uppercase tracking-widest ${isDueToday && !task.isCompleted ? "text-accent-orange" : "text-text-muted"}`}>
-                            {isDueToday ? 'Due Today' : new Date(task.dueDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
+                 {/* Form Details Section */}
+                 <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                    <div className="bg-slate-50 px-6 py-2 border-b border-slate-200 text-left">
+                       <h3 className="text-[12px] font-bold text-slate-700 uppercase">Lead Information</h3>
                     </div>
-                  );
-                })}
+                    <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-12">
+                       <div className="space-y-1 text-left">
+                          <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Owner</p>
+                          <p className="text-[13px] text-slate-800">{lead.source?.includes('10Acres') ? '10Acres' : 'Strathlone Estate'}</p>
+                       </div>
+                       <div className="space-y-1 text-left">
+                          <p className="text-[11px] text-slate-500 uppercase tracking-tight">Company</p>
+                          <p className="text-[13px] text-slate-800">{lead.intent || 'General Enquiry'}</p>
+                       </div>
+                       <div className="space-y-1 text-left">
+                          <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Name</p>
+                          <p className="text-[13px] text-slate-800">{lead.name}</p>
+                       </div>
+                       <div className="space-y-1 text-left">
+                          <p className="text-[11px] text-slate-500 uppercase tracking-tight">Title</p>
+                          <p className="text-[13px] text-slate-800">—</p>
+                       </div>
 
-                {addingTask ? (
-                  <div className="p-3 bg-surface-2 border border-border-1 rounded-xl flex gap-2">
-                    <input
-                      type="text"
-                      value={taskTitle}
-                      onChange={e => setTaskTitle(e.target.value)}
-                      autoFocus
-                      placeholder="Task title..."
-                      className="bg-transparent text-sm text-text-primary outline-none flex-1 placeholder:text-text-muted/50"
-                    />
-                    <button onClick={addTask} className="text-[10px] font-black uppercase text-accent-blue">Add</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setAddingTask(true)} className="text-[10px] font-black text-text-muted hover:text-text-primary uppercase tracking-widest inline-flex items-center gap-1">
-                    + Add Task
-                  </button>
-                )}
+                       {/* Custom Form Fields */}
+                       {lead.customFields && Object.entries(lead.customFields).map(([key, value]) => (
+                          <div key={key} className="space-y-1 text-left">
+                             <p className="text-[11px] text-slate-500 uppercase tracking-tight">{key.replace(/_/g, ' ')}</p>
+                             <p className="text-[13px] text-slate-800 font-medium">{String(value)}</p>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 {/* Autonomous Control Section (Integrated AI Assist) */}
+                 <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                          <Zap size={14} className="text-blue-600" fill="currentColor" />
+                          <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Neural Auto-Pilot</h4>
+                       </div>
+                       <button
+                          onClick={toggleAutoPilot}
+                          className={`w-9 h-5 rounded-full relative transition-colors ${isAutoPilotActive ? 'bg-blue-600' : 'bg-slate-200'}`}
+                       >
+                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm ${isAutoPilotActive ? 'left-5' : 'left-1'}`} />
+                       </button>
+                    </div>
+
+                    <div className="space-y-2 text-left">
+                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Active Sequence</label>
+                       <select
+                          value={selectedSequenceId}
+                          onChange={(e) => handleSequenceChange(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-[13px] outline-none"
+                       >
+                          <option value="">No Active Sequence</option>
+                          {sequences.map(seq => (
+                             <option key={seq.id} value={seq.id}>{seq.name}</option>
+                          ))}
+                       </select>
+                    </div>
+                 </div>
               </div>
-            )}
-          </div>
+           ) : (
+              <div className="p-6">
+                 <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-[15px] font-bold text-slate-800">History</h3>
+                    <div className="text-[12px] text-blue-600 font-medium flex items-center gap-1 cursor-pointer">
+                       0 Upcoming Automated Actions <ChevronDown size={14} />
+                    </div>
+                 </div>
 
+                 {/* Timeline History */}
+                 <div className="relative border-l-2 border-slate-200 ml-3 space-y-10 pl-8 pb-10">
+                    {/* Creation Event */}
+                    <div className="relative">
+                       <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-slate-200 border-4 border-white flex items-center justify-center">
+                          <Tag size={10} className="text-slate-500" />
+                       </div>
+                       <div className="flex flex-col text-left">
+                          <div className="flex items-center gap-3">
+                             <span className="text-[12px] text-slate-500 font-medium">{new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                             <span className="text-[13px] font-bold text-slate-800">Lead Created</span>
+                          </div>
+                          <span className="text-[11px] text-slate-400 mt-0.5">by {lead.source?.includes('10Acres') ? '10Acres' : 'Strathlone Estate'} {new Date(lead.createdAt).toLocaleDateString()}</span>
+                       </div>
+                    </div>
 
-
-
-          {/* Activity Timeline */}
-          <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Activity Timeline</h3>
-            <div className="space-y-0 relative ml-4 border-l border-border-1 pl-6 pb-4">
-              {lead.activities?.map((act, i) => (
-                <div key={act.id} className="relative pb-6 last:pb-0">
-                   <div className="absolute left-[-31.5px] top-1 w-5 h-5 rounded-full bg-surface-2 border border-border-1 flex items-center justify-center text-text-muted">
-                    {getActivityIcon(act.type, act.metadata)}
-                  </div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-[10px] font-black text-text-primary uppercase tracking-widest">{act.type.replace('_', ' ')}</p>
-                    {act.metadata?.intent && (
-                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border
-                        ${act.metadata.intent === 'INTERESTED' ? 'bg-accent-green/10 text-accent-green border-accent-green/20' :
-                          act.metadata.intent === 'NOT_INTERESTED' ? 'bg-accent-orange/10 text-accent-orange border-accent-orange/20' :
-                            act.metadata.intent === 'UNSUBSCRIBE' ? 'bg-accent-red/10 text-accent-red border-accent-red/20' :
-                              'bg-surface-3 text-text-muted border-border-1'}`}>
-                        {act.metadata.intent}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-text-muted font-medium leading-relaxed">{act.description}</p>
-                  <p className="text-[9px] font-black text-text-muted/50 uppercase mt-1">{new Date(act.createdAt).toLocaleString()}</p>
-                </div>
-              ))}
-              {(!lead.activities || lead.activities.length === 0) && (
-                <div className="text-xs text-text-muted opacity-50 italic">No activities recorded yet.</div>
-              )}
-            </div>
-          </div>
-
+                    {/* Dynamic Activities */}
+                    {lead.activities?.map((act) => (
+                       <div key={act.id} className="relative">
+                          <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-blue-50 border-4 border-white flex items-center justify-center shadow-sm">
+                             {getActivityIcon(act.type, act.metadata)}
+                          </div>
+                          <div className="flex flex-col text-left">
+                             <div className="flex items-center gap-3">
+                                <span className="text-[12px] text-slate-500 font-medium">{new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="text-[13px] font-bold text-slate-800 capitalize">{act.type.replace('_', ' ')}</span>
+                             </div>
+                             <p className="text-[12px] text-slate-600 mt-1 leading-relaxed bg-white p-3 rounded-lg border border-slate-200 shadow-sm inline-block">
+                                {act.description}
+                             </p>
+                             <span className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight font-medium">via Intelligence Core</span>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+           )}
         </div>
       </div>
     </div>

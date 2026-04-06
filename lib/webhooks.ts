@@ -11,6 +11,7 @@ export interface WebhookLeadData {
   source: 'google_ads' | 'meta_ads' | 'linkedin_ads' | 'twitter_ads';
   intent?: string;
   utmCampaign?: string;
+  customFields?: any;
   metadata?: any;
 }
 
@@ -46,10 +47,15 @@ export async function processWebhookLead(data: WebhookLeadData) {
         orderBy: { createdAt: 'asc' }
     });
 
+    const client = await prisma.client.findUnique({
+      where: { id: data.clientId }
+    });
+
     // 2. Create the Lead
     lead = await prisma.lead.create({
       data: {
         clientId: data.clientId,
+        assignedTo: client?.name || null,
         name: data.name,
         email: data.email.toLowerCase(),
         phone: data.phone,
@@ -57,6 +63,7 @@ export async function processWebhookLead(data: WebhookLeadData) {
         utmSource: data.source,
         utmCampaign: data.utmCampaign,
         intent: data.intent,
+        customFields: data.customFields || null,
         stage: 'new',
         isAutoPilotActive: !!defaultSequence,
         currentSequenceId: defaultSequence?.id || null

@@ -9,21 +9,34 @@ export async function PATCH(
   try {
     const { leadId } = await params;
     const {
+      name,
+      email,
+      phone,
       stage,
       quotedValue,
       lossReason,
       score,
       scoreFactors,
       isAutoPilotActive,
-      currentSequenceId
+      currentSequenceId,
+      addressStreet,
+      addressCity,
+      addressState,
+      addressZip,
+      addressCountry,
+      description,
+      customFields
     } = await request.json();
-
+ 
     const oldLead = await prisma.lead.findUnique({ where: { id: leadId } });
     if (!oldLead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
-
+ 
     const updateData: any = {
       lastActivityAt: new Date()
     };
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
     if (stage !== undefined) updateData.stage = stage;
     if (quotedValue !== undefined) updateData.quotedValue = quotedValue;
     if (lossReason !== undefined) updateData.lossReason = lossReason;
@@ -31,10 +44,21 @@ export async function PATCH(
     if (scoreFactors !== undefined) updateData.scoreFactors = scoreFactors;
     if (isAutoPilotActive !== undefined) updateData.isAutoPilotActive = isAutoPilotActive;
     if (currentSequenceId !== undefined) updateData.currentSequenceId = currentSequenceId;
-
+    if (addressStreet !== undefined) updateData.addressStreet = addressStreet;
+    if (addressCity !== undefined) updateData.addressCity = addressCity;
+    if (addressState !== undefined) updateData.addressState = addressState;
+    if (addressZip !== undefined) updateData.addressZip = addressZip;
+    if (addressCountry !== undefined) updateData.addressCountry = addressCountry;
+    if (description !== undefined) updateData.description = description;
+    if (customFields !== undefined) updateData.customFields = customFields;
+ 
     const updatedLead = await prisma.lead.update({
       where: { id: leadId },
-      data: updateData
+      data: updateData,
+      include: {
+        activities: { orderBy: { createdAt: 'desc' } },
+        attachments: true
+      }
     });
 
     // Log stage change activity if stage changed
@@ -73,6 +97,7 @@ export async function GET(
       include: {
         activities: { orderBy: { createdAt: 'desc' } },
         tasks: { orderBy: { dueDate: 'asc' } },
+        attachments: { orderBy: { createdAt: 'desc' } },
         humanGates: { where: { status: 'pending' } }
       }
     });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { processWebhookLead } from '@/lib/webhooks';
+import { mapRawLeadData } from '@/lib/leads';
 
 /**
  * Google Ads Lead Form Webhook Receiver (M03)
@@ -25,17 +26,17 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Extract User Data (Name, Email, Phone)
-    const userData: Record<string, string> = {};
+    // 2. Extract User Data (Core Identity + Custom Metadata)
+    const rawData: Record<string, string> = {};
     if (Array.isArray(body.user_column_data)) {
       body.user_column_data.forEach((col: any) => {
-        if (col.column_id === 'FULL_NAME') userData.name = col.string_value;
-        if (col.column_id === 'EMAIL') userData.email = col.string_value;
-        if (col.column_id === 'PHONE_NUMBER') userData.phone = col.string_value;
+        rawData[col.column_id] = col.string_value;
       });
     }
 
-    if (!userData.email) {
+    const { name, email, phone, customFields } = mapRawLeadData(rawData);
+
+    if (!email) {
       console.error('[GOOGLE_WEBHOOK_MISSING_EMAIL]', body);
       return NextResponse.json({ error: 'Missing email' }, { status: 400 });
     }
@@ -43,9 +44,10 @@ export async function POST(
     // 3. Process the Lead (Score + Notify)
     await processWebhookLead({
       clientId,
-      name: userData.name || 'Unknown Google Lead',
-      email: userData.email,
-      phone: userData.phone,
+      name: name || 'Unknown Google Lead',
+      email,
+      phone,
+      customFields,
       source: 'google_ads',
       utmCampaign: body.campaign_id?.toString(),
       intent: `Form submission via Google Lead Form [ID: ${body.form_id}]`

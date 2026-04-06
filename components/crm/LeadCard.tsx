@@ -41,9 +41,9 @@ export default function LeadCard({ lead, onSelect, onResolveGate, isOverlay = fa
 
   // Score Color and Visuals
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-accent-green shadow-[0_0_10px_rgba(55,214,122,0.4)]';
-    if (score >= 50) return 'bg-accent-yellow shadow-[0_0_10px_rgba(255,184,46,0.4)]';
-    return 'bg-accent-red shadow-[0_0_10px_rgba(255,77,0,0.4)]';
+    if (score >= 80) return 'bg-accent-green shadow-[0_0_8px_rgba(55,214,122,0.15)]';
+    if (score >= 50) return 'bg-accent-yellow shadow-[0_0_8px_rgba(255,184,46,0.15)]';
+    return 'bg-accent-red shadow-[0_0_8px_rgba(255,77,0,0.15)]';
   };
 
   const getStageColor = (stage: string) => {
@@ -81,8 +81,8 @@ export default function LeadCard({ lead, onSelect, onResolveGate, isOverlay = fa
       {...attributes}
       {...listeners}
       className={`relative p-3 rounded-xl border transition-all group overflow-visible
-        ${lead.stage === 'lost' ? 'bg-surface-1/40 border-border-1 opacity-60 grayscale' : 'glass-card border-border-1 hover:border-border-2 cursor-grab active:cursor-grabbing'}
-        ${hasPendingGate ? 'border-accent-red/50 shadow-[0_0_15px_rgba(255,100,100,0.3)]' : ''}
+        ${lead.stage === 'lost' ? 'bg-surface-1/40 border-border-1 opacity-60 grayscale' : 'glass-card border-border-1 hover:border-accent-blue/30 cursor-grab active:cursor-grabbing'}
+        ${hasPendingGate ? 'border-accent-blue/40 shadow-[0_0_20px_rgba(45,140,255,0.15)] bg-accent-blue/[0.02]' : ''}
         ${isOverlay ? 'shadow-2xl scale-105 rotate-2 z-50 bg-surface-1/90 backdrop-blur-3xl' : ''}
       `}
     >
@@ -177,15 +177,15 @@ export default function LeadCard({ lead, onSelect, onResolveGate, isOverlay = fa
             <Mail className={`w-3 h-3 ${hasPendingGate ? 'text-accent-red animate-pulse' : 'text-text-dim'} hover:text-accent-blue transition-colors pointer-events-auto`} />
             <Phone className="w-3 h-3 text-text-dim hover:text-accent-blue transition-colors pointer-events-auto" />
             <MessageSquare className="w-3 h-3 text-text-dim hover:text-accent-blue transition-colors pointer-events-auto" />
-            
+
             {hasPendingGate && (
               <button
                 title="Mark as Sent (Resolve AI Draft)"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (onResolveGate) onResolveGate(lead);
-                }} 
-                className="flex items-center gap-1 text-[7px] font-black uppercase text-accent-red hover:text-accent-green transition-colors pointer-events-auto"
+                }}
+                className="flex items-center gap-1 text-[7px] font-black uppercase text-accent-blue/80 hover:text-accent-green transition-colors pointer-events-auto"
               >
                 <Check size={10} />
                 Sent

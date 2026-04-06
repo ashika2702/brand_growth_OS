@@ -4,6 +4,7 @@ import { callAI } from '@/lib/ai';
 import { createNotification } from '@/lib/notifications';
 import { addCRMJob } from '@/lib/queue';
 import { calculateLeadScore, getScoreStyle } from '@/lib/scoring';
+import { mapRawLeadData } from '@/lib/leads';
 
 export async function POST(
   req: Request,
@@ -12,7 +13,10 @@ export async function POST(
   try {
     const { clientId } = await params;
     const body = await req.json();
-    const { name, email, phone, source, campaign, intent } = body;
+    
+    // 1. Map Core Identity vs Custom Metadata
+    const { name, email, phone, customFields } = mapRawLeadData(body);
+    const { source, campaign, intent } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
@@ -27,7 +31,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid origin' }, { status: 404 });
     }
 
-    const compiledSource = `${source} (${campaign})`.trim();
+    const compiledSource = `${source || 'Website'} (${campaign || 'Organic'})`.trim();
 
     // 0. Find first active sequence for this client to auto-enroll
     const defaultSequence = await prisma.neuralSequence.findFirst({
@@ -39,13 +43,15 @@ export async function POST(
     const lead = await prisma.lead.create({
       data: {
         clientId,
+        assignedTo: client.name,
         name,
         email,
         phone,
         source: compiledSource,
         intent: intent || null,
+        customFields: customFields as any,
         stage: 'new',
-        score: 0, // Placeholder, will update with AI
+        score: 0, 
         isAutoPilotActive: !!defaultSequence,
         currentSequenceId: defaultSequence?.id || null,
         scoreFactors: {

@@ -66,7 +66,7 @@ export default function QRCapture({ clientId }: { clientId: string }) {
          <div className="grid grid-cols-3 gap-5 pb-10">
             {/* Generator Settings */}
             <div className="col-span-1 h-full">
-               <div className="glass-card p-5 rounded-2xl border border-border-1 relative overflow-hidden group h-full flex flex-col transition-colors">
+               <div className="glass-card p-6 relative overflow-hidden group h-full flex flex-col transition-all duration-300">
                   <div className="absolute inset-0 bg-border-glass opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   <div className="relative z-10 flex items-center justify-between mb-5">
                      <div className="flex items-center gap-2 text-accent-blue">
@@ -123,7 +123,7 @@ export default function QRCapture({ clientId }: { clientId: string }) {
 
             {/* Generated QR Code */}
             <div className="col-span-1 h-full">
-               <div className="flex flex-col p-5 glass-card border border-border-1 rounded-2xl items-center justify-center h-full relative overflow-hidden group text-center transition-colors">
+               <div className="glass-card p-6 flex flex-col items-center justify-center h-full relative overflow-hidden group text-center transition-all duration-300">
                   <div className="absolute inset-0 bg-border-glass opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   
                   <div className="relative z-10 flex items-center justify-between mb-5 w-full transition-colors">
@@ -162,7 +162,7 @@ export default function QRCapture({ clientId }: { clientId: string }) {
 
             {/* Mobile Preview */}
             <div className="col-span-1 h-full">
-               <div className="glass-card p-5 rounded-2xl border border-white/5 flex flex-col items-center justify-center h-full relative overflow-hidden group">
+               <div className="glass-card p-6 flex flex-col items-center justify-center h-full relative overflow-hidden group transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   
                   <div className="relative z-10 flex items-center gap-2 mb-4 text-accent-blue w-full text-left">

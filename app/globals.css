@@ -42,10 +42,10 @@
   --border-2: rgba(0, 0, 0, 0.06); 
   --border-glass: rgba(255, 255, 255, 0.7);
   
-  --text-primary: #111827; /* Deep Charcoal */
-  --text-secondary: #4B5563; /* Muted Slate */
-  --text-muted: #9CA3AF;     /* Gray-400 */
-  --text-dim: #D1D5DB;       /* Gray-300 */
+  --text-primary: #0F172A;   /* Deep Navy/Black */
+  --text-secondary: #334155; /* Slate-700 */
+  --text-muted: #475569;     /* Slate-600 */
+  --text-dim: #64748B;       /* Slate-500 */
 }
 
 @theme inline {
@@ -84,13 +84,14 @@
   .glass-card {
     background: var(--surface-card);
     border: 1px solid var(--border-1);
-    border-radius: 12px;
+    border-radius: 1.5rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
   }
   
   .light .glass-card {
-    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05), 0 5px 15px -5px rgba(0,0,0,0.02);
+    box-shadow: 10px 10px 30px -5px rgba(0, 0, 0, 0.06); /* Exact offset shadow from reference */
+    border-radius: 2rem;
     border-color: rgba(0,0,0,0.02);
   }
 

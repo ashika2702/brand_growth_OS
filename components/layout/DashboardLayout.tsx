@@ -49,8 +49,8 @@ const SidebarItem = ({ href, icon, label, active, isCollapsed }: SidebarItemProp
     href={href}
     className={`flex items-center gap-3 py-2 transition-all duration-300 relative group ${isCollapsed ? 'px-0 justify-center' : 'px-5'
       } ${active
-        ? 'bg-accent-blue/5 text-accent-blue'
-        : 'text-text-muted hover:text-text-secondary hover:bg-surface-2'
+        ? 'bg-accent-blue/10 text-accent-blue'
+        : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
       }`}
   >
     {/* Left Indicator - Pill Style */}
@@ -58,7 +58,7 @@ const SidebarItem = ({ href, icon, label, active, isCollapsed }: SidebarItemProp
       <div className="absolute left-0 top-1 bottom-1 w-1.5 bg-accent-blue rounded-r-full shadow-[0_0_12px_rgba(62,128,255,0.4)]" />
     )}
 
-    <span className={`transition-all duration-300 shrink-0 ${active ? 'text-accent-blue scale-110 drop-shadow-[0_0_8px_rgba(62,128,255,0.3)]' : 'text-text-muted group-hover:text-text-secondary group-hover:scale-105'}`}>
+    <span className={`transition-all duration-300 shrink-0 ${active ? 'text-accent-blue scale-110 drop-shadow-[0_0_8px_rgba(62,128,255,0.3)]' : 'text-slate-400 group-hover:text-slate-100 group-hover:scale-105'}`}>
       {React.cloneElement(icon as React.ReactElement<{ size: number }>, { size: 18 })}
     </span>
 
@@ -91,18 +91,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Script src="https://js.puter.com/v2/" strategy="afterInteractive" />
       {/* Sidebar */}
       <aside
-        className={`h-full bg-surface-1 border-r border-border-1 z-50 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? 'w-20' : 'w-64'
+        className={`h-full bg-black border-r border-[#1F1F1F] z-50 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? 'w-20' : 'w-64'
           }`}
       >
         {/* Branding */}
         <div className={`flex items-center gap-3 mb-10 mt-6 px-6 ${isCollapsed ? 'justify-center px-0' : ''}`}>
-          <div className="w-8 h-8 rounded-xl bg-surface-2 border border-border-1 flex items-center justify-center shadow-[0_10px_20px_rgba(0,0,0,0.05)] shrink-0 group relative overflow-hidden transition-all duration-500 hover:scale-110 hover:border-accent-blue/30 active:scale-95">
+          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group relative overflow-hidden transition-all duration-500 hover:scale-110 hover:border-accent-blue/30 active:scale-95">
             {/* Neural Pulse Inner Glow */}
             <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-accent-blue/40 to-transparent" />
             <ChartNoAxesCombined className="text-accent-blue w-4.5 h-4.5 transition-all duration-500 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(45,140,255,0.4)]" />
           </div>
           {!isCollapsed && (
-            <span className="text-lg font-black tracking-tighter text-text-primary italic whitespace-nowrap transition-colors">Brand Growth<span className="text-accent-blue">OS</span></span>
+            <span className="text-lg font-black tracking-tighter text-white italic whitespace-nowrap transition-colors">Brand Growth<span className="text-accent-blue">OS</span></span>
           )}
         </div>
 
@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             isCollapsed={isCollapsed}
           />
 
-          <div className="pt-8 border-t border-border-1/20 mt-8">
+          <div className="pt-8 border-t border-white/5 mt-8">
             <SidebarItem
               href="/playground"
               icon={<Zap />}
@@ -184,13 +184,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Bottom Section */}
-        <div className="mt-auto border-t border-[#1F1F1F] p-4 space-y-4">
+        <div className="mt-auto border-t border-white/5 p-4 space-y-4">
           {/* Puter Account Management */}
 
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full py-2.5 bg-surface-2 hover:bg-surface-3 text-text-muted hover:text-text-primary rounded-xl border border-border-1 transition-all flex items-center justify-center group"
+            className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/10 transition-all flex items-center justify-center group"
           >
             {isCollapsed ? <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" /> : <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />}
           </button>
