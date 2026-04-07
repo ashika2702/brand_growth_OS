@@ -11,9 +11,10 @@ import QRCapture from '@/components/crm/views/QRCapture';
 import GlobalActivitiesFeed from '@/components/crm/views/GlobalActivitiesFeed';
 import GlobalTasksList from '@/components/crm/views/GlobalTasksList';
 import IntegrationsView from '@/components/crm/views/IntegrationsView';
+import FormsView from '@/components/crm/views/FormsView';
 import AddLeadModal from '@/components/crm/AddLeadModal';
 
-type TabView = 'pipeline' | 'all' | 'activities' | 'tasks' | 'qr' | 'integrations';
+type TabView = 'pipeline' | 'all' | 'activities' | 'tasks' | 'qr' | 'integrations' | 'forms';
 
 export default function CRMPage() {
   const params = useParams();
@@ -202,6 +203,7 @@ export default function CRMPage() {
           { id: 'activities', label: 'Activities', icon: Activity },
           { id: 'tasks', label: 'Tasks', icon: ListTodo },
           { id: 'qr', label: 'QR Capture', icon: QrCode },
+          { id: 'forms', label: 'Forms', icon: ListTodo },
           { id: 'integrations', label: 'Integrations', icon: Share2 }
         ].map(tab => (
           <button
@@ -286,6 +288,9 @@ export default function CRMPage() {
         )}
         {activeTab === 'qr' && (
           <QRCapture clientId={clientId} />
+        )}
+        {activeTab === 'forms' && (
+          <FormsView clientId={clientId} />
         )}
         {activeTab === 'integrations' && (
           <IntegrationsView clientId={clientId} />

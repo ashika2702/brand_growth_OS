@@ -8,9 +8,13 @@ export interface WebhookLeadData {
   name: string;
   email: string;
   phone?: string;
-  source: 'google_ads' | 'meta_ads' | 'linkedin_ads' | 'twitter_ads';
+  source: 'google_ads' | 'meta_ads' | 'linkedin_ads' | 'twitter_ads' | 'landing_page';
   intent?: string;
   utmCampaign?: string;
+  utmSource?: string;
+  gclid?: string;
+  fbclid?: string;
+  li_fat_id?: string;
   customFields?: any;
   metadata?: any;
 }
@@ -60,8 +64,11 @@ export async function processWebhookLead(data: WebhookLeadData) {
         email: data.email.toLowerCase(),
         phone: data.phone,
         source: data.source,
-        utmSource: data.source,
+        utmSource: data.utmSource || data.source,
         utmCampaign: data.utmCampaign,
+        gclid: data.gclid,
+        fbclid: data.fbclid,
+        li_fat_id: data.li_fat_id,
         intent: data.intent,
         customFields: data.customFields || null,
         stage: 'new',

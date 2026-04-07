@@ -29,10 +29,20 @@ interface Lead {
    personaTag: string | null;
    stage: string;
    intent: string | null;
+   utmSource?: string | null;
+   utmCampaign: string | null;
+   gclid: string | null;
+   fbclid: string | null;
+   li_fat_id?: string | null;
    customFields: any;
    assignedTo: string | null;
    lastActivityAt: string;
    createdAt: string;
+   form?: {
+      id: string;
+      name: string;
+      questions: any;
+   } | null;
 }
 
 export default function AllLeadsTable({ 
@@ -104,25 +114,92 @@ export default function AllLeadsTable({
    };
 
    const exportCSV = () => {
-      const headers = ['Name', 'Email', 'Phone', 'Requirement', 'Source', 'Persona', 'Stage', 'Owner', 'Created At'];
-      const rows = filteredLeads.map(l => [
-         l.name,
-         l.email,
-         l.phone || 'N/A',
-         getLeadRequirementSnippet(l.customFields, l.intent),
-         l.source,
-         l.personaTag || 'General',
-         l.stage,
-         l.assignedTo || 'Unassigned',
-         new Date(l.createdAt).toLocaleDateString()
-      ]);
+      // 1. Build a master map of Question ID -> Real Question Text/Label across all leads
+      const idToLabelMap: Record<string, string> = {};
+      filteredLeads.forEach(l => {
+         // Attempt to get labels from the linked form's question definitions
+         const formQuestions = l.form?.questions as any[];
+         if (formQuestions && Array.isArray(formQuestions)) {
+            formQuestions.forEach(q => {
+               if (q.id && q.label) {
+                  idToLabelMap[q.id] = q.label;
+               }
+            });
+         }
+         
+         // If a lead has data for a field we haven't mapped yet, add it
+         if (l.customFields && typeof l.customFields === 'object') {
+            Object.keys(l.customFields).forEach(key => {
+               if (!idToLabelMap[key]) {
+                  // Fallback: Use the key itself, but clean it up (e.g., q1 -> Question 1)
+                  idToLabelMap[key] = key.startsWith('q') ? `Question ${key.slice(1)}` : key;
+               }
+            });
+         }
+      });
 
-      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+      // Sort IDs so columns are consistent
+      const questionIds = Object.keys(idToLabelMap).sort();
+
+      // 2. Define headers using the REAL Question Labels
+      const headers = [
+         'Lead Name', 
+         'Email', 
+         'Phone', 
+         'Created Date & Time', 
+         'Form Name', 
+         'Form ID', 
+         'Marketing Platform', 
+         'Ad Click ID (GCLID/FBCLID/LI_FAT_ID)',
+         ...questionIds.map(id => idToLabelMap[id])
+      ];
+
+      const rows = filteredLeads.map(l => {
+         const createdAt = new Date(l.createdAt);
+         const formattedDate = `${createdAt.toLocaleDateString()} ${createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+         
+         const platform = l.gclid ? 'Google Ads' : l.fbclid ? (
+            l.utmSource?.toLowerCase().includes('instagram') ? 'Instagram Ads' :
+            l.utmSource?.toLowerCase().includes('facebook') ? 'Facebook Ads' : 'Meta Ads'
+         ) : l.li_fat_id ? 'LinkedIn Ads' : 'Direct/Manual';
+         const clickId = l.gclid || l.fbclid || l.li_fat_id || 'N/A';
+
+         const baseData = [
+            l.name,
+            l.email,
+            l.phone || 'N/A',
+            formattedDate,
+            l.form?.name || 'Direct/Manual',
+            l.form?.id || 'N/A',
+            platform,
+            clickId
+         ];
+
+         // Map answers using the Question IDs
+         const questionAnswers = questionIds.map(id => {
+            const val = l.customFields?.[id];
+            if (val === undefined || val === null) return '';
+            if (Array.isArray(val)) return val.join('; ');
+            return String(val);
+         });
+
+         return [...baseData, ...questionAnswers];
+      });
+
+      // Format as CSV with proper quoting for Excel compatibility
+      const csvContent = [headers, ...rows]
+         .map(row => row.map(cell => {
+            const str = String(cell || '').replace(/"/g, '""');
+            return `"${str}"`;
+         }).join(","))
+         .join("\n");
+
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `crm-leads-export-${new Date().toISOString().split('T')[0]}.csv`);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.setAttribute("download", `BGO-Leads-Intelligence-${timestamp}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -182,14 +259,13 @@ export default function AllLeadsTable({
             {/* Horizontal Scroll Wrapper */}
             <div className="flex-1 overflow-x-auto no-scrollbar flex flex-col">
                {/* Table Header - Aligned with Zoho Screenshot */}
-               <div className="grid grid-cols-[40px_160px_minmax(250px,1.5fr)_200px_140px_120px_120px] gap-0 py-2 border-b border-border-1 bg-surface-2/40 min-w-[1030px]">
+               <div className="grid grid-cols-[40px_220px_minmax(250px,1.5fr)_180px_140px_140px] gap-0 py-2 border-b border-border-1 bg-surface-2/40 min-w-[1030px]">
                   <div className="flex items-center justify-center border-r border-border-1/30">
                      <button onClick={toggleSelectAll} className="text-text-muted hover:text-text-primary transition-colors">
                         {selectedIds.size === filteredLeads.length && filteredLeads.length > 0 ? <CheckSquare size={16} className="text-accent-blue" /> : <Square size={16} />}
                      </button>
                   </div>
                   <div className="text-[10px] font-bold uppercase tracking-tight text-text-muted flex items-center gap-1 pl-4">Lead Name </div>
-                  <div className="text-[10px] font-bold uppercase tracking-tight text-text-muted border-l border-border-1 pl-4">Requirement / Intent</div>
                   <div className="text-[10px] font-bold uppercase tracking-tight text-text-muted border-l border-border-1 pl-4">Email</div>
                   <div className="text-[10px] font-bold uppercase tracking-tight text-text-muted border-l border-border-1 pl-4">Phone</div>
                   <div className="text-[10px] font-bold uppercase tracking-tight text-text-muted border-l border-border-1 pl-4">Lead Source</div>
@@ -202,7 +278,7 @@ export default function AllLeadsTable({
                      <div
                         key={lead.id}
                         onClick={() => onSelectLead?.(lead)}
-                        className={`grid grid-cols-[40px_160px_minmax(250px,1.5fr)_200px_140px_120px_120px] gap-0 py-2 border-b border-border-1/30 hover:bg-surface-2/60 transition-all items-center group cursor-pointer
+                        className={`grid grid-cols-[40px_220px_minmax(250px,1.5fr)_180px_140px_140px] gap-0 py-2 border-b border-border-1/30 hover:bg-surface-2/60 transition-all items-center group cursor-pointer
                       ${selectedIds.has(lead.id) ? 'bg-accent-blue/[0.02]' : ''}`}
                      >
                         <div className="flex items-center justify-center border-r border-border-1/10 h-full">
@@ -219,12 +295,6 @@ export default function AllLeadsTable({
                        
                      </div>
                      
-                     <div className="pl-4 pr-3">
-                        <p className="text-[11px] text-text-secondary leading-snug line-clamp-2">
-                           {getLeadRequirementSnippet(lead.customFields, lead.intent)}
-                        </p>
-                     </div>
-
                      <div className="text-[11px] text-text-muted truncate pl-4 pr-3">
                         <a 
                            href={`mailto:${lead.email}`} 
@@ -247,10 +317,27 @@ export default function AllLeadsTable({
                         )}
                      </div>
 
-                     <div className="text-[11px] text-text-muted pl-4">
+                     <div className="text-[11px] text-text-muted pl-4 flex items-center gap-1.5">
                         <span className="uppercase text-[9px] font-bold text-accent-blue/80 bg-accent-blue/5 px-1.5 py-0.5 rounded">
                            {lead.source?.split('(')[0].trim() || 'Direct'}
                         </span>
+                        {lead.gclid && (
+                           <span className="text-[7px] font-black bg-accent-orange/10 text-accent-orange border border-accent-orange/20 px-1 rounded-sm tracking-tighter">G-ADS</span>
+                        )}
+                        {lead.fbclid && (
+                           <>
+                              {lead.utmSource?.toLowerCase().includes('instagram') ? (
+                                 <span className="text-[7px] font-black bg-pink-500/10 text-pink-500 border border-pink-500/20 px-1 rounded-sm tracking-tighter uppercase">Instagram</span>
+                              ) : lead.utmSource?.toLowerCase().includes('facebook') ? (
+                                 <span className="text-[7px] font-black bg-blue-700/10 text-blue-700 border border-blue-700/20 px-1 rounded-sm tracking-tighter uppercase">Facebook</span>
+                              ) : (
+                                 <span className="text-[7px] font-black bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded-sm tracking-tighter uppercase">Meta</span>
+                              )}
+                           </>
+                        )}
+                        {lead.li_fat_id && (
+                           <span className="text-[7px] font-black bg-blue-600/10 text-blue-600 border border-blue-600/20 px-1 rounded-sm tracking-tighter uppercase">LinkedIn</span>
+                        )}
                      </div>
 
                      <div className="pl-4">

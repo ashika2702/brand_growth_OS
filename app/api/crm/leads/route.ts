@@ -28,7 +28,8 @@ export async function GET(request: Request) {
         },
         humanGates: {
           where: { status: 'pending' }
-        }
+        },
+        form: true
       },
       orderBy: { createdAt: 'desc' }
     });

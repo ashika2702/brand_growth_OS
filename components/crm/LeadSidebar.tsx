@@ -32,6 +32,9 @@ interface Lead {
   tasks?: Task[];
   utmSource?: string | null;
   utmCampaign?: string | null;
+  gclid?: string | null;
+  fbclid?: string | null;
+  li_fat_id?: string | null;
   intent?: string | null;
   customFields?: any;
   isAutoPilotActive?: boolean;
@@ -236,8 +239,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
              </div>
              <div className="flex items-center gap-2">
                 
-                <button className="px-3 py-1.5 border border-slate-300 bg-white text-slate-700 rounded text-[12px] font-medium hover:bg-slate-50 whitespace-nowrap">Convert</button>
-                <button className="px-3 py-1.5 border border-slate-300 bg-white text-slate-700 rounded text-[12px] font-medium hover:bg-slate-50 whitespace-nowrap">Edit</button>
+                
                 <div className="w-[1px] h-4 bg-slate-300 mx-1" />
                 <button 
                   onClick={onClose}
@@ -306,6 +308,49 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
                    </div>
                 </div>
 
+                  {/* Ad Attribution Section */}
+                  {(lead.gclid || lead.fbclid || lead.utmCampaign) && (
+                    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden mt-4">
+                       <div className="bg-slate-50 px-6 py-2 border-b border-slate-200 text-left">
+                          <h3 className="text-[12px] font-bold text-slate-700 uppercase">Ad Attribution</h3>
+                       </div>
+                       <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-12">
+                          {lead.utmCampaign && (
+                            <div className="space-y-1 text-left col-span-2">
+                               <p className="text-[11px] text-slate-500 uppercase tracking-tight">Campaign</p>
+                               <p className="text-[13px] text-slate-800 font-bold">{lead.utmCampaign}</p>
+                            </div>
+                          )}
+                          {lead.gclid && (
+                             <div className="space-y-1 text-left col-span-2">
+                                <p className="text-[11px] text-slate-500 uppercase tracking-tight">Google Click ID (GCLID)</p>
+                                <p className="text-[10px] text-accent-orange font-mono break-all bg-accent-orange/5 p-2 rounded border border-accent-orange/10">{lead.gclid}</p>
+                             </div>
+                          )}
+                          {lead.fbclid && (
+                             <div className="space-y-1 text-left col-span-2">
+                                <p className="text-[11px] text-slate-500 uppercase tracking-tight">
+                                   {lead.utmSource?.toLowerCase().includes('instagram') ? 'Instagram' : lead.utmSource?.toLowerCase().includes('facebook') ? 'Facebook' : 'Meta'} Click ID (FBCLID)
+                                </p>
+                                <p className={`text-[10px] font-mono break-all p-2 rounded border ${
+                                   lead.utmSource?.toLowerCase().includes('instagram') 
+                                      ? 'text-pink-600 bg-pink-50 border-pink-100' 
+                                      : 'text-blue-600 bg-blue-50 border-blue-100'
+                                }`}>
+                                   {lead.fbclid}
+                                </p>
+                             </div>
+                          )}
+                          {lead.li_fat_id && (
+                             <div className="space-y-1 text-left col-span-2">
+                                <p className="text-[11px] text-slate-500 uppercase tracking-tight">LinkedIn Click ID (LI_FAT_ID)</p>
+                                <p className="text-[10px] text-blue-600 font-mono break-all bg-blue-50 p-2 rounded border border-blue-100 italic">{lead.li_fat_id}</p>
+                             </div>
+                          )}
+                       </div>
+                    </div>
+                  )}
+
                  {/* Form Details Section */}
                  <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <div className="bg-slate-50 px-6 py-2 border-b border-slate-200 text-left">
@@ -314,7 +359,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
                     <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-12">
                        <div className="space-y-1 text-left">
                           <p className="text-[11px] text-slate-500 uppercase tracking-tight">Lead Owner</p>
-                          <p className="text-[13px] text-slate-800">{lead.source?.includes('10Acres') ? '10Acres' : 'Strathlone Estate'}</p>
+                          <p className="text-[13px] text-slate-800">{lead.source}</p>
                        </div>
                        <div className="space-y-1 text-left">
                           <p className="text-[11px] text-slate-500 uppercase tracking-tight">Company</p>
@@ -339,35 +384,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
                     </div>
                  </div>
 
-                 {/* Autonomous Control Section (Integrated AI Assist) */}
-                 <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-2">
-                          <Zap size={14} className="text-blue-600" fill="currentColor" />
-                          <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Neural Auto-Pilot</h4>
-                       </div>
-                       <button
-                          onClick={toggleAutoPilot}
-                          className={`w-9 h-5 rounded-full relative transition-colors ${isAutoPilotActive ? 'bg-blue-600' : 'bg-slate-200'}`}
-                       >
-                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm ${isAutoPilotActive ? 'left-5' : 'left-1'}`} />
-                       </button>
-                    </div>
 
-                    <div className="space-y-2 text-left">
-                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Active Sequence</label>
-                       <select
-                          value={selectedSequenceId}
-                          onChange={(e) => handleSequenceChange(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-[13px] outline-none"
-                       >
-                          <option value="">No Active Sequence</option>
-                          {sequences.map(seq => (
-                             <option key={seq.id} value={seq.id}>{seq.name}</option>
-                          ))}
-                       </select>
-                    </div>
-                 </div>
               </div>
            ) : (
               <div className="p-6">
@@ -390,7 +407,7 @@ export default function LeadSidebar({ lead, isOpen, onClose, refreshLeads }: Lea
                              <span className="text-[12px] text-slate-500 font-medium">{new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                              <span className="text-[13px] font-bold text-slate-800">Lead Created</span>
                           </div>
-                          <span className="text-[11px] text-slate-400 mt-0.5">by {lead.source?.includes('10Acres') ? '10Acres' : 'Strathlone Estate'} {new Date(lead.createdAt).toLocaleDateString()}</span>
+                          <span className="text-[11px] text-slate-400 mt-0.5">by {lead.source} {new Date(lead.createdAt).toLocaleDateString()}</span>
                        </div>
                     </div>
 

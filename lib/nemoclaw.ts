@@ -15,8 +15,13 @@ export async function callNemoClaw({
         console.log(`🧠 [NemoClaw] Sending request to brain: ${prompt.slice(0, 50)}...`);
         const endpoint = process.env.NEMOCLAW_ENDPOINT || 'http://localhost:3000/api/chat';
 
+        // RULE: Local AI can be slow. Set a 5-minute timeout (300,000ms)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 300000);
+
         const response = await fetch(endpoint, {
             method: 'POST',
+            signal: controller.signal,
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -27,6 +32,8 @@ export async function callNemoClaw({
                 maxTokens
             }),
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error(`NemoClaw error: ${response.statusText}`);

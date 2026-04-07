@@ -52,13 +52,15 @@ export function mapRawLeadData(rawData: Record<string, any>) {
  * Formats custom fields for table display (Snippet)
  */
 export function getLeadRequirementSnippet(customFields: any, intent: string | null): string {
-  if (intent) return intent;
-  if (!customFields) return 'General Enquiry';
+  const parts: string[] = [];
   
-  const entries = Object.entries(customFields);
-  if (entries.length === 0) return 'General Enquiry';
-  
-  // Return the first interesting field or a summary
-  const [firstKey, firstVal] = entries[0];
-  return `${firstKey}: ${firstVal}`;
+  if (customFields) {
+    Object.entries(customFields).forEach(([key, value]) => {
+      const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      parts.push(`${label}: ${value}`);
+    });
+  }
+
+  if (parts.length > 0) return parts.join(' | ');
+  return intent || 'General Enquiry';
 }

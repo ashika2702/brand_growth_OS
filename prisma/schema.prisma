@@ -54,6 +54,7 @@ model Client {
   prMentions          PRMention[]
   prOpportunities     PROpportunity[]
   prReleases          PRRelease[]
+  leadForms           LeadForm[]
   assignedUsers       User[]               @relation("ClientToUser")
 }
 
@@ -203,6 +204,9 @@ model Lead {
   utmSource         String?
   utmMedium         String?
   utmCampaign       String?
+  gclid             String?
+  fbclid            String?
+  li_fat_id         String?
   emailOptOut       Boolean        @default(false)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -214,6 +218,8 @@ model Lead {
   currentSequenceId String?
   isAutoPilotActive Boolean        @default(false)
   customFields      Json?
+  formId            String?
+  form              LeadForm?      @relation(fields: [formId], references: [id])
   
   // Address Information
   addressStreet     String?
@@ -311,4 +317,20 @@ model LeadSequence {
   sequence    NeuralSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
 
   @@unique([leadId, sequenceId])
+}
+
+model LeadForm {
+  id          String   @id @default(cuid())
+  clientId    String
+  name        String
+  description String?
+  slug        String   @unique
+  questions   Json     // Array of {id, type, label, required}
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  leads       Lead[]
+
+  @@index([clientId])
 }
