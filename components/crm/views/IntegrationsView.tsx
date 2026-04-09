@@ -17,7 +17,9 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
     googleAdsKey: '',
     metaAccessToken: '',
     metaPageId: '',
-    linkedInAccessToken: ''
+    linkedInAccessToken: '',
+    googleSearchConsoleUrl: '',
+    isGoogleConnected: false
   });
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
 
   return (
     <div className="h-full overflow-y-auto pr-2 pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* Header Info */}
       <div className="flex items-start gap-4 p-6 rounded-3xl bg-surface-2 border border-border-1 transition-colors">
         <div className="w-12 h-12 rounded-2xl bg-accent-blue/10 flex items-center justify-center text-accent-blue border border-accent-blue/20 shrink-0">
@@ -88,7 +90,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
           <Globe className="text-accent-blue w-5 h-5" />
           <h3 className="text-sm font-black uppercase tracking-widest text-text-primary italic transition-colors">Google Ads Lead Forms</h3>
         </div>
-        
+
         <div className="glass-card p-6 rounded-3xl border border-border-1 space-y-6 transition-colors">
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
@@ -97,7 +99,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
             </label>
             <div className="flex items-center gap-2 bg-surface-3 p-3 rounded-2xl border border-border-2 group">
               <code className="text-xs text-text-secondary truncate flex-1 font-mono">{webhookUrl}</code>
-              <button 
+              <button
                 onClick={() => copyToClipboard(webhookUrl, 'webhook')}
                 className="p-2 hover:bg-surface-2 rounded-xl transition-all text-text-muted hover:text-accent-blue"
               >
@@ -109,7 +111,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Google Ads Key (Secret)</label>
-            <input 
+            <input
               type="text"
               value={formData.googleAdsKey}
               onChange={(e) => setFormData({ ...formData, googleAdsKey: e.target.value })}
@@ -126,12 +128,12 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
           <Instagram className="text-accent-red w-5 h-5" />
           <h3 className="text-sm font-black uppercase tracking-widest text-text-primary italic transition-colors">Meta & Instagram Lead Ads</h3>
         </div>
-        
+
         <div className="glass-card p-6 rounded-3xl border border-border-1 space-y-6 transition-colors">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Meta Page ID</label>
-              <input 
+              <input
                 type="text"
                 value={formData.metaPageId}
                 onChange={(e) => setFormData({ ...formData, metaPageId: e.target.value })}
@@ -141,7 +143,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Meta Access Token</label>
-              <input 
+              <input
                 type="password"
                 value={formData.metaAccessToken}
                 onChange={(e) => setFormData({ ...formData, metaAccessToken: e.target.value })}
@@ -157,17 +159,17 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
         </div>
       </section>
 
-      {/* LinkedIn Section */}
+      {/* LinkedIn Section (existing) */}
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <Linkedin className="text-accent-blue w-5 h-5" />
           <h3 className="text-sm font-black uppercase tracking-widest text-text-primary italic transition-colors">LinkedIn Lead Gen Forms</h3>
         </div>
-        
+
         <div className="glass-card p-6 rounded-3xl border border-border-1 space-y-4 transition-colors">
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">LinkedIn Access Token</label>
-            <input 
+            <input
               type="password"
               value={formData.linkedInAccessToken}
               onChange={(e) => setFormData({ ...formData, linkedInAccessToken: e.target.value })}
@@ -178,10 +180,67 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
         </div>
       </section>
 
+      {/* Google Search Console Section */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Globe className="text-accent-orange w-5 h-5" />
+          <h3 className="text-sm font-black uppercase tracking-widest text-text-primary italic transition-colors">Google Search Console (SEO Intelligence)</h3>
+        </div>
+
+        <div className="glass-card p-6 rounded-3xl border border-border-1 space-y-6 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all ${
+                formData.isGoogleConnected 
+                ? 'bg-accent-green/10 text-accent-green border-accent-green/20' 
+                : 'bg-surface-2 text-text-muted border-border-1'
+              }`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${formData.isGoogleConnected ? 'bg-accent-green animate-pulse' : 'bg-text-muted'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {formData.isGoogleConnected ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+              
+              {formData.isGoogleConnected && (
+                <button 
+                  onClick={() => window.location.href = `/seo/${clientId}`}
+                  className="px-4 py-1 bg-accent-blue/10 hover:bg-accent-blue/20 text-accent-blue text-[10px] font-black uppercase tracking-widest rounded-full border border-accent-blue/20 transition-all flex items-center gap-2"
+                >
+                  View Dashboard
+                </button>
+              )}
+            </div>
+            
+            <a 
+              href={`/api/auth/google/login?clientId=${clientId}`}
+              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all 
+                ${formData.isGoogleConnected 
+                  ? 'bg-surface-2 text-text-muted border border-border-1 hover:bg-accent-red/10 hover:text-accent-red hover:border-accent-red/20' 
+                  : 'bg-accent-orange text-white shadow-[0_0_15px_rgba(255,77,0,0.2)] hover:scale-[1.02]'}`}
+            >
+              {formData.isGoogleConnected ? 'Reconnect Console' : 'Connect Account'}
+            </a>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
+              Verified Property URL
+              <span className="text-[8px] bg-accent-orange/20 text-accent-orange px-2 py-0.5 rounded-full">Required</span>
+            </label>
+            <input
+              type="text"
+              value={formData.googleSearchConsoleUrl}
+              onChange={(e) => setFormData({ ...formData, googleSearchConsoleUrl: e.target.value })}
+              placeholder="e.g. https://www.yourdomain.com/"
+              className="w-full bg-surface-3 border border-border-2 focus:border-accent-orange p-4 rounded-2xl text-sm transition-all focus:ring-1 focus:ring-accent-orange/20 text-text-primary font-medium"
+            />
+            <p className="text-[10px] text-text-muted italic">This must match the property URL exactly as seen in your Google Search Console dashboard.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Action Footer */}
       <div className="fixed bottom-6 right-10 left-[calc(var(--sidebar-width)+3rem)] pointer-events-none">
         <div className="max-w-4xl mx-auto flex justify-end">
-          <button 
+          <button
             onClick={handleSave}
             disabled={saving}
             className={`pointer-events-auto flex items-center gap-3 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-[0.2em] shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98]

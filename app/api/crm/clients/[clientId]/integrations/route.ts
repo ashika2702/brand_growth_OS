@@ -17,7 +17,9 @@ export async function GET(
         googleAdsKey: true,
         metaAccessToken: true,
         metaPageId: true,
-        linkedInAccessToken: true
+        linkedInAccessToken: true,
+        googleRefreshToken: true,
+        googleSearchConsoleUrl: true
       }
     });
 
@@ -32,7 +34,9 @@ export async function GET(
       googleAdsKey: client.googleAdsKey || '',
       metaAccessToken: mask(client.metaAccessToken),
       metaPageId: client.metaPageId || '',
-      linkedInAccessToken: mask(client.linkedInAccessToken)
+      linkedInAccessToken: mask(client.linkedInAccessToken),
+      isGoogleConnected: !!client.googleRefreshToken,
+      googleSearchConsoleUrl: client.googleSearchConsoleUrl || ''
     });
 
   } catch (error) {
@@ -52,11 +56,12 @@ export async function PATCH(
   try {
     const { clientId } = await params;
     const body = await req.json();
-    const { googleAdsKey, metaAccessToken, metaPageId, linkedInAccessToken } = body;
+    const { googleAdsKey, metaAccessToken, metaPageId, linkedInAccessToken, googleSearchConsoleUrl } = body;
 
     const data: any = {};
     if (googleAdsKey !== undefined) data.googleAdsKey = googleAdsKey;
     if (metaPageId !== undefined) data.metaPageId = metaPageId;
+    if (googleSearchConsoleUrl !== undefined) data.googleSearchConsoleUrl = googleSearchConsoleUrl;
     
     // Only update tokens if they aren't masked strings (containing dots)
     if (metaAccessToken && !metaAccessToken.includes('•')) {

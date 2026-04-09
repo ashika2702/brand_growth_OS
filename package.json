@@ -20,6 +20,7 @@
     "@upstash/redis": "^1.36.4",
     "bullmq": "^5.71.0",
     "date-fns": "^4.1.0",
+    "googleapis": "^171.4.0",
     "groq-sdk": "^1.1.1",
     "html-to-image": "^1.11.13",
     "imap": "^0.8.19",

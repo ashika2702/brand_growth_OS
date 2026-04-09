@@ -32,6 +32,10 @@ model Client {
   canvaAccessToken    String?
   canvaRefreshToken   String?
   canvaTokenExpiresAt DateTime?
+  googleAccessToken     String?
+  googleRefreshToken    String?
+  googleTokenExpiresAt  DateTime?
+  googleSearchConsoleUrl String?
   fromName            String?
   imapHost            String?
   imapPort            Int?
