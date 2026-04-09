@@ -34,6 +34,9 @@ interface Lead {
    gclid: string | null;
    fbclid: string | null;
    li_fat_id?: string | null;
+   googleLeadId?: string | null;
+   metaLeadId?: string | null;
+   liLeadId?: string | null;
    customFields: any;
    assignedTo: string | null;
    lastActivityAt: string;
@@ -161,8 +164,8 @@ export default function AllLeadsTable({
          const platform = l.gclid ? 'Google Ads' : l.fbclid ? (
             l.utmSource?.toLowerCase().includes('instagram') ? 'Instagram Ads' :
             l.utmSource?.toLowerCase().includes('facebook') ? 'Facebook Ads' : 'Meta Ads'
-         ) : l.li_fat_id ? 'LinkedIn Ads' : 'Direct/Manual';
-         const clickId = l.gclid || l.fbclid || l.li_fat_id || 'N/A';
+         ) : l.li_fat_id || l.liLeadId ? 'LinkedIn Ads' : 'Direct/Manual';
+         const clickId = l.googleLeadId || l.gclid || l.metaLeadId || l.fbclid || l.liLeadId || l.li_fat_id || 'N/A';
 
          const baseData = [
             l.name,
@@ -321,10 +324,10 @@ export default function AllLeadsTable({
                         <span className="uppercase text-[9px] font-bold text-accent-blue/80 bg-accent-blue/5 px-1.5 py-0.5 rounded">
                            {lead.source?.split('(')[0].trim() || 'Direct'}
                         </span>
-                        {lead.gclid && (
+                        {(lead.gclid || lead.googleLeadId) && (
                            <span className="text-[7px] font-black bg-accent-orange/10 text-accent-orange border border-accent-orange/20 px-1 rounded-sm tracking-tighter">G-ADS</span>
                         )}
-                        {lead.fbclid && (
+                        {(lead.fbclid || lead.metaLeadId) && (
                            <>
                               {lead.utmSource?.toLowerCase().includes('instagram') ? (
                                  <span className="text-[7px] font-black bg-pink-500/10 text-pink-500 border border-pink-500/20 px-1 rounded-sm tracking-tighter uppercase">Instagram</span>
@@ -335,7 +338,7 @@ export default function AllLeadsTable({
                               )}
                            </>
                         )}
-                        {lead.li_fat_id && (
+                        {(lead.li_fat_id || lead.liLeadId) && (
                            <span className="text-[7px] font-black bg-blue-600/10 text-blue-600 border border-blue-600/20 px-1 rounded-sm tracking-tighter uppercase">LinkedIn</span>
                         )}
                      </div>

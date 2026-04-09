@@ -49,6 +49,7 @@ export async function POST(
       phone,
       customFields,
       source: 'google_ads',
+      googleLeadId: body.lead_id?.toString(),
       utmCampaign: body.campaign_id?.toString(),
       intent: `Form submission via Google Lead Form [ID: ${body.form_id}]`
     });

@@ -155,6 +155,7 @@ export default function FormsView({ clientId }: FormsViewProps) {
           <thead>
             <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/50">
               <th className="px-6 py-2">Form Identity</th>
+              <th className="px-6 py-2">Description</th>
               <th className="px-6 py-2">Questions</th>
               <th className="px-6 py-2">Date Created</th>
               <th className="px-6 py-2 text-center w-20">Copy</th>
@@ -175,6 +176,13 @@ export default function FormsView({ clientId }: FormsViewProps) {
                     </div>
                     
                   </div>
+                </td>
+
+                {/* Form Description */}
+                <td className="px-6 py-3 border-y border-border-1 group-hover:border-accent-blue/30 transition-colors">
+                  <span className="text-[11px] font-bold text-text-muted uppercase tracking-tight line-clamp-1 max-w-[250px]">
+                    {form.description || '—'}
+                  </span>
                 </td>
                 
                 {/* Questions Count */}

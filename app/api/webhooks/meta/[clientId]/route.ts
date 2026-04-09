@@ -79,6 +79,7 @@ export async function POST(
       phone,
       customFields,
       source: 'meta_ads',
+      metaLeadId: change.leadgen_id?.toString(),
       utmCampaign: leadJson.campaign_name || leadJson.ad_id,
       intent: `Form submission via Meta/IG Lead Ad [Name: ${leadJson.ad_name}]`
     });

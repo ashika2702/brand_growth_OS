@@ -15,6 +15,9 @@ export interface WebhookLeadData {
   gclid?: string;
   fbclid?: string;
   li_fat_id?: string;
+  googleLeadId?: string;
+  metaLeadId?: string;
+  liLeadId?: string;
   customFields?: any;
   metadata?: any;
 }
@@ -69,6 +72,9 @@ export async function processWebhookLead(data: WebhookLeadData) {
         gclid: data.gclid,
         fbclid: data.fbclid,
         li_fat_id: data.li_fat_id,
+        googleLeadId: data.googleLeadId,
+        metaLeadId: data.metaLeadId,
+        liLeadId: data.liLeadId,
         intent: data.intent,
         customFields: data.customFields || null,
         stage: 'new',

@@ -47,6 +47,7 @@ export async function POST(
       email: userData.email,
       phone: userData.phone,
       source: 'linkedin_ads',
+      liLeadId: leadUrn,
       utmCampaign: body.campaign_urn,
       intent: `LinkedIn Form Submission [Form: ${body.form_urn}]`
     });

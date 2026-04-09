@@ -207,6 +207,9 @@ model Lead {
   gclid             String?
   fbclid            String?
   li_fat_id         String?
+  googleLeadId      String?
+  metaLeadId        String?
+  liLeadId          String?
   emailOptOut       Boolean        @default(false)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
