@@ -28,20 +28,26 @@ export async function getGoogleToken(clientId: string) {
     expiry_date: client.googleTokenExpiresAt ? client.googleTokenExpiresAt.getTime() : undefined,
   });
 
-  // Listen for token updates (automatic refresh)
-  oauth2Client.on('tokens', async (tokens) => {
-    const data: any = {};
-    if (tokens.access_token) data.googleAccessToken = tokens.access_token;
-    if (tokens.refresh_token) data.googleRefreshToken = tokens.refresh_token;
-    if (tokens.expiry_date) data.googleTokenExpiresAt = new Date(tokens.expiry_date);
+  // Ensure listener is only added once
+  if (oauth2Client.listenerCount('tokens') === 0) {
+    oauth2Client.on('tokens', async (tokens) => {
+      const data: any = {};
+      if (tokens.access_token) data.googleAccessToken = tokens.access_token;
+      if (tokens.refresh_token) data.googleRefreshToken = tokens.refresh_token;
+      if (tokens.expiry_date) data.googleTokenExpiresAt = new Date(tokens.expiry_date);
 
-    if (Object.keys(data).length > 0) {
-      await prisma.client.update({
-        where: { id: clientId },
-        data
-      });
-    }
-  });
+      if (Object.keys(data).length > 0) {
+        // We use a separate prisma call here to avoid capturing clientId in a way that risks leaks
+        // But since this is a utility, we'll keep it simple for now or use a global update logic
+        // For now, this listener is global, so it might not have the clientId easily.
+        // Better: Update by Refresh Token which is unique.
+        await prisma.client.updateMany({
+          where: { googleRefreshToken: tokens.refresh_token || client.googleRefreshToken },
+          data
+        });
+      }
+    });
+  }
 
   // This will trigger the 'tokens' event and refresh if needed
   const { token } = await oauth2Client.getAccessToken();
@@ -51,7 +57,13 @@ export async function getGoogleToken(clientId: string) {
 /**
  * Fetch performance data for a specific site
  */
-export async function fetchGSCPerformance(clientId: string, startDate: string, endDate: string) {
+export async function fetchGSCPerformance(
+  clientId: string, 
+  startDate: string, 
+  endDate: string,
+  dimensions: string[] = ['query'],
+  dataState?: string
+) {
   await getGoogleToken(clientId);
   
   const clientData = await prisma.client.findUnique({ 
@@ -62,20 +74,29 @@ export async function fetchGSCPerformance(clientId: string, startDate: string, e
   if (!clientData?.googleSearchConsoleUrl) {
     throw new Error('Google Search Console URL not configured for this client');
   }
-
+ 
   const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
   
-  const res = await searchconsole.searchanalytics.query({
-    siteUrl: clientData.googleSearchConsoleUrl,
-    requestBody: {
+  try {
+    const requestBody: any = {
       startDate,
       endDate,
-      dimensions: ['query'],
-      rowLimit: 100,
-    },
-  });
+      dimensions,
+      rowLimit: 5000,
+    };
+    if (dataState) requestBody.dataState = dataState;
 
-  return res.data.rows;
+    const res = await searchconsole.searchanalytics.query({
+      siteUrl: clientData.googleSearchConsoleUrl,
+      requestBody,
+    });
+    return res.data.rows || [];
+  } catch (error: any) {
+    if (error.response?.data) {
+      console.error('GSC API Error Detail:', JSON.stringify(error.response.data, null, 2));
+    }
+    throw error;
+  }
 }
 
 /**

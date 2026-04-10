@@ -19,10 +19,33 @@ export async function GET(
     
     const startDate = searchParams.get('startDate') || thirtyDaysAgo;
     const endDate = searchParams.get('endDate') || today;
+    
+    // Fetch Keyword Data (Current Range)
+    const keywords = await fetchGSCPerformance(clientId, startDate, endDate, ['query'], 'all');
+    
+    // Fetch Trend Data (Current Range)
+    const trends = await fetchGSCPerformance(clientId, startDate, endDate, ['date'], 'all');
 
-    const rows = await fetchGSCPerformance(clientId, startDate, endDate);
-    return NextResponse.json({ rows });
+    // Optional: Fetch Comparison Data for Delta (Last Period)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diff = end.getTime() - start.getTime();
+    
+    const prevStart = new Date(start.getTime() - (diff || 86400000)).toISOString().split('T')[0];
+    const prevEnd = new Date(start.getTime() - 1000).toISOString().split('T')[0];
+
+    const prevKeywords = await fetchGSCPerformance(clientId, prevStart, prevEnd, ['query'], 'all');
+    const prevTrends = await fetchGSCPerformance(clientId, prevStart, prevEnd, ['date'], 'all');
+
+    return NextResponse.json({ 
+      keywords, 
+      trends, 
+      prevKeywords, 
+      prevTrends,
+      range: { startDate, endDate, prevStart, prevEnd }
+    });
   } catch (error: any) {
+    // ... error handling
     console.error('GSC Fetch Error:', error);
     
     // Check if it's a "Not Connected" error
