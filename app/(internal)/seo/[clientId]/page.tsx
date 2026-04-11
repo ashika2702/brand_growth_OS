@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   Globe, 
@@ -15,6 +15,8 @@ import {
   ShieldAlert,
   Calendar,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowUp,
   ArrowDown,
   Info
@@ -42,9 +44,15 @@ interface GSCMetricRow {
 }
 
 interface PerformanceData {
-  keywords: GSCMetricRow[];
+  queries: GSCMetricRow[];
+  pages: GSCMetricRow[];
+  countries: GSCMetricRow[];
+  devices: GSCMetricRow[];
   trends: GSCMetricRow[];
-  prevKeywords: GSCMetricRow[];
+  prevQueries: GSCMetricRow[];
+  prevPages: GSCMetricRow[];
+  prevCountries: GSCMetricRow[];
+  prevDevices: GSCMetricRow[];
   prevTrends: GSCMetricRow[];
   range: {
     startDate: string;
@@ -53,6 +61,63 @@ interface PerformanceData {
     prevEnd: string;
   };
 }
+
+// --- Utils ---
+const COUNTRY_MAP: Record<string, string> = {
+  'AFG': 'Afghanistan', 'ALB': 'Albania', 'DZA': 'Algeria', 'AND': 'Andorra', 'AGO': 'Angola', 
+  'ARG': 'Argentina', 'ARM': 'Armenia', 'AUS': 'Australia', 'AUT': 'Austria', 'AZE': 'Azerbaijan',
+  'BHS': 'Bahamas', 'BHR': 'Bahrain', 'BGD': 'Bangladesh', 'BRB': 'Barbados', 'BLR': 'Belarus', 
+  'BEL': 'Belgium', 'BLZ': 'Belize', 'BEN': 'Benin', 'BTN': 'Bhutan', 'BOL': 'Bolivia', 
+  'BIH': 'Bosnia and Herzegovina', 'BWA': 'Botswana', 'BRA': 'Brazil', 'BRN': 'Brunei', 'BGR': 'Bulgaria', 
+  'BFA': 'Burkina Faso', 'BDI': 'Burundi', 'KHM': 'Cambodia', 'CMR': 'Cameroon', 'CAN': 'Canada', 
+  'CPV': 'Cape Verde', 'CAF': 'Central African Republic', 'TCD': 'Chad', 'CHL': 'Chile', 'CHN': 'China',
+  'COL': 'Colombia', 'COM': 'Comoros', 'COG': 'Congo', 'COD': 'Congo (DRC)', 'CRI': 'Costa Rica', 
+  'HRV': 'Croatia', 'CUB': 'Cuba', 'CYP': 'Cyprus', 'CZE': 'Czechia', 'DNK': 'Denmark', 
+  'DJI': 'Djibouti', 'DMA': 'Dominica', 'DOM': 'Dominican Republic', 'ECU': 'Ecuador', 'EGY': 'Egypt', 
+  'SLV': 'El Salvador', 'GNQ': 'Equatorial Guinea', 'ERI': 'Eritrea', 'EST': 'Estonia', 'SWZ': 'Eswatini', 
+  'ETH': 'Ethiopia', 'FJI': 'Fiji', 'FIN': 'Finland', 'FRA': 'France', 'GAB': 'Gabon', 
+  'GMB': 'Gambia', 'GEO': 'Georgia', 'DEU': 'Germany', 'GHA': 'Ghana', 'GRC': 'Greece', 
+  'GRD': 'Grenada', 'GTM': 'Guatemala', 'GIN': 'Guinea', 'GNB': 'Guinea-Bissau', 'GUY': 'Guyana', 
+  'HTI': 'Haiti', 'HND': 'Honduras', 'HUN': 'Hungary', 'ISL': 'Iceland', 'IND': 'India', 
+  'IDN': 'Indonesia', 'IRN': 'Iran', 'IRQ': 'Iraq', 'IRL': 'Ireland', 'ISR': 'Israel', 
+  'ITA': 'Italy', 'JAM': 'Jamaica', 'JPN': 'Japan', 'JOR': 'Jordan', 'KAZ': 'Kazakhstan', 
+  'KEN': 'Kenya', 'KIR': 'Kiribati', 'KWT': 'Kuwait', 'KGZ': 'Kyrgyzstan', 'LAO': 'Laos', 
+  'LVA': 'Latvia', 'LBN': 'Lebanon', 'LSO': 'Lesotho', 'LBR': 'Liberia', 'LBY': 'Libya', 
+  'LIE': 'Liechtenstein', 'LTU': 'Lithuania', 'LUX': 'Luxembourg', 'MDG': 'Madagascar', 'MWI': 'Malawi',
+  'MYS': 'Malaysia', 'MDV': 'Maldives', 'MLI': 'Mali', 'MLT': 'Malta', 'MHL': 'Marshall Islands', 
+  'MRT': 'Mauritania', 'MUS': 'Mauritius', 'MEX': 'Mexico', 'FSM': 'Micronesia', 'MDA': 'Moldova', 
+  'MCO': 'Monaco', 'MNG': 'Mongolia', 'MNE': 'Montenegro', 'MAR': 'Morocco', 'MOZ': 'Mozambique', 
+  'MMR': 'Myanmar', 'NAM': 'Namibia', 'NRU': 'Nauru', 'NPL': 'Nepal', 'NLD': 'Netherlands', 
+  'NZL': 'New Zealand', 'NIC': 'Nicaragua', 'NER': 'Niger', 'NGA': 'Nigeria', 'PRK': 'North Korea', 
+  'MKD': 'North Macedonia', 'NOR': 'Norway', 'OMN': 'Oman', 'PAK': 'Pakistan', 'PLW': 'Palau', 
+  'PAN': 'Panama', 'PNG': 'Papua New Guinea', 'PRY': 'Paraguay', 'PER': 'Peru', 'PHL': 'Philippines', 
+  'POL': 'Poland', 'PRT': 'Portugal', 'QAT': 'Qatar', 'ROU': 'Romania', 'RUS': 'Russia', 
+  'RWA': 'Rwanda', 'KNA': 'Saint Kitts and Nevis', 'LCA': 'Saint Lucia', 'VCG': 'Saint Vincent', 'WSM': 'Samoa',
+  'SMR': 'San Marino', 'STP': 'Sao Tome and Principe', 'SAU': 'Saudi Arabia', 'SEN': 'Senegal', 'SRB': 'Serbia', 
+  'SYC': 'Seychelles', 'SLE': 'Sierra Leone', 'SGP': 'Singapore', 'SVK': 'Slovakia', 'SVN': 'Slovenia', 
+  'SLB': 'Solomon Islands', 'SOM': 'Somalia', 'ZAF': 'South Africa', 'KOR': 'South Korea', 'SSD': 'South Sudan', 
+  'ESP': 'Spain', 'LKA': 'Sri Lanka', 'SDN': 'Sudan', 'SUR': 'Suriname', 'SWE': 'Sweden', 
+  'CHE': 'Switzerland', 'SYR': 'Syria', 'TWN': 'Taiwan', 'TJK': 'Tajikistan', 'TZA': 'Tanzania', 
+  'THA': 'Thailand', 'TLS': 'Timor-Leste', 'TGO': 'Togo', 'TON': 'Tonga', 'TTO': 'Trinidad and Tobago', 
+  'TUN': 'Tunisia', 'TUR': 'Turkey', 'TKM': 'Turkmenistan', 'TUV': 'Tuvalu', 'UGA': 'Uganda', 
+  'UKR': 'Ukraine', 'ARE': 'United Arab Emirates', 'GBR': 'United Kingdom', 'USA': 'United States', 'URY': 'Uruguay', 
+  'UZB': 'Uzbekistan', 'VUT': 'Vanuatu', 'VAT': 'Vatican City', 'VEN': 'Venezuela', 'VNM': 'Vietnam', 
+  'YEM': 'Yemen', 'ZMB': 'Zambia', 'ZWE': 'Zimbabwe', 'ZZZ': 'Unknown Region'
+};
+
+const getCountryName = (code: string) => {
+  if (!code) return 'Unknown';
+  const clean = code.toUpperCase().trim();
+  return COUNTRY_MAP[clean] || clean;
+};
+
+const DeviceIcon = ({ type, size = 14 }: { type: string, size?: number }) => {
+  const t = type.toLowerCase();
+  if (t === 'mobile' || t === 'smartphone') return <Zap size={size} className="text-accent-orange" />;
+  if (t === 'desktop') return <Globe size={size} className="text-accent-blue" />;
+  if (t === 'tablet') return <BarChart3 size={size} className="text-accent-green" />;
+  return <Search size={size} />;
+};
 
 // --- Components ---
 
@@ -83,10 +148,10 @@ const Sparkline = ({ data, color }: { data: any[], color: string }) => (
 const KPICard = ({ label, value, trend, trendVal, data, color }: any) => {
   const brandColor = color === 'orange' ? '#FF4D00' : color === 'blue' ? '#00A3FF' : color === 'green' ? '#00FF9D' : '#94A3B8';
   return (
-    <div className={`p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] shadow-xl relative overflow-hidden group`} 
+    <div className={`p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] shadow-xl relative overflow-hidden group backdrop-blur-xl`} 
          style={{ 
-           backgroundColor: `${brandColor}08`, 
-           borderColor: `${brandColor}25` 
+           backgroundColor: `${brandColor}12`, 
+           borderColor: `${brandColor}40` 
          }}>
     {/* Subtle Glow Accent */}
     <div className="absolute -top-10 -right-10 w-24 h-24 blur-[40px] opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity"
@@ -119,6 +184,31 @@ export default function ClientSEODashboard() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [aggregation, setAggregation] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [showAggDropdown, setShowAggDropdown] = useState(false);
+  const [activeTab, setActiveTab] = useState<'queries' | 'pages' | 'countries' | 'devices' | 'days'>('queries');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [showRowsDropdown, setShowRowsDropdown] = useState(false);
+
+  const aggRef = useRef<HTMLDivElement>(null);
+  const dateRef = useRef<HTMLDivElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close implementation
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (aggRef.current && !aggRef.current.contains(event.target as Node)) {
+        setShowAggDropdown(false);
+      }
+      if (dateRef.current && !dateRef.current.contains(event.target as Node)) {
+        setShowDatePicker(false);
+      }
+      if (rowsRef.current && !rowsRef.current.contains(event.target as Node)) {
+        setShowRowsDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // --- Data Fetching ---
   const fetchData = useCallback(async (start?: string, end?: string) => {
@@ -166,6 +256,10 @@ export default function ClientSEODashboard() {
     }
   }, [clientId, dateRange, fetchData]);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activeTab]);
+
   // --- Computed Stats ---
   const stats = useMemo(() => {
     if (!data) return null;
@@ -179,9 +273,9 @@ export default function ClientSEODashboard() {
     const prevImps = data.prevTrends.reduce((a, b) => a + (b.impressions || 0), 0);
     const impDiff = ((curImps - prevImps) / (prevImps || 1) * 100).toFixed(1);
 
-    // Position is still best averaged from keywords for focus on ranked terms
-    const curPos = data.trends.reduce((a, b) => a + (b.position || 0), 0) / (data.trends.length || 1);
-    const prevPos = data.prevTrends.reduce((a, b) => a + (b.position || 0), 0) / (data.prevTrends.length || 1);
+    // Position is still best averaged from queries for focus on ranked terms
+    const curPos = data.queries.reduce((a, b) => a + (b.position || 0), 0) / (data.queries.length || 1);
+    const prevPos = data.prevQueries.reduce((a, b) => a + (b.position || 0), 0) / (data.prevQueries.length || 1);
     const posDiff = (curPos - prevPos).toFixed(1);
 
     const curCtr = (curClicks / (curImps || 1) * 100);
@@ -295,20 +389,28 @@ export default function ClientSEODashboard() {
   }
 
   return (
-    <div className="h-full bg-background p-2 lg:p-8 flex flex-col gap-4 overflow-y-auto no-scrollbar animate-in fade-in duration-1000">
+    <div className="h-full bg-background p-2 lg:p-8 flex flex-col gap-4 overflow-y-auto no-scrollbar animate-in fade-in duration-1000 relative">
+      {/* Background Plasma Blobs for Glass Depth */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-orange/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-blue/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-[30%] right-[20%] w-[30%] h-[30%] bg-accent-orange/5 blur-[100px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-4">
       
       {/* Header Area */}
-      <div className="flex justify-between items-center px-2">
+      <div className="flex justify-between items-center px-2 ">
         <div className="space-y-1">
-          <h1 className="text-xl font-black text-white tracking-tighter uppercase">Performance</h1>
+          <h1 className="text-xl font-black text-white tracking-tighter uppercase">SEO Performance</h1>
         </div>
 
         <div className="flex items-center gap-4 relative">
           {/* Aggregation Type Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={aggRef}>
             <button 
               onClick={() => setShowAggDropdown(!showAggDropdown)}
-              className="px-6 py-3 bg-[#13171F] rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-text-secondary border border-white/10 hover:border-white/20 transition-all shadow-2xl"
+              className="px-4 py-3 bg-[#13171F] rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-text-secondary border border-white/10 hover:border-white/20 transition-all shadow-2xl"
             >
               <BarChart3 size={14} className="text-accent-orange" />
               {aggregation}
@@ -316,7 +418,7 @@ export default function ClientSEODashboard() {
             </button>
             
             {showAggDropdown && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-[#13171F] p-2 rounded-3xl border border-white/10 z-[30] shadow-2xl animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full right-0 mt-2 w-32 bg-[#13171F]/80 backdrop-blur-xl p-2 rounded-3xl border border-white/10 z-[30] shadow-2xl animate-in fade-in slide-in-from-top-2">
                 {(['daily', 'weekly', 'monthly'] as const).map(mode => (
                   <button
                     key={mode}
@@ -332,20 +434,21 @@ export default function ClientSEODashboard() {
             )}
           </div>
 
-          <button 
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className="px-6 py-3 bg-[#13171F] rounded-2xl flex items-center gap-3 text-xs font-black text-white border border-white/10 hover:border-white/20 transition-all shadow-2xl"
-          >
-            <Calendar size={14} className="text-accent-orange" />
-            {dateRange === 'custom' ? `${customRange.start} - ${customRange.end}` : 
-             dateRange === '1w' ? 'Last One Week' :
-             dateRange === '30d' ? 'Last 30 Days' :
-             'Last 3 Months'}
-            <ChevronDown size={14} className="text-slate-600" />
-          </button>
+          <div className="relative" ref={dateRef}>
+            <button 
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="px-4 py-3 bg-[#13171F] rounded-2xl flex items-center gap-3 text-xs font-black text-white border border-white/10 hover:border-white/20 transition-all shadow-2xl"
+            >
+              <Calendar size={14} className="text-accent-orange" />
+              {dateRange === 'custom' ? `${customRange.start} - ${customRange.end}` : 
+               dateRange === '1w' ? 'Last One Week' :
+               dateRange === '30d' ? 'Last 30 Days' :
+               'Last 3 Months'}
+              <ChevronDown size={14} className="text-slate-600" />
+            </button>
 
           {showDatePicker && (
-            <div className="absolute top-full right-0 mt-2 w-64 bg-[#13171F] p-4 rounded-3xl border border-white/10 z-50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2">
+            <div className="absolute top-full right-0 mt-2 w-48 bg-[#13171F]/80 backdrop-blur-xl p-4 rounded-3xl border border-white/10 z-50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2">
               <div className="flex flex-col gap-1">
                 {[
                   { id: '1w', label: 'Last One Week' },
@@ -367,12 +470,12 @@ export default function ClientSEODashboard() {
                   <div className="px-2 space-y-2">
                      <input 
                        type="date" 
-                       className="w-full bg-white/5 border border-white/5 rounded-lg p-2 text-[10px] text-white outline-none focus:border-accent-orange transition-colors"
+                       className="w-full bg-white/5 border border-white/5 rounded-lg p-2 text-[10px] text-white outline-none focus:border-accent-orange transition-colors [color-scheme:dark]"
                        onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
                      />
                      <input 
                        type="date" 
-                       className="w-full bg-white/5 border border-white/5 rounded-lg p-2 text-[10px] text-white outline-none focus:border-accent-orange transition-colors"
+                       className="w-full bg-white/5 border border-white/5 rounded-lg p-2 text-[10px] text-white outline-none focus:border-accent-orange transition-colors [color-scheme:dark]"
                        onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
                      />
                      <button 
@@ -394,6 +497,7 @@ export default function ClientSEODashboard() {
           )}
         </div>
       </div>
+    </div>
 
       {/* KPI Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -438,7 +542,7 @@ export default function ClientSEODashboard() {
         <div className="col-span-12 flex flex-col gap-6">
           
           {/* Unified Intelligence Trend Chart */}
-          <div className="bg-[#13171F]/50 backdrop-blur-3xl p-6 lg:p-8 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-2xl">
+          <div className="bg-[#13171F]/40 backdrop-blur-3xl p-6 lg:p-8 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-2xl">
               <div className="absolute top-0 right-0 w-80 h-80 bg-accent-blue/10 blur-[100px] opacity-20 transition-all group-hover:bg-accent-orange/10 duration-1000" />
               
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-7 relative z-10 gap-4 mt-1">
@@ -506,25 +610,25 @@ export default function ClientSEODashboard() {
                       />
                       
                       <RechartsTooltip 
-                        cursor={{ stroke: '#ffffff10', strokeWidth: 2 }}
+                        cursor={{ stroke: '#ffffff20', strokeWidth: 2 }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                              return (
-                               <div className="bg-[#13171F] p-5 border border-white/10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-3 backdrop-blur-xl">
-                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">{payload[0].payload.date}</p>
+                               <div className="bg-[#13171F]/80 backdrop-blur-xl p-5 border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-3 animate-in fade-in zoom-in duration-200">
+                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">{payload[0].payload.date}</p>
                                  <div className="flex items-center justify-between gap-8">
                                     <div className="flex items-center gap-2">
-                                       <div className="w-2 h-2 rounded-full bg-accent-orange shadow-[0_0_10px_rgba(255,77,0,0.5)]" />
-                                       <span className="text-[10px] font-black text-white uppercase tracking-widest">Clicks</span>
+                                       <div className="w-1.5 h-1.5 rounded-full bg-accent-orange shadow-[0_0_10px_rgba(255,77,0,0.5)]" />
+                                       <span className="text-[9px] font-black text-white uppercase tracking-widest">Clicks</span>
                                     </div>
-                                    <span className="text-sm font-black text-accent-orange italic">{payload[0].value.toLocaleString()}</span>
+                                    <span className="text-[10px] font-black text-accent-orange">{payload[0].value.toLocaleString()}</span>
                                  </div>
                                  <div className="flex items-center justify-between gap-8">
                                     <div className="flex items-center gap-2">
-                                       <div className="w-2 h-2 rounded-full bg-accent-blue shadow-[0_0_10px_rgba(0,163,255,0.5)]" />
-                                       <span className="text-[10px] font-black text-white uppercase tracking-widest">Impressions</span>
+                                       <div className="w-1.5 h-1.5 rounded-full bg-accent-blue shadow-[0_0_10px_rgba(0,163,255,0.5)]" />
+                                       <span className="text-[9px] font-black text-white uppercase tracking-widest">Impressions</span>
                                     </div>
-                                    <span className="text-sm font-black text-accent-blue italic">{payload[1]?.value.toLocaleString()}</span>
+                                    <span className="text-[10px] font-black text-accent-blue">{payload[1]?.value.toLocaleString()}</span>
                                  </div>
                                </div>
                              );
@@ -562,44 +666,142 @@ export default function ClientSEODashboard() {
           </div>
 
           {/* Keyword Performance Table */}
-          <div className="bg-[#13171F]/50 p-6 rounded-[2rem] border border-white/5">
-             <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6">Keywords</h3>
+          <div className="bg-[#13171F]/40 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/5 shadow-2xl">
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-3">
+               <h3 className="text-lg font-black text-white uppercase tracking-tighter">Performance</h3>
+               
+               <div className="flex items-center p-1 bg-white/5 rounded-2xl border border-white/5 relative h-10">
+                 {(['queries', 'pages', 'countries', 'devices', 'days'] as const).map(tab => (
+                   <button
+                     key={tab}
+                     onClick={() => setActiveTab(tab)}
+                     className={`relative px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
+                       activeTab === tab ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                     }`}
+                   >
+                     {tab}
+                     {activeTab === tab && (
+                       <span className="absolute inset-0 bg-accent-orange rounded-xl -z-10 shadow-[0_0_15px_rgba(255,77,0,0.3)] animate-in fade-in zoom-in duration-300" />
+                     )}
+                   </button>
+                 ))}
+               </div>
+             </div>
              
              <div className="overflow-x-auto">
                 <table className="w-full table-fixed text-left border-separate border-spacing-y-1.5">
                    <thead>
                       <tr className="text-slate-600">
-                         {['Keyword', 'Rank', 'Clicks', 'Impressions', 'CTR'].map(t => (
-                           <th key={t} className={`pb-4 text-[9px] font-black uppercase tracking-widest px-3 ${t === 'Keyword' ? 'w-[50%]' : 'w-[12.5%]'}`}>{t}</th>
+                         {[(activeTab === 'queries' ? 'Queries' : activeTab === 'pages' ? 'Page' : activeTab === 'countries' ? 'Country' : activeTab === 'devices' ? 'Device' : 'Date'), 'Rank', 'Clicks', 'Impressions', 'CTR'].map(t => (
+                            <th key={t} className={`pb-4 text-[9px] font-black uppercase tracking-widest px-3 ${['Queries', 'Page', 'Country', 'Device', 'Date'].includes(t) ? 'w-[75%]' : 'w-[10%]'}`}>{t}</th>
                          ))}
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-white/5">
-                      {data?.keywords.map((kw, i) => {
-                        
-                        return (
-                          <tr key={i} className="group hover:bg-white/[0.02] transition-all">
-                             <td className="py-1 px-3">
-                                <span className="text-[13px] font-black font-semibold text-slate-300 group-hover:text-white transition-colors">{kw.keys?.[0]}</span>
-                             </td>
-                             <td className="py-1 px-3 text-center">
+                      {(() => {
+                        const rawData = data?.[activeTab === 'days' ? 'trends' : activeTab] || [];
+                        // Sort by date descending if in 'days' tab
+                        const sortedData = activeTab === 'days' 
+                          ? [...rawData].sort((a,b) => (b.keys?.[0] || '').localeCompare(a.keys?.[0] || ''))
+                          : rawData;
+
+                        // Apply Pagination
+                        const paginatedData = sortedData.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage);
+
+                        return paginatedData.map((row, i) => {
+                          let displayKey = row.keys?.[0] || 'Unknown';
+                          
+                          if (activeTab === 'days' && displayKey !== 'Unknown') {
+                            const d = new Date(displayKey);
+                            displayKey = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                          }
+
+                          return (
+                            <tr key={i} className="group hover:bg-white/[0.02] transition-all">
+                               <td className="py-2 px-3">
+                                  <div className="flex items-center gap-3">
+                                     {activeTab === 'devices' && <DeviceIcon type={row.keys?.[0] || ''} />}
+                                     <span className="text-[13px] font-semibold text-slate-300 group-hover:text-white transition-colors truncate max-full block">
+                                        {activeTab === 'countries' ? getCountryName(displayKey) : displayKey}
+                                     </span>
+                                  </div>
+                               </td>
+                             <td className="py-2 px-3 text-center">
                                 <div className={`w-7 h-7 flex items-center justify-center rounded-lg font-black text-[9px] ${
-                                  kw.position <= 3 ? 'bg-accent-green/10 text-accent-green border border-accent-green/20' :
-                                  kw.position < 10 ? 'bg-accent-blue/10 text-accent-blue border border-accent-blue/20' :
+                                  row.position <= 3 ? 'bg-accent-green/10 text-accent-green border border-accent-green/20' :
+                                  row.position < 10 ? 'bg-accent-blue/10 text-accent-blue border border-accent-blue/20' :
                                   'bg-accent-red/10 text-accent-red border border-accent-red/20'
                                 } shadow-xl`}>
-                                   {kw.position.toFixed(0)}
+                                   {row.position.toFixed(0)}
                                 </div>
                              </td>
-                             <td className="py-1 px-3 text-[10px] font-black text-slate-400">{kw.clicks.toLocaleString()}</td>
-                             <td className="py-1 px-3 text-[10px] font-black text-slate-400">{kw.impressions.toLocaleString()}</td>
-                             <td className="py-1 px-3 text-[10px] font-black text-slate-400">{(kw.ctr * 100).toFixed(1)}%</td>
+                             <td className="py-2 px-3 text-[10px] font-black text-slate-400">{row.clicks.toLocaleString()}</td>
+                             <td className="py-2 px-3 text-[10px] font-black text-slate-400">{row.impressions.toLocaleString()}</td>
+                             <td className="py-2 px-3 text-[10px] font-black text-slate-400">{(row.ctr * 100).toFixed(1)}%</td>
                           </tr>
                         );
-                      })}
+                      })
+                    })()}
                    </tbody>
                 </table>
              </div>
+
+             {/* Pagination Controls */}
+             {data && (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0) > 0 && (
+               <div className="mt-8 flex flex-col sm:flex-row items-center justify-end gap-6 px-4 py-4 border-t border-white/5">
+                 <div className="flex items-center gap-3 relative" ref={rowsRef}>
+                   <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Rows per page:</span>
+                   <button 
+                     onClick={() => setShowRowsDropdown(!showRowsDropdown)}
+                     className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl text-[11px] font-black text-white hover:bg-white/10 transition-all border border-white/5"
+                   >
+                     {rowsPerPage}
+                     <ChevronDown size={14} className={`text-slate-500 transition-transform ${showRowsDropdown ? 'rotate-180' : ''}`} />
+                   </button>
+
+                   {showRowsDropdown && (
+                     <div className="absolute bottom-full right-0 mb-2 w-20 bg-[#13171F]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-1 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2">
+                       {[10, 25, 50, 100].map(size => (
+                         <button
+                           key={size}
+                           onClick={() => { setRowsPerPage(size); setCurrentPage(0); setShowRowsDropdown(false); }}
+                           className={`w-full text-left px-4 py-2 rounded-xl text-[10px] font-black transition-all ${
+                             rowsPerPage === size ? 'bg-accent-orange text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                           }`}
+                         >
+                           {size}
+                         </button>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+
+                 <div className="flex items-center gap-6">
+                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest tabular-nums italic">
+                     {Math.min(currentPage * rowsPerPage + 1, (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0))} - {Math.min((currentPage + 1) * rowsPerPage, (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0))} 
+                     <span className="text-slate-600 mx-1">of</span> 
+                     {(data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0)}
+                   </span>
+
+                   <div className="flex items-center gap-2">
+                     <button 
+                       disabled={currentPage === 0}
+                       onClick={() => setCurrentPage(p => p - 1)}
+                       className="p-2 bg-white/5 rounded-xl text-white disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white/10 transition-all border border-white/5"
+                     >
+                       <ChevronLeft size={16} />
+                     </button>
+                     <button 
+                       disabled={(currentPage + 1) * rowsPerPage >= (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0)}
+                       onClick={() => setCurrentPage(p => p + 1)}
+                       className="p-2 bg-white/5 rounded-xl text-white disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white/10 transition-all border border-white/5"
+                     >
+                       <ChevronRight size={16} />
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             )}
           </div>
         </div>
 
@@ -626,7 +828,7 @@ export default function ClientSEODashboard() {
           scrollbar-width: none;
         }
       `}</style>
-
+      </div>
     </div>
   );
 }

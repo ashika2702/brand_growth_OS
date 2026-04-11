@@ -19,28 +19,48 @@ export async function GET(
     
     const startDate = searchParams.get('startDate') || thirtyDaysAgo;
     const endDate = searchParams.get('endDate') || today;
-    
-    // Fetch Keyword Data (Current Range)
-    const keywords = await fetchGSCPerformance(clientId, startDate, endDate, ['query'], 'all');
-    
-    // Fetch Trend Data (Current Range)
-    const trends = await fetchGSCPerformance(clientId, startDate, endDate, ['date'], 'all');
 
-    // Optional: Fetch Comparison Data for Delta (Last Period)
+    // Calculate Comparison Range
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diff = end.getTime() - start.getTime();
-    
     const prevStart = new Date(start.getTime() - (diff || 86400000)).toISOString().split('T')[0];
     const prevEnd = new Date(start.getTime() - 1000).toISOString().split('T')[0];
-
-    const prevKeywords = await fetchGSCPerformance(clientId, prevStart, prevEnd, ['query'], 'all');
-    const prevTrends = await fetchGSCPerformance(clientId, prevStart, prevEnd, ['date'], 'all');
-
-    return NextResponse.json({ 
+    
+    const [
       keywords, 
+      pages, 
+      countries, 
+      devices, 
       trends, 
       prevKeywords, 
+      prevPages, 
+      prevCountries, 
+      prevDevices, 
+      prevTrends
+    ] = await Promise.all([
+      fetchGSCPerformance(clientId, startDate, endDate, ['query'], 'all'),
+      fetchGSCPerformance(clientId, startDate, endDate, ['page'], 'all'),
+      fetchGSCPerformance(clientId, startDate, endDate, ['country'], 'all'),
+      fetchGSCPerformance(clientId, startDate, endDate, ['device'], 'all'),
+      fetchGSCPerformance(clientId, startDate, endDate, ['date'], 'all'),
+      fetchGSCPerformance(clientId, prevStart, prevEnd, ['query'], 'all'),
+      fetchGSCPerformance(clientId, prevStart, prevEnd, ['page'], 'all'),
+      fetchGSCPerformance(clientId, prevStart, prevEnd, ['country'], 'all'),
+      fetchGSCPerformance(clientId, prevStart, prevEnd, ['device'], 'all'),
+      fetchGSCPerformance(clientId, prevStart, prevEnd, ['date'], 'all'),
+    ]);
+
+    return NextResponse.json({ 
+      queries: keywords, 
+      pages,
+      countries,
+      devices,
+      trends, 
+      prevQueries: prevKeywords, 
+      prevPages,
+      prevCountries,
+      prevDevices,
       prevTrends,
       range: { startDate, endDate, prevStart, prevEnd }
     });
