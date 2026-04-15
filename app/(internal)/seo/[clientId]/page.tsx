@@ -777,7 +777,7 @@ export default function ClientSEODashboard() {
                  </div>
 
                  <div className="flex items-center gap-6">
-                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest tabular-nums italic">
+                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest tabular-nums ">
                      {Math.min(currentPage * rowsPerPage + 1, (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0))} - {Math.min((currentPage + 1) * rowsPerPage, (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0))} 
                      <span className="text-slate-600 mx-1">of</span> 
                      {(data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0)}
