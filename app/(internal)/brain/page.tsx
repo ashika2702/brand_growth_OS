@@ -12,7 +12,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
-  Sparkles
+  Sparkles,
+  SquarePen,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useClientStore } from '@/lib/store';
@@ -24,6 +26,9 @@ export default function BusinessBrainPage() {
   const { clients, setClients, setActiveClientId } = useClientStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<any>(null);
 
   const fetchClients = async () => {
     try {
@@ -36,6 +41,24 @@ export default function BusinessBrainPage() {
       console.error('Error fetching agents:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditClick = async (agent: any) => {
+    setEditingAgent(agent);
+    setIsEditOpen(true);
+    setIsSyncing(true);
+    try {
+      const res = await fetch(`/api/brain?clientId=${agent.id}`);
+      const data = await res.json();
+      if (data) {
+        // Merge the client info with the brain data
+        setEditingAgent({ ...data, clientId: agent.id, client: agent });
+      }
+    } catch (err) {
+      console.error('Error fetching brain data:', err);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -138,20 +161,16 @@ export default function BusinessBrainPage() {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right pr-12">
-                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 hover:bg-surface-3 rounded-lg text-text-muted hover:text-text-primary transition-all">
-                          <Settings size={16} />
-                        </button>
-                        <Link
-                          href={`/brain/${agent.id}`}
-                          className="flex items-center gap-2 px-4 py-2 bg-accent-orange/10 hover:bg-accent-orange text-accent-orange hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-accent-orange/20 transition-all"
+                      <div className="flex items-center justify-end gap-3 transition-opacity">
+                        <button 
+                          className="p-2.5 bg-accent-blue/5 hover:bg-accent-blue/10 rounded-xl text-text-muted hover:text-accent-blue transition-all border border-border-1 hover:border-accent-blue/20"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveClientId(agent.id);
+                            handleEditClick(agent);
                           }}
                         >
-                          Manage <ChevronRight size={14} />
-                        </Link>
+                          <SquarePen size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -198,6 +217,33 @@ export default function BusinessBrainPage() {
           onClose={() => setIsSetupOpen(false)}
           onSuccess={fetchClients}
         />
+      </Dialog>
+
+      {/* Edit Agent Intelligence Dialog */}
+      <Dialog
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        title="Agent Intelligence Workspace"
+      >
+        {isSyncing ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-accent-blue/20 blur-3xl rounded-full animate-pulse" />
+              <Loader2 className="w-12 h-12 text-accent-blue animate-spin relative z-10" />
+            </div>
+            <div className="text-center space-y-2">
+              <h4 className="text-[14px] font-black text-text-primary uppercase italic tracking-tighter">Synchronizing Neural Core</h4>
+              <p className="text-[9px] text-text-muted font-black uppercase tracking-widest leading-relaxed">Retrieving personas, offers, and voice guides...</p>
+            </div>
+          </div>
+        ) : (
+          <IntakeForm
+            initialData={editingAgent}
+            startStep={2}
+            onClose={() => setIsEditOpen(false)}
+            onSuccess={fetchClients}
+          />
+        )}
       </Dialog>
     </div>
   );

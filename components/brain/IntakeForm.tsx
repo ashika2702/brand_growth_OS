@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
@@ -31,17 +31,20 @@ const STEPS: Step[] = [
 interface IntakeFormProps {
   onClose?: () => void;
   onSuccess?: () => void;
+  initialData?: any;
+  startStep?: number;
 }
 
-export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
+export default function IntakeForm({ onClose, onSuccess, initialData, startStep = 1 }: IntakeFormProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(startStep);
   const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
-    clientId: `client_${Math.random().toString(36).substr(2, 9)}`,
-    clientName: '',
-    domain: '',
-    personas: [{
+    clientId: initialData?.clientId || `client_${Math.random().toString(36).substr(2, 9)}`,
+    clientName: initialData?.client?.name || initialData?.clientName || '',
+    domain: initialData?.client?.domain || initialData?.domain || '',
+    personas: initialData?.personas || [{
       id: '1',
       name: '',
       description: '',
@@ -53,25 +56,44 @@ export default function IntakeForm({ onClose, onSuccess }: IntakeFormProps) {
         steps: [{ delayDays: 0, strategy: 'Initial personalized outreach focusing on the primary pain point.', name: 'Initial Pulse', goal: 'Establish connection' }]
       }
     }],
-    offers: [{ id: '1', name: '', valueProposition: '', price: '' }],
-    onlineChannels: [] as string[],
-    offlineChannels: [] as string[],
-    constraints: [] as string[],
-    voiceGuide: {
+    offers: initialData?.offers || [{ id: '1', name: '', valueProposition: '', price: '' }],
+    onlineChannels: initialData?.onlineChannels || [] as string[],
+    offlineChannels: initialData?.offlineChannels || [] as string[],
+    constraints: initialData?.constraints || [] as string[],
+    voiceGuide: initialData?.voiceGuide || {
       tone: 'Professional',
       adjectives: [] as string[],
       vocab_do: [] as string[],
       vocab_dont: [] as string[],
       samples: [] as string[]
     },
-    fromName: '',
-    smtpUser: '',
-    smtpPass: '',
-    smtpHost: 'smtp.gmail.com',
-    smtpPort: 465,
-    imapHost: 'imap.gmail.com',
-    imapPort: 993
+    fromName: initialData?.client?.fromName || initialData?.fromName || '',
+    smtpUser: initialData?.client?.smtpUser || initialData?.smtpUser || '',
+    smtpPass: initialData?.client?.smtpPass || initialData?.smtpPass || '',
+    smtpHost: initialData?.client?.smtpHost || initialData?.smtpHost || 'smtp.gmail.com',
+    smtpPort: initialData?.client?.smtpPort || initialData?.smtpPort || 465,
+    imapHost: initialData?.client?.imapHost || initialData?.imapHost || 'imap.gmail.com',
+    imapPort: initialData?.client?.imapPort || initialData?.imapPort || 993
   });
+
+  // Keep state in sync if initialData updates
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        clientName: initialData.client?.name || initialData.clientName || prev.clientName,
+        domain: initialData.client?.domain || initialData.domain || prev.domain,
+        fromName: initialData.client?.fromName || initialData.fromName || prev.fromName,
+        smtpUser: initialData.client?.smtpUser || initialData.smtpUser || prev.smtpUser,
+        smtpPass: initialData.client?.smtpPass || initialData.smtpPass || prev.smtpPass,
+        smtpHost: initialData.client?.smtpHost || initialData.smtpHost || prev.smtpHost,
+        smtpPort: initialData.client?.smtpPort || initialData.smtpPort || prev.smtpPort,
+        imapHost: initialData.client?.imapHost || initialData.imapHost || prev.imapHost,
+        imapPort: initialData.client?.imapPort || initialData.imapPort || prev.imapPort,
+      }));
+    }
+  }, [initialData]);
 
   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));

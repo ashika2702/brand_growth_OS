@@ -4,8 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { ChevronDown, Check, Globe, Plus } from 'lucide-react';
 import { useClientStore } from '@/lib/store';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function ClientSwitcher() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { activeClientId, clients, setActiveClientId, setClients } = useClientStore();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -64,8 +67,21 @@ export default function ClientSwitcher() {
                 <button
                   key={client.id}
                   onClick={() => {
+                    // Update state
+                    const oldId = activeClientId;
                     setActiveClientId(client.id);
                     setIsOpen(false);
+
+                    // If we are on a client-specific page, update the URL
+                    if (oldId && pathname.includes(oldId)) {
+                      const newPath = pathname.replace(oldId, client.id);
+                       if (newPath !== pathname) {
+                         router.push(newPath);
+                       }
+                    } else if (pathname.includes('/setup')) {
+                       // Edge case: if they are in setup/brain, maybe stay put or go to dashboard
+                       router.push('/dashboard');
+                    }
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-black transition-all group ${activeClientId === client.id
                       ? 'bg-accent-blue text-white shadow-xl shadow-accent-blue/25'

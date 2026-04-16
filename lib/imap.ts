@@ -49,113 +49,126 @@ async function syncClientInbox(client: any) {
                                 const fromEmail = mail.from?.value[0]?.address?.toLowerCase();
                                 if (!fromEmail) return;
 
-                                const lead = await prisma.lead.findFirst({
-                                    where: {
-                                        clientId: client.id,
-                                        email: { equals: fromEmail, mode: 'insensitive' }
-                                    },
-                                    orderBy: { updatedAt: 'desc' }
-                                });
-
-                                if (lead && mail.date && mail.date > lead.createdAt) {
-                                    const messageId = mail.messageId || `date-${mail.date?.getTime()}`;
-
-                                    const existingActivity = await prisma.leadActivity.findFirst({
+                                try {
+                                    const lead = await prisma.lead.findFirst({
                                         where: {
-                                            leadId: lead.id,
-                                            type: 'email_reply',
-                                            metadata: { path: ['messageId'], equals: messageId }
-                                        }
+                                            clientId: client.id,
+                                            email: { equals: fromEmail, mode: 'insensitive' }
+                                        },
+                                        orderBy: { updatedAt: 'desc' }
                                     });
 
-                                    if (!existingActivity) {
-                                        const snippet = mail.text?.substring(0, 500) || '';
-                                        const intent = await analyzeLeadIntent(lead, snippet);
+                                    if (lead && mail.date && mail.date > lead.createdAt) {
+                                        const messageId = mail.messageId || `date-${mail.date?.getTime()}`;
 
-                                        await prisma.leadActivity.create({
-                                            data: {
+                                        const existingActivity = await prisma.leadActivity.findFirst({
+                                            where: {
                                                 leadId: lead.id,
                                                 type: 'email_reply',
-                                                description: `Lead replied: "${mail.subject}"`,
-                                                metadata: {
-                                                    messageId,
-                                                    subject: mail.subject,
-                                                    snippet,
-                                                    receivedAt: mail.date,
-                                                    intent
-                                                }
+                                                metadata: { path: ['messageId'], equals: messageId }
                                             }
                                         });
 
-                                        const isAlreadyQualified = lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'won';
+                                        if (!existingActivity) {
+                                            const snippet = mail.text?.substring(0, 500) || '';
+                                            const intent = await analyzeLeadIntent(lead, snippet);
 
-                                        // --- GLOBAL DRAFTS-ONLY ENFORCEMENT ---
-                                        // Unified logic: AI never sends replies directly. Always drafts + Human Gate.
-                                        if (!isAlreadyQualified) {
-                                            if (intent === 'INTERESTED') {
-                                                const replyContent = await generateHandoffReply(lead, snippet);
-                                                const subject = `Re: ${mail.subject}`;
+                                            await prisma.leadActivity.create({
+                                                data: {
+                                                    leadId: lead.id,
+                                                    type: 'email_reply',
+                                                    description: `Lead replied: "${mail.subject}"`,
+                                                    metadata: {
+                                                        messageId,
+                                                        subject: mail.subject,
+                                                        snippet,
+                                                        receivedAt: mail.date,
+                                                        intent
+                                                    }
+                                                }
+                                            });
 
-                                                console.log(`[HUMAN GATE] Drafting Gmail reply for ${lead.name} (Global Draft Mandatory)`);
-                                                
-                                                await appendGmailDraft(client, {
-                                                    to: lead.email,
-                                                    subject,
-                                                    html: replyContent.replace(/\n/g, '<br/>')
-                                                });
+                                            const isAlreadyQualified = lead.stage === 'qualified' || lead.stage === 'quoted' || lead.stage === 'won';
 
-                                                await prisma.humanGate.create({
-                                                    data: {
-                                                        clientId: client.id,
-                                                        leadId: lead.id,
-                                                        agentId: 'inbox_sync',
-                                                        gateType: 'approval',
-                                                        question: `${lead.name} replied with interest. Approve this response?`,
-                                                        contextJson: {
+                                            if (!isAlreadyQualified) {
+                                                if (intent === 'INTERESTED') {
+                                                    const replyContent = await generateHandoffReply(lead, snippet);
+                                                    const subject = `Re: ${mail.subject}`;
+
+                                                    console.log(`[HUMAN GATE] Drafting Gmail reply for ${lead.name} (Global Draft Mandatory)`);
+                                                    
+                                                    await appendGmailDraft(client, {
+                                                        to: lead.email,
+                                                        subject,
+                                                        html: replyContent.replace(/\n/g, '<br/>')
+                                                    });
+
+                                                    await prisma.humanGate.create({
+                                                        data: {
+                                                            clientId: client.id,
                                                             leadId: lead.id,
-                                                            draftSubject: subject,
-                                                            draftHtml: replyContent.replace(/\n/g, '<br/>'),
-                                                            originalMessageId: messageId
+                                                            agentId: 'inbox_sync',
+                                                            gateType: 'approval',
+                                                            question: `${lead.name} replied with interest. Approve this response?`,
+                                                            contextJson: {
+                                                                leadId: lead.id,
+                                                                draftSubject: subject,
+                                                                draftHtml: replyContent.replace(/\n/g, '<br/>'),
+                                                                originalMessageId: messageId
+                                                            }
                                                         }
-                                                    }
-                                                });
+                                                    });
 
-                                                await prisma.leadActivity.create({
-                                                    data: {
-                                                        leadId: lead.id,
-                                                        type: 'email_draft',
-                                                        description: `AI Drafted Interested Reply (Synced to Gmail)`,
-                                                        metadata: { subject, content: replyContent, isAutoReply: true, isGated: true }
-                                                    }
-                                                });
+                                                    await prisma.leadActivity.create({
+                                                        data: {
+                                                            leadId: lead.id,
+                                                            type: 'email_draft',
+                                                            description: `AI Drafted Interested Reply (Synced to Gmail)`,
+                                                            metadata: { subject, content: replyContent, isAutoReply: true, isGated: true }
+                                                        }
+                                                    });
 
-                                                await prisma.notification.create({
-                                                    data: {
-                                                        clientId: client.id,
-                                                        type: 'lead.interested',
-                                                        title: `High Intent (Pending): ${lead.name}`,
-                                                        message: `Lead is interested! AI has drafted a reply in Gmail. Please approve.`,
-                                                        link: `/crm/${client.id}?leadId=${lead.id}`,
-                                                        priority: 'high'
-                                                    }
-                                                });
+                                                    await prisma.notification.create({
+                                                        data: {
+                                                            clientId: client.id,
+                                                            type: 'lead.interested',
+                                                            title: `High Intent (Pending): ${lead.name}`,
+                                                            message: `Lead is interested! AI has drafted a reply in Gmail. Please approve.`,
+                                                            link: `/crm/${client.id}?leadId=${lead.id}`,
+                                                            priority: 'high'
+                                                        }
+                                                    });
 
+                                                    await prisma.lead.update({
+                                                        where: { id: lead.id },
+                                                        data: {
+                                                            stage: 'qualified',
+                                                            score: 60,
+                                                            isAutoPilotActive: false,
+                                                            currentSequenceId: null,
+                                                            lastActivityAt: new Date()
+                                                        }
+                                                    });
+                                                } else if ((intent === 'NOT_INTERESTED' || intent === 'NEUTRAL') && (lead.stage === 'new' || lead.stage === 'contacted')) {
+                                                    await prisma.lead.update({
+                                                        where: { id: lead.id },
+                                                        data: {
+                                                            stage: 'contacted',
+                                                            score: 40,
+                                                            isAutoPilotActive: false,
+                                                            currentSequenceId: null,
+                                                            lastActivityAt: new Date()
+                                                        }
+                                                    });
+                                                }
+                                            }
+
+                                            if (intent === 'UNSUBSCRIBE') {
                                                 await prisma.lead.update({
                                                     where: { id: lead.id },
-                                                    data: {
-                                                        stage: 'qualified',
-                                                        score: 60,
-                                                        isAutoPilotActive: false,
-                                                        currentSequenceId: null,
-                                                        lastActivityAt: new Date()
-                                                    }
-                                                });
-                                            } else if ((intent === 'NOT_INTERESTED' || intent === 'NEUTRAL') && (lead.stage === 'new' || lead.stage === 'contacted')) {
-                                                await prisma.lead.update({
-                                                    where: { id: lead.id },
-                                                    data: {
-                                                        stage: 'contacted',
-                                                        score: 40,
+                                                    data: { 
+                                                        stage: 'lost', 
+                                                        emailOptOut: true,
                                                         isAutoPilotActive: false,
                                                         currentSequenceId: null,
                                                         lastActivityAt: new Date()
@@ -163,25 +176,14 @@ async function syncClientInbox(client: any) {
                                                 });
                                             }
                                         }
-
-                                        if (intent === 'UNSUBSCRIBE') {
-                                            await prisma.lead.update({
-                                                where: { id: lead.id },
-                                                data: { 
-                                                    stage: 'lost', 
-                                                    emailOptOut: true,
-                                                    isAutoPilotActive: false,
-                                                    currentSequenceId: null,
-                                                    lastActivityAt: new Date()
-                                                }
-                                            });
-                                        }
                                     }
-                                }
-
-                                processed++;
-                                if (processed === results.length) {
-                                    imap.end();
+                                } catch (dbError: any) {
+                                    console.error(`[IMAP SYNC] Database connection failure for client ${client.id}:`, dbError.message);
+                                } finally {
+                                    processed++;
+                                    if (processed === results.length) {
+                                        imap.end();
+                                    }
                                 }
                             });
                         });
