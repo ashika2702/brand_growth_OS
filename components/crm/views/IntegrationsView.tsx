@@ -19,6 +19,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
     metaPageId: '',
     linkedInAccessToken: '',
     googleSearchConsoleUrl: '',
+    googleAnalyticsPropertyId: '',
     isGoogleConnected: false
   });
 
@@ -184,7 +185,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <Globe className="text-accent-orange w-5 h-5" />
-          <h3 className="text-sm font-black uppercase tracking-widest text-text-primary italic transition-colors">Google Search Console (SEO Intelligence)</h3>
+          <h3 className="text-sm font-black uppercase tracking-widest text-text-primary italic transition-colors">Google Intelligence (SEO & Analytics)</h3>
         </div>
 
         <div className="glass-card p-6 rounded-3xl border border-border-1 space-y-6 transition-colors">
@@ -201,12 +202,20 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
               </div>
               
               {formData.isGoogleConnected && (
-                <button 
-                  onClick={() => window.location.href = `/seo/${clientId}`}
-                  className="px-4 py-1 bg-accent-blue/10 hover:bg-accent-blue/20 text-accent-blue text-[10px] font-black uppercase tracking-widest rounded-full border border-accent-blue/20 transition-all flex items-center gap-2"
-                >
-                  View Dashboard
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => window.location.href = `/seo/${clientId}`}
+                    className="px-4 py-1 bg-accent-blue/10 hover:bg-accent-blue/20 text-accent-blue text-[10px] font-black uppercase tracking-widest rounded-full border border-accent-blue/20 transition-all flex items-center gap-2"
+                  >
+                    SEO Dashboard
+                  </button>
+                  <button 
+                    onClick={() => window.location.href = `/intelligence/${clientId}/analytics`}
+                    className="px-4 py-1 bg-accent-green/10 hover:bg-accent-green/20 text-accent-green text-[10px] font-black uppercase tracking-widest rounded-full border border-accent-green/20 transition-all flex items-center gap-2"
+                  >
+                    Analytics Dashboard
+                  </button>
+                </div>
               )}
             </div>
             
@@ -233,6 +242,21 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
               className="w-full bg-surface-3 border border-border-2 focus:border-accent-orange p-4 rounded-2xl text-sm transition-all focus:ring-1 focus:ring-accent-orange/20 text-text-primary font-medium"
             />
             <p className="text-[10px] text-text-muted italic">This must match the property URL exactly as seen in your Google Search Console dashboard.</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
+              GA4 Property ID
+              <span className="text-[8px] bg-accent-green/20 text-accent-green px-2 py-0.5 rounded-full">Required for Analytics</span>
+            </label>
+            <input
+              type="text"
+              value={formData.googleAnalyticsPropertyId}
+              onChange={(e) => setFormData({ ...formData, googleAnalyticsPropertyId: e.target.value })}
+              placeholder="e.g. 123456789"
+              className="w-full bg-surface-3 border border-border-2 focus:border-accent-green p-4 rounded-2xl text-sm transition-all focus:ring-1 focus:ring-accent-green/20 text-text-primary font-medium"
+            />
+            <p className="text-[10px] text-text-muted italic">Found in GA4 Admin → Property Settings → Property ID.</p>
           </div>
         </div>
       </section>

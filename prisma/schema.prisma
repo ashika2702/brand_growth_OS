@@ -19,47 +19,49 @@ model User {
 }
 
 model Client {
-  id                  String               @id @default(cuid())
-  name                String
-  domain              String?
-  logo                String?
-  primaryColor        String?              @default("#0D1117")
-  brand24ProjectId    String?
-  canvaBrandKitId     String?
-  elevenlabsVoiceId   String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  canvaAccessToken    String?
-  canvaRefreshToken   String?
-  canvaTokenExpiresAt DateTime?
-  googleAccessToken     String?
-  googleRefreshToken    String?
-  googleTokenExpiresAt  DateTime?
+  id                     String               @id @default(cuid())
+  name                   String
+  domain                 String?
+  logo                   String?
+  primaryColor           String?              @default("#0D1117")
+  brand24ProjectId       String?
+  canvaBrandKitId        String?
+  elevenlabsVoiceId      String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  canvaAccessToken       String?
+  canvaRefreshToken      String?
+  canvaTokenExpiresAt    DateTime?
+  fromName               String?
+  imapHost               String?
+  imapPort               Int?
+  smtpHost               String?
+  smtpPass               String?
+  smtpPort               Int?
+  smtpUser               String?
+  autoPilotMode          String               @default("manual")
+  googleAdsKey           String?
+  metaAccessToken        String?
+  metaPageId             String?
+  linkedInAccessToken    String?
+  googleAccessToken      String?
+  googleRefreshToken     String?
   googleSearchConsoleUrl String?
-  fromName            String?
-  imapHost            String?
-  imapPort            Int?
-  smtpHost            String?
-  smtpPass            String?
-  smtpPort            Int?
-  smtpUser            String?
-  autoPilotMode       String               @default("manual")
-  googleAdsKey        String?
-  metaAccessToken     String?
-  metaPageId          String?
-  linkedInAccessToken String?
-  brain               BusinessBrain?
-  intelligence        ContentIntelligence?
-  contentRequests     ContentRequest[]
-  humanGates          HumanGate[]
-  leads               Lead[]
-  sequences           NeuralSequence[]
-  notifications       Notification[]
-  prMentions          PRMention[]
-  prOpportunities     PROpportunity[]
-  prReleases          PRRelease[]
-  leadForms           LeadForm[]
-  assignedUsers       User[]               @relation("ClientToUser")
+  googleTokenExpiresAt   DateTime?
+  googleAnalyticsPropertyId String?
+  brain                  BusinessBrain?
+  intelligence           ContentIntelligence?
+  contentRequests        ContentRequest[]
+  humanGates             HumanGate[]
+  leads                  Lead[]
+  leadForms              LeadForm[]
+  sequences              NeuralSequence[]
+  notifications          Notification[]
+  prMentions             PRMention[]
+  prOpportunities        PROpportunity[]
+  prReleases             PRRelease[]
+  SeoKeyword             SeoKeyword[]
+  assignedUsers          User[]               @relation("ClientToUser")
 }
 
 model HumanGate {
@@ -194,56 +196,51 @@ model PRRelease {
 }
 
 model Lead {
-  id                String         @id @default(cuid())
+  id                String           @id @default(cuid())
   clientId          String
   name              String
   email             String
   phone             String?
   source            String?
   personaTag        String?
-  stage             String         @default("new")
+  stage             String           @default("new")
   assignedTo        String?
-  score             Int            @default(0)
+  score             Int              @default(0)
   tags              String[]
   utmSource         String?
   utmMedium         String?
   utmCampaign       String?
-  gclid             String?
-  fbclid            String?
-  li_fat_id         String?
-  googleLeadId      String?
-  metaLeadId        String?
-  liLeadId          String?
-  emailOptOut       Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  lastActivityAt    DateTime       @default(now())
+  emailOptOut       Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  lastActivityAt    DateTime         @default(now())
   lossReason        String?
   quotedValue       Int?
   scoreFactors      Json?
   intent            String?
   currentSequenceId String?
-  isAutoPilotActive Boolean        @default(false)
+  isAutoPilotActive Boolean          @default(false)
   customFields      Json?
-  formId            String?
-  form              LeadForm?      @relation(fields: [formId], references: [id])
-  
-  // Address Information
-  addressStreet     String?
   addressCity       String?
-  addressState      String?
-  addressZip        String?
   addressCountry    String?
-  
-  // Description Information
+  addressState      String?
+  addressStreet     String?
+  addressZip        String?
   description       String?
-  
+  formId            String?
+  fbclid            String?
+  gclid             String?
+  li_fat_id         String?
+  googleLeadId      String?
+  liLeadId          String?
+  metaLeadId        String?
   humanGates        HumanGate[]
-  client            Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client            Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  form              LeadForm?        @relation(fields: [formId], references: [id])
   activities        LeadActivity[]
+  attachments       LeadAttachment[]
   sequences         LeadSequence[]
   tasks             LeadTask[]
-  attachments       LeadAttachment[]
 }
 
 model LeadAttachment {
@@ -330,14 +327,31 @@ model LeadForm {
   id          String   @id @default(cuid())
   clientId    String
   name        String
-  description String?
   slug        String   @unique
-  questions   Json     // Array of {id, type, label, required}
+  questions   Json
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  description String?
   leads       Lead[]
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+  @@index([clientId])
+}
+
+model SeoKeyword {
+  id            String    @id
+  clientId      String
+  keyword       String
+  location      String?
+  currentRank   Int?
+  previousRank  Int?
+  lastCheckedAt DateTime?
+  history       Json?     @default("[]")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  Client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, keyword])
   @@index([clientId])
 }

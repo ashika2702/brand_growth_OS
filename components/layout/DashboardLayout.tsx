@@ -16,6 +16,8 @@ import {
   LogOut,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   MoreVertical,
   PenTool,
   Activity,
@@ -42,9 +44,12 @@ interface SidebarItemProps {
   label: string;
   active: boolean;
   isCollapsed: boolean;
+  hasChildren?: boolean;
+  isOpen?: boolean;
+  onToggle?: (e: React.MouseEvent) => void;
 }
 
-const SidebarItem = ({ href, icon, label, active, isCollapsed }: SidebarItemProps) => (
+const SidebarItem = ({ href, icon, label, active, isCollapsed, hasChildren, isOpen, onToggle }: SidebarItemProps) => (
   <Link
     href={href}
     className={`flex items-center gap-3 py-2 transition-all duration-300 relative group ${isCollapsed ? 'px-0 justify-center' : 'px-5'
@@ -63,10 +68,41 @@ const SidebarItem = ({ href, icon, label, active, isCollapsed }: SidebarItemProp
     </span>
 
     {!isCollapsed && (
-      <span className={`font-black text-[10px] uppercase tracking-[0.15em] whitespace-nowrap overflow-hidden transition-all duration-300 ${active ? 'translate-x-1' : 'group-hover:translate-x-0.5'}`}>
-        {label}
-      </span>
+      <>
+        <span className={`font-black text-[10px] uppercase tracking-[0.15em] whitespace-nowrap overflow-hidden transition-all duration-300 ${active ? 'translate-x-1' : 'group-hover:translate-x-0.5'}`}>
+          {label}
+        </span>
+        {hasChildren && (
+          <div 
+            onClick={onToggle}
+            className="ml-auto p-1 hover:bg-white/5 rounded-md transition-colors"
+          >
+            {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </div>
+        )}
+      </>
     )}
+  </Link>
+);
+
+const SidebarSubItem = ({ href, label, active, isCollapsed }: { href: string, label: string, active: boolean, isCollapsed: boolean }) => (
+  <Link
+    href={href}
+    className={`flex items-center gap-3 py-2 pl-12 transition-all duration-300 relative group ${isCollapsed ? 'hidden' : ''
+      } ${active
+        ? 'text-accent-blue'
+        : 'text-slate-500 hover:text-slate-200'
+      }`}
+  >
+    {/* Connector Line */}
+    <div className="absolute left-7 top-0 bottom-0 w-[1px] bg-white/5" />
+    {active && (
+        <div className="absolute left-7 top-1/2 -translate-y-1/2 w-2 h-[1px] bg-accent-blue" />
+    )}
+    
+    <span className={`font-bold text-[9px] uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden transition-all duration-300 ${active ? 'translate-x-1' : 'group-hover:translate-x-0.5'}`}>
+      {label}
+    </span>
   </Link>
 );
 
@@ -85,6 +121,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const { activeClientId } = useClientStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(pathname.includes('/analytics') || pathname.includes('/intelligence'));
 
   return (
     <div className="flex h-screen bg-surface-1 font-sans text-text-secondary selection:bg-blue-500/30 overflow-hidden transition-colors duration-500">
@@ -116,54 +153,67 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             isCollapsed={isCollapsed}
           />
           <SidebarItem
-            href="/business"
+            href={activeClientId ? `/brain/${activeClientId}` : '/brain'}
             icon={<Brain />}
-            label="Business"
-            active={pathname.includes('/business') || pathname.includes('/brain') || pathname.includes('/crm')}
+            label="Agents"
+            active={pathname.includes('/brain')}
             isCollapsed={isCollapsed}
           />
           <SidebarItem
-            href="/marketing"
-            icon={<PenTool />}
-            label="Marketing"
-            active={pathname.includes('/marketing') || pathname.includes('/content') || pathname.includes('/strategy') || pathname.includes('/workflow')}
+            href={activeClientId ? `/crm/${activeClientId}` : '/crm'}
+            icon={<Users />}
+            label="CRM"
+            active={pathname.includes('/crm')}
             isCollapsed={isCollapsed}
           />
           <SidebarItem
-            href="/intelligence"
-            icon={<BarChart3 />}
-            label="Intelligence"
-            active={pathname.includes('/intelligence') || pathname.includes('/analytics') || pathname.includes('/leads')}
-            isCollapsed={isCollapsed}
-          />
-          <SidebarItem
-            href="/growth"
+            href="/content/tap"
             icon={<Sparkles />}
-            label="Growth"
-            active={pathname.includes('/growth') || pathname.includes('/seo') || pathname.includes('/aeo')}
+            label="Content Tap"
+            active={pathname.includes('/content/tap')}
             isCollapsed={isCollapsed}
           />
           <SidebarItem
-            href="/campaign-tools"
-            icon={<Megaphone />}
-            label="Campaign Tools"
-            active={pathname.includes('/campaign-tools') || pathname.includes('/landing-pages') || pathname.includes('/communication') || pathname.includes('/pr')}
+            href={activeClientId ? `/seo/${activeClientId}` : '/seo'}
+            icon={<Search />}
+            label="SEO"
+            active={pathname.includes('/seo')}
             isCollapsed={isCollapsed}
           />
-          <SidebarItem
-            href="/resources"
-            icon={<ImageIcon />}
-            label="Resources"
-            active={pathname.includes('/resources') || pathname.includes('/assets')}
-            isCollapsed={isCollapsed}
-          />
-          <SidebarItem
-            href="/clients"
-            icon={<ShieldCheck />}
-            label="Clients"
-            active={pathname.includes('/clients') || pathname.includes('/portal')}
-            isCollapsed={isCollapsed}
-          />
+          <div className="space-y-0.5">
+            <SidebarItem
+                href={activeClientId ? `/intelligence/${activeClientId}/analytics` : '/intelligence'}
+                icon={<BarChart3 />}
+                label="Analytics"
+                active={pathname.includes('/intelligence') || pathname.includes('/analytics')}
+                isCollapsed={isCollapsed}
+                hasChildren={true}
+                isOpen={isAnalyticsOpen}
+                onToggle={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsAnalyticsOpen(!isAnalyticsOpen);
+                }}
+            />
+            
+            {/* Analytics Sub Menu */}
+            {isAnalyticsOpen && !isCollapsed && (
+                <div className="animate-in slide-in-from-top-2 duration-300">
+                    <SidebarSubItem 
+                        href={activeClientId ? `/intelligence/${activeClientId}/analytics/realtime` : '/intelligence'} 
+                        label="Realtime Overview" 
+                        active={pathname.includes('/analytics/realtime')} 
+                        isCollapsed={isCollapsed} 
+                    />
+                    <SidebarSubItem 
+                        href={activeClientId ? `/intelligence/${activeClientId}/analytics?view=acquisition` : '/intelligence'} 
+                        label="Acquisition" 
+                        active={pathname.includes('/analytics') && typeof window !== 'undefined' && window.location.search.includes('view=acquisition')} 
+                        isCollapsed={isCollapsed} 
+                    />
+                </div>
+            )}
+          </div>
 
           <div className="pt-8 border-t border-white/5 mt-8">
             <SidebarItem

@@ -131,10 +131,156 @@ export function getGoogleAuthUrl(clientId: string) {
     prompt: 'consent',
     scope: [
       'https://www.googleapis.com/auth/webmasters.readonly',
-      'https://www.googleapis.com/auth/webmasters'
+      'https://www.googleapis.com/auth/webmasters',
+      'https://www.googleapis.com/auth/analytics.readonly',
+      'https://www.googleapis.com/auth/analytics'
     ],
     state: clientId // Pass clientId in state to recover it in callback
   });
+}
+
+
+/**
+ * Fetch Performance Data from GA4
+ */
+export async function fetchGA4Performance(
+  clientId: string,
+  startDate: string,
+  endDate: string
+) {
+  await getGoogleToken(clientId);
+
+  const clientData = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { googleAnalyticsPropertyId: true }
+  });
+
+  if (!clientData?.googleAnalyticsPropertyId) {
+    throw new Error('Google Analytics Property ID not configured for this client');
+  }
+
+  const analyticsdata = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
+
+  // 1. Standard Report (Totals & Trend)
+  const response = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'date' }],
+      metrics: [
+        { name: 'activeUsers' },
+        { name: 'sessions' },
+        { name: 'conversions' },
+        { name: 'bounceRate' }
+      ],
+      metricAggregations: ['TOTAL']
+    }
+  });
+
+  // 2. Realtime Report (Active Users now)
+  const realtimeResponse = await analyticsdata.properties.runRealtimeReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      metrics: [{ name: 'activeUsers' }]
+    }
+  });
+
+  // 3. Geographic Report
+  const geoData = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'country' }, { name: 'city' }],
+      metrics: [{ name: 'activeUsers' }],
+      limit: 10
+    }
+  });
+
+  // 4. Event Explorer Report
+  const eventData = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'eventName' }],
+      metrics: [{ name: 'eventCount' }],
+      limit: 15
+    }
+  });
+
+  // 5. Acquisition / Behavior (Refined)
+  const behaviorData = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'sessionSource' }, { name: 'pagePath' }],
+      metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
+      limit: 15
+    }
+  });
+
+  return {
+    rows: response.data.rows || [],
+    totals: response.data.totals?.[0]?.metricValues || [],
+    realtime: realtimeResponse.data.rows?.[0]?.metricValues?.[0]?.value || '0',
+    geo: geoData.data.rows || [],
+    events: eventData.data.rows || [],
+    behavior: behaviorData.data.rows || []
+  };
+}
+
+/**
+ * Fetch Full Realtime Report (Last 30 Minutes)
+ */
+export async function fetchGA4Realtime(clientId: string) {
+  await getGoogleToken(clientId);
+
+  const clientData = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { googleAnalyticsPropertyId: true }
+  });
+
+  if (!clientData?.googleAnalyticsPropertyId) {
+    throw new Error('Google Analytics Property ID not configured for this client');
+  }
+
+  const analyticsdata = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
+  const propertyId = `properties/${clientData.googleAnalyticsPropertyId}`;
+
+  // Helper to run a report safely without crashing the dashboard
+  const runSafeReport = async (name: string, dimensions: any[], metrics: any[]) => {
+    try {
+      const response = await analyticsdata.properties.runRealtimeReport({
+        property: propertyId,
+        requestBody: { dimensions, metrics }
+      });
+      return response.data.rows || [];
+    } catch (err: any) {
+      console.error(`GA4 Realtime [${name}] Error:`, err.message);
+      return [];
+    }
+  };
+
+  // Execute multiple realtime dimension reports independently
+  const [timeline, geo, sources, pages, events] = await Promise.all([
+    runSafeReport('Timeline', [{ name: 'minutesAgo' }], [{ name: 'activeUsers' }]),
+    runSafeReport('Geo', [{ name: 'country' }, { name: 'city' }], [{ name: 'activeUsers' }]),
+    runSafeReport('Device', [{ name: 'deviceCategory' }], [{ name: 'activeUsers' }]),
+    runSafeReport('Pages', [{ name: 'unifiedScreenName' }], [{ name: 'activeUsers' }]),
+    runSafeReport('Events', [{ name: 'eventName' }], [{ name: 'activeUsers' }])
+  ]);
+
+  // Total active users is simply the sum of the timeline or any other valid report 
+  // We use the timeline as the source of truth for "now"
+  const totalActive = timeline.reduce((acc, row) => acc + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 0;
+
+  return {
+    totalActive,
+    timeline,
+    geo,
+    sources,
+    pages,
+    events
+  };
 }
 
 /**
