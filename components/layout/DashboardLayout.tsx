@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             isCollapsed={isCollapsed}
           />
           <SidebarItem
-            href={activeClientId ? `/brain/${activeClientId}` : '/brain'}
+            href="/brain"
             icon={<Brain />}
             label="Agents"
             active={pathname.includes('/brain')}

@@ -260,26 +260,72 @@ export async function fetchGA4Realtime(clientId: string) {
     }
   };
 
-  // Execute multiple realtime dimension reports independently
-  const [timeline, geo, sources, pages, events] = await Promise.all([
+  // Execute focused reports in compatible batches (Metrics like eventCount must be requested with eventName separately)
+  const [timeline, masterA, masterB] = await Promise.all([
     runSafeReport('Timeline', [{ name: 'minutesAgo' }], [{ name: 'activeUsers' }]),
-    runSafeReport('Geo', [{ name: 'country' }, { name: 'city' }], [{ name: 'activeUsers' }]),
-    runSafeReport('Device', [{ name: 'deviceCategory' }], [{ name: 'activeUsers' }]),
-    runSafeReport('Pages', [{ name: 'unifiedScreenName' }], [{ name: 'activeUsers' }]),
-    runSafeReport('Events', [{ name: 'eventName' }], [{ name: 'activeUsers' }])
+    runSafeReport('MasterA', 
+      [
+        { name: 'country' },           // index 0
+        { name: 'city' },              // index 1
+        { name: 'deviceCategory' }     // index 2
+      ], 
+      [
+        { name: 'activeUsers' }        // index 0
+      ]
+    ),
+    runSafeReport('MasterB', 
+      [
+        { name: 'eventName' }          // index 0
+      ], 
+      [
+        { name: 'eventCount' },        // index 0
+        { name: 'keyEvents' }          // index 1
+      ]
+    )
   ]);
 
-  // Total active users is simply the sum of the timeline or any other valid report 
-  // We use the timeline as the source of truth for "now"
+  // Aggregate helper to extract specific dimension data from a specific master result
+  const getBreakdown = (rows: any[], dimIndex: number, metricIndex: number, secondaryDimIndex?: number) => {
+      const summary = new Map<string, { metrics: number[], dims: string[] }>();
+      
+      rows.forEach(row => {
+          const key = secondaryDimIndex !== undefined 
+            ? `${row.dimensionValues[dimIndex].value}|${row.dimensionValues[secondaryDimIndex].value}`
+            : row.dimensionValues[dimIndex].value;
+          
+          const val = parseInt(row.metricValues[metricIndex].value || '0');
+          if (val === 0) return;
+
+          const existing = summary.get(key);
+          if (existing) {
+              existing.metrics[0] += val;
+          } else {
+              summary.set(key, { 
+                metrics: [val], 
+                dims: secondaryDimIndex !== undefined 
+                    ? [row.dimensionValues[dimIndex].value, row.dimensionValues[secondaryDimIndex].value]
+                    : [row.dimensionValues[dimIndex].value]
+              });
+          }
+      });
+
+      return Array.from(summary.values())
+        .sort((a, b) => b.metrics[0] - a.metrics[0])
+        .map(item => ({
+            dimensionValues: item.dims.map(d => ({ value: d })),
+            metricValues: item.metrics.map(m => ({ value: m.toString() }))
+        }));
+  };
+
   const totalActive = timeline.reduce((acc, row) => acc + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 0;
 
   return {
     totalActive,
     timeline,
-    geo,
-    sources,
-    pages,
-    events
+    geo: getBreakdown(masterA, 0, 0, 1),      // Country + City
+    sources: getBreakdown(masterA, 2, 0),     // Device Category
+    events: getBreakdown(masterB, 0, 0),      // Event Name + Event Count
+    keyEvents: getBreakdown(masterB, 0, 1)    // Event Name + Key Events
   };
 }
 

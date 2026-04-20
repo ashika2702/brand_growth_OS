@@ -2,27 +2,30 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  RefreshCw, 
-  Users, 
-  Clock, 
-  Target, 
-  Globe, 
-  MousePointer2, 
+import {
+  ArrowLeft,
+  RefreshCw,
+  Users,
+  Clock,
+  Target,
+  Globe,
+  MousePointer2,
   Filter,
   BarChart3,
   ExternalLink,
   MapPin,
-  ChevronRight
+  ChevronRight,
+  Smartphone,
+  Zap,
+  Activity
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip as RechartsTooltip,
   Cell
 } from 'recharts';
@@ -38,8 +41,8 @@ interface RealtimeData {
   timeline: RealtimeRow[];
   geo: RealtimeRow[];
   sources: RealtimeRow[];
-  pages: RealtimeRow[];
   events: RealtimeRow[];
+  keyEvents: RealtimeRow[];
 }
 
 // --- Components ---
@@ -71,7 +74,7 @@ export default function RealtimeOverview() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // 30s polling
+    const interval = setInterval(fetchData, 60000); // 60s polling
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -105,38 +108,38 @@ export default function RealtimeOverview() {
 
   if (loading && !data) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4 bg-[#0A0C10]">
+      <div className="h-full flex flex-col items-center justify-center gap-4 bg-background">
         <div className="w-10 h-10 border-[3px] border-accent-blue/20 border-t-accent-blue rounded-full animate-spin" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Establishing Realtime Connection...</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-text-muted italic">Establishing Realtime Connection...</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#0A0C10] overflow-hidden select-none text-white">
+    <div className="h-full flex flex-col bg-surface-1 overflow-hidden select-none text-text-primary">
       {/* Top Header Barra */}
-      <div className="h-14 bg-white/5 backdrop-blur-xl border-b border-white/5 px-6 flex items-center justify-between shrink-0">
+      <div className="h-14 bg-surface-1/50 backdrop-blur-xl border-b border-border-1 px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all">
+          <button onClick={() => router.back()} className="p-2 hover:bg-surface-2 rounded-lg text-text-muted hover:text-text-primary transition-all">
             <ArrowLeft size={18} />
           </button>
-          <div className="h-6 w-[1px] bg-white/10 mx-1" />
-          <h1 className="text-sm font-black text-white tracking-tight uppercase">Realtime Overview</h1>
+          <div className="h-6 w-[1px] bg-border-1 mx-1" />
+          <h1 className="text-sm font-bold text-text-primary tracking-tight">Realtime Overview</h1>
           <div className="flex items-center gap-2 px-3 py-1 bg-accent-green/10 border border-accent-green/20 rounded-full ml-2">
-             <span className="w-1.5 h-1.5 bg-accent-green rounded-full animate-pulse" />
-             <span className="text-[8px] font-black text-accent-green uppercase tracking-tighter">Live</span>
+            <span className="w-1.5 h-1.5 bg-accent-green rounded-full animate-pulse" />
+            <span className="text-[10px] font-bold text-accent-green uppercase tracking-tight">Live</span>
           </div>
         </div>
 
         <div className="flex items-center gap-6">
           <div className="text-right">
-            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Last Updated</p>
-            <p className="text-[10px] font-bold text-white">{lastUpdated.toLocaleTimeString()}</p>
+            <p className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Last Updated</p>
+            <p className="text-[11px] font-bold text-text-primary">{lastUpdated.toLocaleTimeString()}</p>
           </div>
-          <button 
-            onClick={() => fetchData()} 
+          <button
+            onClick={() => fetchData()}
             disabled={refreshing}
-            className={`p-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-slate-400 transition-all ${refreshing ? 'animate-spin' : ''}`}
+            className={`p-2.5 bg-surface-2 hover:bg-surface-3 rounded-xl border border-border-1 text-text-dim transition-all ${refreshing ? 'animate-spin' : ''}`}
           >
             <RefreshCw size={16} />
           </button>
@@ -149,226 +152,199 @@ export default function RealtimeOverview() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-purple/5 blur-[120px] pointer-events-none" />
 
         {/* Timeline Hero */}
-        <div className="grid grid-cols-12 gap-6 relative z-10">
-            {/* Realtime KPI & Chart */}
-            <div className="col-span-12 glass-card p-10 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row gap-12">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-blue/50 to-transparent" />
-                
-                {/* Left Side: Big Numbers */}
-                <div className="lg:w-1/3 flex flex-col justify-center">
-                    <div className="mb-8">
-                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 border-b border-dashed border-white/10 inline-block">Active users in last 30 minutes</p>
-                        <h2 className="text-8xl font-black text-white tracking-tighter drop-shadow-[0_0_25px_rgba(255,255,255,0.1)]">{data?.totalActive || 0}</h2>
-                    </div>
-                    
-                    <div>
-                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 border-b border-dashed border-white/10 inline-block">Active users in last 5 minutes</p>
-                        <h2 className="text-5xl font-black text-white tracking-tighter">{activeInLast5}</h2>
-                        <div className="flex items-center gap-2 mt-6 p-3 bg-white/5 rounded-2xl border border-white/5 inline-flex">
-                            <Users size={14} className="text-accent-blue" />
-                            <span className="text-[10px] font-bold text-slate-400 italic">Real-time engagement pulse</span>
-                        </div>
-                    </div>
-                </div>
+        <div className="grid grid-cols-12 gap-4 relative z-10">
+          {/* Realtime KPI & Chart (Top Left) */}
+          <div className="col-span-12 lg:col-span-8 glass-card p-6 rounded-[2rem] shadow-2xl relative overflow-hidden flex flex-col lg:flex-row gap-8">
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-blue/50 to-transparent" />
 
-                {/* Right Side: Timeline Chart */}
-                <div className="lg:w-2/3 flex flex-col h-[300px]">
-                    <div className="flex justify-between items-center mb-8">
-                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
-                            <Clock size={12} className="text-accent-blue" /> Active Users Per Minute
-                        </h3>
-                        <div className="flex gap-4">
-                           <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">-30 min</span>
-                           <span className="text-[9px] font-black text-accent-blue uppercase tracking-tighter">Live now</span>
-                        </div>
-                    </div>
-                    <div className="h-[220px] w-full" key={loading ? 'loading' : 'ready'}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={timelineData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                                <XAxis dataKey="minute" hide />
-                                <YAxis hide domain={[0, 'auto']} />
-                                <RechartsTooltip 
-                                    contentStyle={{ backgroundColor: '#13171F', border: '1px solid #ffffff10', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-                                    itemStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}
-                                    labelStyle={{ color: '#64748b', fontSize: '9px', fontWeight: 'black', textTransform: 'uppercase', marginBottom: '8px' }}
-                                    cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                                />
-                                <Bar dataKey="users" radius={[4, 4, 0, 0]}>
-                                    {timelineData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 29 ? '#3E80FF' : 'rgba(255,255,255,0.1)'} className="transition-all duration-500" />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+            {/* Left Side: Big Numbers */}
+            <div className="lg:w-1/3 flex flex-col justify-center">
+              <div className="mb-8">
+                <p className="text-xs font-bold text-text-muted tracking-tight mb-3 border-b border-dashed border-border-1 inline-block pb-1">Active users (last 30 min)</p>
+                <h2 className="text-4xl font-black text-text-primary tracking-tighter drop-shadow-[0_0_25px_rgba(255,255,255,0.1)]">{data?.totalActive || 0}</h2>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-text-muted tracking-tight mb-3 border-b border-dashed border-border-1 inline-block pb-1">Active users (last 5 min)</p>
+                <h2 className="text-4xl font-black text-text-primary tracking-tighter">{activeInLast5}</h2>
+              </div>
             </div>
 
-            {/* Sub Widgets Grid */}
-            <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                
-                {/* Device Breakdown Card */}
-                <RealtimeCard title="Active users by Device" footerLink="/analytics">
-                    <div className="space-y-2">
-                        {data?.sources.slice(0, 5).map((row, i) => (
-                            <BreakdownItem 
-                                key={i}
-                                label={row.dimensionValues[0].value || 'Desktop'}
-                                value={row.metricValues[0].value}
-                                percentage={Math.round((parseInt(row.metricValues[0].value) / (data.totalActive || 1)) * 100)}
-                                color="bg-accent-blue"
-                            />
-                        ))}
-                        {!data?.sources.length && (
-                            <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest">Awaiting Pulse...</div>
-                        )}
-                    </div>
-                </RealtimeCard>
+            {/* Right Side: Timeline Chart */}
+            <div className="lg:w-2/3 flex flex-col h-[300px]">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xs font-bold text-text-secondary tracking-tight flex items-center gap-2">
+                  <Clock size={12} className="text-accent-blue" /> User Activity Timeline
+                </h3>
+                <div className="flex gap-4">
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-tight">-30 min</span>
+                  <span className="text-[10px] font-bold text-accent-blue uppercase tracking-tight">Live</span>
+                </div>
+              </div>
+              <div className="flex-1 w-full min-h-[200px]" key={loading ? 'loading' : 'ready'}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[...timelineData].reverse()} margin={{ bottom: 30, top: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+                    <XAxis
+                      dataKey="offset"
+                      axisLine={{ stroke: 'var(--border-2)' }}
+                      tickLine={{ stroke: 'var(--border-2)' }}
+                      tickSize={8}
+                      tick={{ fontSize: 11, fill: 'var(--text-secondary)', fontWeight: 900, dy: 10 }}
+                      ticks={[0, 4, 9, 14, 19, 24, 29]}
+                      height={60}
+                      tickFormatter={(val) => {
+                        const offsetNum = parseInt(val);
+                        return `-${offsetNum + 1}m`;
+                      }}
+                    />
 
-                {/* Geography Map Summary */}
-                <RealtimeCard title="Active users by Geography" footerLink="/analytics">
-                    <div className="flex-1 flex flex-col justify-center items-center relative py-6">
-                        <Globe className="text-white/5 w-32 h-32 absolute animate-pulse" />
-                        <div className="relative z-10 w-full space-y-4">
-                            {data?.geo.slice(0, 4).map((row, i) => (
-                                <div key={i} className="flex items-center gap-4 transition-all hover:translate-x-1">
-                                    <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-accent-blue shrink-0 shadow-lg">
-                                        <MapPin size={16} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[11px] font-black text-white uppercase tracking-tight">{row.dimensionValues[1].value}</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{row.dimensionValues[0].value}</p>
-                                    </div>
-                                    <span className="text-sm font-black text-white italic drop-shadow-md">{row.metricValues[0].value}</span>
-                                </div>
-                            ))}
-                            {!data?.geo.length && (
-                                <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-4">
-                                     <Globe size={32} className="opacity-20 translate-y-2" />
-                                     Awaiting Signal...
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </RealtimeCard>
-
-                {/* Content Card */}
-                <RealtimeCard title="Views by Page title" footerLink="/analytics">
-                    <div className="space-y-5">
-                        {data?.pages.slice(0, 5).map((row, i) => (
-                            <div key={i} className="flex justify-between items-start group cursor-default">
-                                <div className="max-w-[80%]">
-                                    <p className="text-[10px] font-black text-white line-clamp-1 group-hover:text-accent-blue transition-colors uppercase tracking-[0.1em]">{row.dimensionValues[0].value}</p>
-                                    <p className="text-[8px] font-bold text-slate-500 truncate opacity-60 uppercase tracking-widest mt-1">Live Interaction</p>
-                                </div>
-                                <span className="text-[10px] font-black bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg text-white italic shrink-0">{row.metricValues[0].value}</span>
-                            </div>
-                        ))}
-                        {!data?.pages.length && (
-                            <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest">Awaiting Pulse...</div>
-                        )}
-                    </div>
-                </RealtimeCard>
-
-                {/* Events Card */}
-                <RealtimeCard title="Event count by Event name" footerLink="/analytics">
-                    <div className="space-y-2">
-                        {data?.events.slice(0, 5).map((row, i) => (
-                            <BreakdownItem 
-                                key={i}
-                                label={row.dimensionValues[0].value}
-                                value={row.metricValues[0].value}
-                                percentage={Math.round((parseInt(row.metricValues[0].value) / (data.events.reduce((acc, r) => acc + parseInt(r.metricValues[0].value), 0) || 1)) * 100)}
-                                color="bg-accent-orange"
-                            />
-                        ))}
-                        {!data?.events.length && (
-                            <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest">Awaiting Pulse...</div>
-                        )}
-                    </div>
-                </RealtimeCard>
-
-                {/* Key Events Card */}
-                <RealtimeCard title="Key events by Event name" footerLink="/analytics">
-                    <div className="flex-1 flex flex-col justify-center items-center text-center p-8 bg-white/5 rounded-[2rem] border border-dashed border-white/10">
-                        <Target className="text-slate-600 mb-4" size={40} />
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Silence in Core Matrix</p>
-                        <p className="text-[9px] text-slate-600 mt-2 italic max-w-[150px]">Defining conversion events in GA4 activates this neural link.</p>
-                    </div>
-                </RealtimeCard>
-
-                {/* Intelligence Insights Card */}
-                <RealtimeCard title="Intelligence Pulse">
-                    <div className="flex-1 flex flex-col justify-between">
-                         <div className="space-y-6 mt-2">
-                            <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 transition-all hover:bg-white/5 group">
-                                <div className="w-2.5 h-2.5 rounded-full bg-accent-blue mt-1.5 animate-ping opacity-75" />
-                                <div>
-                                    <p className="text-[10px] font-black text-white uppercase tracking-[0.15em] group-hover:text-accent-blue transition-colors">Neural Spike Detected</p>
-                                    <p className="text-[9px] text-slate-500 font-bold mt-1 line-clamp-2">Direct infiltration detected. Anomalous user behavior cluster identified on homepage.</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5 opacity-50 grayscale">
-                                <div className="w-2.5 h-2.5 rounded-full bg-slate-700 mt-1.5" />
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Signal Stabilization</p>
-                                    <p className="text-[9px] text-slate-600 font-bold mt-1">Acquisition channels are currently operating within standard predicted variance.</p>
-                                </div>
-                            </div>
-                         </div>
-                         <div className="mt-8 p-4 rounded-2xl bg-accent-blue/10 border border-accent-blue/30 text-white flex items-center justify-between shadow-[0_0_30px_rgba(62,128,255,0.1)]">
-                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-accent-blue/20 rounded-xl">
-                                    <BarChart3 size={16} className="text-accent-blue" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue">Neural Forecast</span>
-                             </div>
-                             <span className="text-[10px] font-black italic text-accent-green px-3 py-1 bg-accent-green/10 rounded-full border border-accent-green/20">STABLE</span>
-                         </div>
-                    </div>
-                </RealtimeCard>
-
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--border-1)', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}
+                      labelStyle={{ color: 'var(--text-muted)', fontSize: '9px', fontWeight: 'black', textTransform: 'uppercase', marginBottom: '8px' }}
+                      cursor={{ fill: 'var(--border-1)' }}
+                    />
+                    <Bar dataKey="users" radius={[2, 2, 0, 0]} barSize={10} fill="var(--border-2)">
+                      {[...timelineData].reverse().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--accent-blue)' : 'var(--border-2)'} className="transition-all duration-500" />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
+          </div>
+
+          {/* Geography (Top Right) */}
+          <div className="col-span-12 lg:col-span-4">
+            <RealtimeCard title="Active users by Geography" icon={<Globe size={14} className="text-accent-blue" />} footerLink="/analytics">
+              <div className="flex-1 flex flex-col justify-center items-center relative py-6">
+                <Globe className="text-white/5 w-24 h-24 absolute animate-pulse opacity-10" />
+                <div className="relative z-10 w-full space-y-2">
+                  {data?.geo.slice(0, 8).map((row, i) => (
+                    <div key={i} className="flex items-center gap-4 transition-all hover:translate-x-1">
+                      <div className="w-10 h-10 rounded-2xl bg-surface-2 border border-border-1 flex items-center justify-center text-accent-blue shrink-0 shadow-lg">
+                        <MapPin size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-text-primary tracking-tight">{row.dimensionValues[1].value}</p>
+                        <p className="text-[10px] font-medium text-text-muted">{row.dimensionValues[0].value}</p>
+                      </div>
+                      <span className="text-base font-bold text-text-primary drop-shadow-sm">{row.metricValues[0].value}</span>
+                    </div>
+                  ))}
+                  {!data?.geo.length && (
+                    <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-4">
+                      <Globe size={32} className="opacity-20 translate-y-2" />
+                      Awaiting Signal...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </RealtimeCard>
+          </div>
+
+          {/* Bottom Row Widgets */}
+          <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+
+            {/* Device Breakdown Card */}
+            <RealtimeCard title="Active users by Device" icon={<Smartphone size={14} className="text-accent-blue" />} footerLink="/analytics">
+              <div className="space-y-1">
+                {data?.sources.slice(0, 10).map((row, i) => (
+                  <BreakdownItem
+                    key={i}
+                    label={row.dimensionValues[0].value || 'Desktop'}
+                    value={row.metricValues[0].value}
+                    percentage={Math.round((parseInt(row.metricValues[0].value) / (data.totalActive || 1)) * 100)}
+                    color="bg-accent-blue"
+                  />
+                ))}
+                {!data?.sources.length && (
+                  <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest">Awaiting Pulse...</div>
+                )}
+              </div>
+            </RealtimeCard>
+
+            {/* Events Card */}
+            <RealtimeCard title="Event count by Event name" icon={<Zap size={14} className="text-accent-orange" />} footerLink="/analytics">
+              <div className="space-y-1">
+                {data?.events.slice(0, 10).map((row, i) => (
+                  <BreakdownItem
+                    key={i}
+                    label={row.dimensionValues[0].value}
+                    value={row.metricValues[0].value}
+                    percentage={Math.round((parseInt(row.metricValues[0].value) / (data.events.reduce((acc, r) => acc + parseInt(r.metricValues[0].value), 0) || 1)) * 100)}
+                    color="bg-accent-orange"
+                  />
+                ))}
+                {!data?.events.length && (
+                  <div className="py-12 text-center opacity-20 italic text-[10px] font-bold uppercase tracking-widest">Awaiting Pulse...</div>
+                )}
+              </div>
+            </RealtimeCard>
+
+            {/* Key Events Card */}
+            <RealtimeCard title="Key events by Event name" icon={<Target size={14} className="text-accent-green" />} footerLink="/analytics">
+              <div className="space-y-1">
+                {data?.keyEvents && data.keyEvents.length > 0 ? (
+                  data.keyEvents.slice(0, 10).map((row, i) => (
+                    <BreakdownItem
+                      key={i}
+                      label={row.dimensionValues[0].value}
+                      value={row.metricValues[0].value}
+                      percentage={Math.round((parseInt(row.metricValues[0].value) / (data.keyEvents.reduce((acc, r) => acc + parseInt(r.metricValues[0].value), 0) || 1)) * 100)}
+                      color="bg-accent-green"
+                    />
+                  ))
+                ) : (
+                  <div className="flex-1 flex flex-col justify-center items-center text-center p-8 bg-surface-2 rounded-[2rem] border border-dashed border-border-2 my-2">
+                    <Target className="text-text-dim mb-4" size={40} />
+                    <p className="text-xs font-bold tracking-tight text-text-muted">Awaiting Conversion Signals</p>
+                    <p className="text-[10px] text-text-dim mt-2 italic max-w-[170px]">Conversion events will appear here as they trigger in GA4.</p>
+                  </div>
+                )}
+              </div>
+            </RealtimeCard>
+
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-const RealtimeCard = ({ title, children, footerLink }: any) => (
-  <div className="glass-card shadow-2xl p-8 rounded-[2.5rem] border border-white/5 flex flex-col h-full group transition-all hover:border-white/10">
-    <div className="flex justify-between items-center mb-10 shrink-0">
-      <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.25em] flex items-center gap-3">
-        <span className="w-2 h-2 rounded-full bg-accent-blue/30 group-hover:bg-accent-blue transition-colors" /> {title}
+const RealtimeCard = ({ title, children, footerLink, icon }: any) => (
+  <div className="glass-card shadow-2xl p-6 rounded-[2rem] flex flex-col h-full group transition-all hover:-translate-y-1 backdrop-blur-2xl relative overflow-hidden">
+    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border-2 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="flex justify-between items-center mb-6 shrink-0">
+      <h3 className="text-xs font-bold text-text-secondary tracking-tight flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl bg-surface-2 border border-border-1 flex items-center justify-center transition-colors group-hover:bg-accent-blue/10 group-hover:border-accent-blue/20">
+          {icon || <Activity size={14} className="text-accent-blue" />}
+        </div>
+        {title}
       </h3>
-      {footerLink && <ChevronRight size={14} className="text-slate-700 group-hover:text-accent-blue transition-all group-hover:translate-x-1" />}
+      {footerLink && <ChevronRight size={14} className="text-text-dim group-hover:text-accent-blue transition-all group-hover:translate-x-1" />}
     </div>
     <div className="flex-1 flex flex-col min-h-0">
       {children}
     </div>
-    {footerLink && (
-        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-             <span className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-600">Deep Link Active</span>
-             <ExternalLink size={12} className="text-slate-800" />
-        </div>
-    )}
   </div>
 );
 
 const BreakdownItem = ({ label, value, percentage, color = "bg-accent-blue" }: any) => (
   <div className="py-3 group/item">
-    <div className="flex justify-between items-center mb-2.5">
-      <span className="text-[11px] font-black text-slate-300 truncate pr-4 group-hover/item:text-white transition-colors uppercase tracking-tight">{label}</span>
+    <div className="flex justify-between items-center mb-2">
+      <span className="text-xs font-semibold text-text-secondary truncate pr-4 group-hover/item:text-text-primary transition-colors tracking-tight">{label}</span>
       <div className="text-right shrink-0">
-        <span className="text-[12px] font-black text-white italic">{value}</span>
-        {percentage && <span className="text-[9px] text-slate-500 ml-2 font-bold tracking-tighter">{percentage}%</span>}
+        <span className="text-sm font-bold text-text-primary">{value}</span>
+        {percentage && <span className="text-[10px] text-text-muted ml-2 font-bold tracking-tight">{percentage}%</span>}
       </div>
     </div>
-    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/[0.02]">
-      <div 
-        className={`h-full ${color} rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(62,128,255,0.4)] opacity-70 group-hover/item:opacity-100`} 
-        style={{ width: `${percentage || 100}%` }} 
+    <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden border border-border-1">
+      <div
+        className={`h-full ${color} rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(62,128,255,0.4)] opacity-70 group-hover/item:opacity-100`}
+        style={{ width: `${percentage || 100}%` }}
       />
     </div>
   </div>
