@@ -116,9 +116,9 @@ export default function RealtimeOverview() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-surface-1 overflow-hidden select-none text-text-primary">
+    <div className="h-full flex flex-col bg-background overflow-hidden select-none text-text-primary">
       {/* Top Header Barra */}
-      <div className="h-14 bg-surface-1/50 backdrop-blur-xl border-b border-border-1 px-6 flex items-center justify-between shrink-0">
+      <div className="h-14 bg-surface-1 border-b border-border-1 px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={() => router.back()} className="p-2 hover:bg-surface-2 rounded-lg text-text-muted hover:text-text-primary transition-all">
             <ArrowLeft size={18} />
@@ -148,13 +148,12 @@ export default function RealtimeOverview() {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-accent-blue/5 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-purple/5 blur-[120px] pointer-events-none" />
+        {/* Background Glow Removed for Light Mode Harmonization */}
 
         {/* Timeline Hero */}
         <div className="grid grid-cols-12 gap-4 relative z-10">
           {/* Realtime KPI & Chart (Top Left) */}
-          <div className="col-span-12 lg:col-span-8 glass-card p-6 rounded-[2rem] shadow-2xl relative overflow-hidden flex flex-col lg:flex-row gap-8">
+          <div className="col-span-12 lg:col-span-8 glass-card p-6 rounded-[2rem] relative overflow-hidden flex flex-col lg:flex-row gap-8">
             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-blue/50 to-transparent" />
 
             {/* Left Side: Big Numbers */}
@@ -315,7 +314,7 @@ export default function RealtimeOverview() {
 }
 
 const RealtimeCard = ({ title, children, footerLink, icon }: any) => (
-  <div className="glass-card shadow-2xl p-6 rounded-[2rem] flex flex-col h-full group transition-all hover:-translate-y-1 backdrop-blur-2xl relative overflow-hidden">
+  <div className="glass-card p-6 rounded-[1.5rem] flex flex-col h-full group transition-all hover:-translate-y-1 backdrop-blur-2xl relative overflow-hidden">
     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border-2 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
     <div className="flex justify-between items-center mb-6 shrink-0">
       <h3 className="text-xs font-bold text-text-secondary tracking-tight flex items-center gap-3">

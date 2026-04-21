@@ -75,7 +75,7 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
     return (
         <div className="flex h-full gap-6 overflow-hidden">
             {/* Sidebar Nav Tabs */}
-            <aside className="w-64 glass-card rounded-[2.5rem] border border-white/5 flex flex-col p-6 backdrop-blur-3xl shrink-0">
+            <aside className="w-64 glass-card rounded-[2rem] border border-white/5 flex flex-col p-6 backdrop-blur-3xl shrink-0">
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-accent-blue shadow-[0_0_8px_#3E80FF]" />
@@ -83,7 +83,7 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
                     </div>
                     <div className="space-y-4">
                         <div className="flex justify-between items-end mb-1">
-                            <span className="text-[11px] font-black text-white uppercase tracking-tight italic">Brain Health</span>
+                            <span className="text-[11px] font-black text-text-primary uppercase tracking-tight italic">Brain Health</span>
                             <span className="text-[11px] font-black text-accent-blue italic">{healthScore}%</span>
                         </div>
                         <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
@@ -123,7 +123,7 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 glass-card rounded-[2.5rem] border border-white/5 flex flex-col backdrop-blur-3xl overflow-hidden relative">
+            <div className="flex-1 glass-card rounded-[2rem] border border-white/5 flex flex-col backdrop-blur-3xl overflow-hidden relative">
                 {/* Tab Header Overlay */}
                 <div className="absolute top-0 right-0 p-8 z-10">
                     <div className="flex bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl p-1 shadow-2xl">
@@ -142,7 +142,7 @@ export default function BusinessBrainDashboard({ clientId, initialData }: Busine
                 </div>
 
                 {/* AI Actions Floating Bar */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-6 z-20">
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[2rem] flex items-center gap-6 z-20">
                     <button className="flex items-center gap-3 px-6 py-2.5 bg-accent-blue/10 hover:bg-accent-blue text-accent-blue hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-accent-blue/20 group">
                         <Zap size={14} className="fill-current group-hover:animate-pulse" /> Enrich Brain
                     </button>

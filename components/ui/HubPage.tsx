@@ -29,7 +29,7 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
           <Link 
             key={i} 
             href={module.href}
-            className="group relative glass-card p-8 rounded-[2.5rem] hover:border-accent-orange/50 transition-all duration-700 cursor-pointer overflow-hidden"
+            className="group relative glass-card p-8 rounded-[1.5rem] hover:border-accent-orange/50 transition-all duration-700 cursor-pointer overflow-hidden"
           >
             {/* Hover Glow */}
             <div className={`absolute -right-8 -top-8 w-48 h-48 rounded-full opacity-0 group-hover:opacity-20 transition-opacity blur-[80px] ${module.color}`} />
@@ -38,7 +38,7 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
             <div className="flex flex-col gap-6 relative z-10">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${module.color.replace('bg-', 'bg-')}/10 shadow-2xl backdrop-blur-md border border-white/5 transition-colors`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${module.color.replace('bg-', 'bg-')}/10 backdrop-blur-md border border-white/5 transition-colors`}>
                 {React.cloneElement(module.icon as React.ReactElement<{ size: number, className?: string }>, { size: 28, className: module.color.replace('bg-', 'text-') })}
               </div>
               

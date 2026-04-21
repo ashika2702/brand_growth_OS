@@ -101,7 +101,7 @@ export default function NotificationsPage() {
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">Notification <span className="text-accent-blue">Centre</span></h1>
+          <h1 className="text-3xl font-black text-text-primary uppercase italic tracking-tighter mb-2">Notification <span className="text-accent-blue">Centre</span></h1>
           <p className="text-sm text-slate-500 font-medium">Real-time intelligence and alerts for your brand ecosystem.</p>
         </div>
         
@@ -141,7 +141,7 @@ export default function NotificationsPage() {
                 placeholder="Search alerts..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-[#0D0D0D] border border-white/5 rounded-xl py-2 pl-9 pr-4 text-xs text-white outline-none focus:border-accent-blue/50 transition-all" 
+                className="w-full bg-[#0D0D0D] border border-white/5 rounded-xl py-2 pl-9 pr-4 text-xs text-text-primary outline-none focus:border-accent-blue/50 transition-all" 
             />
         </div>
       </div>
@@ -154,9 +154,9 @@ export default function NotificationsPage() {
             <p className="text-[10px] font-black uppercase tracking-widest">Encrypting Feed...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="h-96 flex flex-col items-center justify-center border border-dashed border-white/5 rounded-[2.5rem]">
+          <div className="h-96 flex flex-col items-center justify-center border border-dashed border-white/5 rounded-[2rem]">
             <Info className="w-12 h-12 text-slate-800 opacity-20 mb-4" />
-            <p className="text-sm font-black text-white/20 uppercase tracking-[0.2em]">Zero Notifications Found</p>
+            <p className="text-sm font-black text-text-primary/20 uppercase tracking-[0.2em]">Zero Notifications Found</p>
           </div>
         ) : (
           filtered.map((n) => (
@@ -185,7 +185,7 @@ export default function NotificationsPage() {
               <div className="flex-1 min-w-0">
                  <div className="flex justify-between items-start mb-1">
                     <div className="flex items-center gap-3">
-                        <h3 className={`font-black text-base transition-colors ${!n.isRead ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}`}>{n.title}</h3>
+                        <h3 className={`font-black text-base transition-colors ${!n.isRead ? 'text-text-primary' : 'text-slate-400 group-hover:text-slate-300'}`}>{n.title}</h3>
                         {n.priority === 'urgent' && (
                             <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20 uppercase tracking-widest animate-pulse">URGENT</span>
                         )}

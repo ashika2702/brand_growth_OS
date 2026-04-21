@@ -36,7 +36,7 @@ export default function IntelligenceBar({ clientId }: { clientId: string }) {
   }, [tips.length]);
 
   return (
-    <div className="h-14 bg-black/40 border-t border-white/5 backdrop-blur-3xl flex items-center px-8 justify-between shrink-0">
+    <div className="h-14 bg-surface-1/40 border-t border-border-1 backdrop-blur-3xl flex items-center px-8 justify-between shrink-0">
       <div className="flex items-center gap-4 flex-1">
         <div className="flex items-center gap-2 px-3 py-1 bg-accent-blue/10 border border-accent-blue/20 rounded-full">
             <Lightbulb size={12} className="text-accent-blue" />

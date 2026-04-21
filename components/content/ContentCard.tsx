@@ -93,7 +93,7 @@ export default function ContentCard({ item, isOverlay, onRefresh }: ContentCardP
       style={style}
       {...attributes}
       onClick={() => item.status !== 'REQUESTED' && setIsBriefOpen(true)}
-      className={`group relative bg-[#161B22] border border-white/5 rounded-xl p-3 hover:border-accent-blue/30 transition-all ${
+      className={`group relative bg-surface-1 border border-border-1 rounded-xl p-3 hover:border-accent-blue/30 transition-all ${
         isOverlay ? 'shadow-2xl shadow-blue-500/20 rotate-2' : ''
       } ${item.status !== 'REQUESTED' ? 'cursor-pointer' : 'cursor-default'}`}
     >
@@ -121,7 +121,7 @@ export default function ContentCard({ item, isOverlay, onRefresh }: ContentCardP
       </div>
 
       {/* Title */}
-      <h4 className="text-[11px] font-black text-white uppercase tracking-wider mb-2 line-clamp-2">
+      <h4 className="text-[11px] font-black text-text-primary uppercase tracking-wider mb-2 line-clamp-2">
         {item.title}
       </h4>
 

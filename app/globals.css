@@ -29,13 +29,12 @@
 
 .light {
   /* LIGHT THEME (Premium Luxury Floating with Atmospheric Gradient) */
-  --background: #F0F4FF;     /* Modern light-blue base */
-  --background-gradient: linear-gradient(135deg, #F8FAFF 0%, #E2E8F9 50%, #D7E1F5 100%);
+  --background: #F8FAFC;     /* Premium Soft Slate Background */
   --foreground: #0F172A;    /* Deep Slate Primary Text */
   
-  --surface-1: #FFFFFF;    /* Pure White Cards & Sidebar */
-  --surface-2: #F7F9FB;    /* Soft Secondary Surfaces */
-  --surface-3: #FDFDFD;    /* Pure White Brightest */
+  --surface-1: #FFFFFF;    /* Pure White Cards Pop against Slate Bg */
+  --surface-2: #F1F5F9;    /* Subtle Secondary Surfaces */
+  --surface-3: #FFFFFF;    /* Pure White Brightest */
   --surface-card: #FFFFFF;
   
   --border-1: rgba(0, 0, 0, 0.03); /* Ultra-Subtle Separation */
@@ -67,6 +66,7 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-text-dim: var(--text-dim);
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -90,16 +90,23 @@
   }
   
   .light .glass-card {
-    box-shadow: 10px 10px 30px -5px rgba(0, 0, 0, 0.06); /* Exact offset shadow from reference */
-    border-radius: 2rem;
-    border-color: rgba(0,0,0,0.02);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.1),
+      0 10px 20px -10px rgba(0, 0, 0, 0.05),
+      0 0 0 1px rgba(0, 0, 0, 0.01);
+    border-radius: 1.5rem;
+    border-color: rgba(0, 0, 0, 0.04);
   }
 
   .glass-card:hover {
     border-color: var(--border-2);
     background: var(--surface-3);
     transform: translateY(-2px);
-    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.08);
+  }
+
+  .light .glass-card:hover {
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.05);
   }
 
   /* High contrast glow for text/icons */

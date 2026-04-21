@@ -156,7 +156,7 @@ export default function CRMPage() {
   if (loading) return <div className="p-8 text-text-primary font-black uppercase italic animate-pulse transition-colors">Synchronizing Leads...</div>;
 
   return (
-    <div className="h-full flex flex-col gap-6 overflow-hidden">
+    <div className="h-full bg-background flex flex-col gap-6 overflow-hidden p-8">
       <div className="flex justify-between items-end">
         <div>
           <div className="flex items-center gap-3 mb-2">

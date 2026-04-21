@@ -9,6 +9,15 @@ export async function GET() {
         name: true,
         domain: true,
         createdAt: true,
+        fromName: true,
+        smtpUser: true,
+        autoPilotMode: true,
+        brain: {
+          select: {
+            personas: true,
+            offers: true,
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'

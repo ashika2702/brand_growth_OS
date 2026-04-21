@@ -61,13 +61,13 @@ export default function DashboardPage() {
   return (
     <div className="h-full flex flex-col gap-4 overflow-hidden">
       {/* Top Row: Mini Stats */}
-    <div className="grid grid-cols-4 gap-4 shrink-0">
+    <div className="grid grid-cols-4 gap-6 shrink-0">
         {[{ label: 'Appointments', value: '500', icon: Users, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
           { label: 'Operations', value: '104', icon: Zap, color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
           { label: 'New Patients', value: '150', icon: Brain, color: 'text-accent-green', bg: 'bg-accent-green/10' },
           { label: 'Earnings', value: '$20,500', icon: DollarSign, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
         ].map((stat, i) => (
-          <div key={i} className="glass-card p-4 rounded-[20px] flex items-center gap-3 group cursor-pointer hover:border-accent-blue/20 transition-all border border-border-1 bg-surface-1">
+          <div key={i} className="glass-card p-4 rounded-[1.25rem] flex items-center gap-3 group cursor-pointer hover:border-accent-blue/20 transition-all border border-border-1">
             <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color} shadow-lg shadow-black/5 group-hover:scale-105 transition-transform`}>
               <stat.icon size={20} />
             </div>
@@ -83,9 +83,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Middle Row: Big Charts & Calendar */}
-      <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
         {/* Main Area Chart */}
-        <div className="col-span-6 glass-card p-4 rounded-[24px] flex flex-col border border-border-1 bg-surface-1">
+        <div className="col-span-6 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2">
               <TrendingUp size={14} className="text-accent-orange" /> Portfolio Growth
@@ -115,7 +115,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Mini Bar Chart */}
-        <div className="col-span-3 glass-card p-4 rounded-[24px] flex flex-col border border-border-1 bg-surface-1">
+        <div className="col-span-3 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
            <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] mb-4">Performance</h3>
            <div className="flex-1 h-28">
             <ResponsiveContainer width="100%" height="100%">
@@ -138,7 +138,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Small Calendar */}
-        <div className="col-span-3 glass-card p-4 rounded-[24px] flex flex-col border border-border-1 bg-surface-1">
+        <div className="col-span-3 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
            <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">Schedule</h3>
               <Plus size={14} className="text-text-muted cursor-pointer hover:text-text-primary transition-colors" />
@@ -157,9 +157,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Row: Table & Lists */}
-      <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
         {/* Lead Table */}
-        <div className="col-span-6 glass-card p-4 rounded-[24px] overflow-hidden flex flex-col border border-border-1 bg-surface-1">
+        <div className="col-span-6 glass-card p-4 rounded-[1.5rem] overflow-hidden flex flex-col border border-border-1">
           <div className="flex justify-between items-center mb-4 shrink-0 px-1">
             <h3 className="text-xs font-black text-text-primary uppercase tracking-[0.2em]">Active Intelligence Feed</h3>
             <button className="text-[9px] font-black text-accent-orange uppercase hover:text-accent-orange/80 transition-colors tracking-widest">View All</button>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Specialized Profile List */}
-        <div className="col-span-3 glass-card p-4 rounded-[24px] flex flex-col border border-border-1 bg-surface-1">
+        <div className="col-span-3 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
           <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] mb-4">Top Architects</h3>
           <div className="space-y-3 flex-1 overflow-y-auto pr-1 no-scrollbar">
              {[
@@ -223,7 +223,7 @@ export default function DashboardPage() {
         {/* Vertical PR Widgets */}
         <div className="col-span-3 flex flex-col gap-3 overflow-y-auto pr-1 no-scrollbar">
            {PR_MENTIONS.map((m) => (
-              <div key={m.id} className="glass-card p-3 rounded-[20px] flex items-center gap-3 shrink-0 border border-border-1 bg-surface-1 hover:border-accent-orange/30">
+              <div key={m.id} className="glass-card p-3 rounded-[1.25rem] flex items-center gap-3 shrink-0 border border-border-1 hover:border-accent-orange/30">
                  <div className="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center text-accent-orange border border-border-1 group-hover:scale-105 transition-transform">
                     <Globe size={16} />
                  </div>

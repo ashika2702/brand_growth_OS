@@ -51,12 +51,12 @@ export default function ContentTapPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col h-full gap-6 bg-background p-8 overflow-y-auto no-scrollbar">
       {/* Header Actions */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black italic text-white tracking-tighter uppercase">Content Tap <span className="text-accent-blue">v2.0</span></h1>
-            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+            <h1 className="text-2xl font-black italic text-text-primary tracking-tighter uppercase">Content Tap <span className="text-accent-blue">v2.0</span></h1>
+            <div className="flex items-center gap-1 bg-surface-2 border border-border-1 rounded-full px-3 py-1">
                 <div className={`w-1.5 h-1.5 rounded-full bg-accent-blue ${isOrchestrating ? 'animate-ping' : 'animate-pulse'}`} />
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                     {isOrchestrating ? 'Agent Orchestrating...' : 'AI Pipeline Active'}
@@ -85,7 +85,7 @@ export default function ContentTapPage() {
 
       {/* Main Tabs Navigation */}
       <div className="flex items-center justify-between border-b border-white/5 pb-4">
-        <div className="flex gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5">
+        <div className="flex gap-1 bg-surface-2 p-1 rounded-xl border border-border-1">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
@@ -104,7 +104,7 @@ export default function ContentTapPage() {
       </div>
 
       {/* Tab Content Area */}
-      <div className="flex-1 overflow-hidden min-h-0 bg-[#0D0D0D]/50 border border-white/5 rounded-3xl backdrop-blur-3xl relative">
+      <div className="flex-1 overflow-hidden min-h-[500px] bg-surface-1 border border-border-1 rounded-3xl relative">
         {activeTab === 'Kanban' && <KanbanBoard key={refreshKey} clientId={activeClientId || ''} />}
         {/* Other tabs will be implemented soon */}
       </div>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Brain,
@@ -69,7 +69,7 @@ const SidebarItem = ({ href, icon, label, active, isCollapsed, hasChildren, isOp
 
     {!isCollapsed && (
       <>
-        <span className={`font-black text-[10px] uppercase tracking-[0.15em] whitespace-nowrap overflow-hidden transition-all duration-300 ${active ? 'translate-x-1' : 'group-hover:translate-x-0.5'}`}>
+        <span className={`font-bold text-[10px] uppercase tracking-[0.15em] whitespace-nowrap overflow-hidden transition-all duration-300 ${active ? 'translate-x-1' : 'group-hover:translate-x-0.5'}`}>
           {label}
         </span>
         {hasChildren && (
@@ -109,7 +109,7 @@ const SidebarSubItem = ({ href, label, active, isCollapsed }: { href: string, la
 const NavSection = ({ title, isCollapsed, children }: { title: string, isCollapsed: boolean, children: React.ReactNode }) => (
   <div className="mb-6">
     {!isCollapsed && (
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 mb-2 px-6">{title}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700 mb-2 px-6">{title}</p>
     )}
     <div className="space-y-0.5">
       {children}
@@ -119,6 +119,7 @@ const NavSection = ({ title, isCollapsed, children }: { title: string, isCollaps
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { activeClientId } = useClientStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(pathname.includes('/analytics') || pathname.includes('/intelligence'));
@@ -139,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <ChartNoAxesCombined className="text-accent-blue w-4.5 h-4.5 transition-all duration-500 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(45,140,255,0.4)]" />
           </div>
           {!isCollapsed && (
-            <span className="text-lg font-black tracking-tighter text-white italic whitespace-nowrap transition-colors">Brand Growth<span className="text-accent-blue">OS</span></span>
+            <span className="text-lg font-bold tracking-tighter text-white whitespace-nowrap transition-colors">Brand Growth<span className="text-accent-blue">OS</span></span>
           )}
         </div>
 
@@ -208,7 +209,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <SidebarSubItem 
                         href={activeClientId ? `/intelligence/${activeClientId}/analytics?view=acquisition` : '/intelligence'} 
                         label="Acquisition" 
-                        active={pathname.includes('/analytics') && typeof window !== 'undefined' && window.location.search.includes('view=acquisition')} 
+                        active={pathname.includes('/analytics') && searchParams.get('view') === 'acquisition'} 
+                        isCollapsed={isCollapsed} 
+                    />
+                    <SidebarSubItem 
+                        href={activeClientId ? `/intelligence/${activeClientId}/analytics?view=traffic_acquisition` : '/intelligence'} 
+                        label="Traffic Acquisition" 
+                        active={pathname.includes('/analytics') && searchParams.get('view') === 'traffic_acquisition'} 
                         isCollapsed={isCollapsed} 
                     />
                 </div>
@@ -268,11 +275,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <NotificationCenter />
             <div className="flex items-center gap-3 pl-4 border-l border-border-1 h-6">
               <div className="text-right hidden xl:block">
-                <p className="text-[9px] font-black text-text-primary leading-tight uppercase tracking-widest">Alex Growth</p>
-                <p className="text-[7px] text-text-muted font-black uppercase tracking-widest opacity-80">Architect</p>
+                <p className="text-[9px] font-bold text-text-primary leading-tight uppercase tracking-widest">Alex Growth</p>
+                <p className="text-[7px] text-text-muted font-bold uppercase tracking-widest opacity-80">Architect</p>
               </div>
               <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-orange p-[1px] shadow-lg shadow-accent-blue/5">
-                <div className="w-full h-full rounded-[7px] bg-surface-1 flex items-center justify-center font-black text-[10px] text-accent-blue">AG</div>
+                <div className="w-full h-full rounded-[7px] bg-surface-1 flex items-center justify-center font-bold text-[10px] text-accent-blue">AG</div>
                 {/* Active Indicator Pips */}
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent-green rounded-full border-[2px] border-surface-1 shadow-[0_0_8px_rgba(62,255,128,0.4)] animate-pulse" />
               </div>

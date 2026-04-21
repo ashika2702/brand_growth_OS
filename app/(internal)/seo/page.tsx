@@ -42,7 +42,7 @@ export default function SEOControlCenter() {
             <div className="w-10 h-10 rounded-2xl bg-accent-green/10 flex items-center justify-center text-accent-green border border-accent-green/20">
               <Globe size={24} />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">SEO Control Center</h1>
+            <h1 className="text-3xl font-black text-text-primary tracking-tighter uppercase italic">SEO Control Center</h1>
           </div>
           <p className="text-slate-500 font-medium">Dominate the answer engines with AI-native search infrastructure.</p>
         </div>
@@ -74,9 +74,9 @@ export default function SEOControlCenter() {
       {/* Main Analysis Section */}
       <div className="grid grid-cols-12 gap-6">
         {/* Performance Graph */}
-        <div className="col-span-12 lg:col-span-8 glass-card p-8 rounded-[2.5rem] border border-white/5 min-h-[400px] flex flex-col">
+        <div className="col-span-12 lg:col-span-8 glass-card p-8 rounded-[2rem] border border-white/5 min-h-[400px] flex flex-col">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center gap-2">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary flex items-center gap-2">
               <BarChart3 size={14} className="text-accent-green" /> Visibility Index
             </h3>
             <div className="flex gap-2">
@@ -108,8 +108,8 @@ export default function SEOControlCenter() {
         </div>
 
         {/* Audit Checklist */}
-        <div className="col-span-12 lg:col-span-4 glass-card p-8 rounded-[2.5rem] border border-white/5 flex flex-col">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white mb-8 flex items-center gap-2">
+        <div className="col-span-12 lg:col-span-4 glass-card p-8 rounded-[2rem] border border-white/5 flex flex-col">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary mb-8 flex items-center gap-2">
             <ShieldCheck size={14} className="text-accent-orange" /> Site Health Score
           </h3>
           
@@ -142,9 +142,9 @@ export default function SEOControlCenter() {
         </div>
 
         {/* Top Keywords Table */}
-        <div className="col-span-12 glass-card p-8 rounded-[2.5rem] border border-white/5 overflow-hidden">
+        <div className="col-span-12 glass-card p-8 rounded-[2rem] border border-white/5 overflow-hidden">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center gap-2">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary flex items-center gap-2">
               <TrendingUp size={14} className="text-accent-blue" /> Keyword Dominance
             </h3>
             <button className="text-[9px] font-black text-slate-500 uppercase hover:text-white transition-all flex items-center gap-2">
@@ -172,7 +172,7 @@ export default function SEOControlCenter() {
                   <tr key={i} className="hover:bg-white/5 transition-colors group cursor-pointer">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-white">{row.kw}</span>
+                        <span className="text-sm font-black text-text-primary">{row.kw}</span>
                         <ArrowUpRight size={12} className="text-slate-700 group-hover:text-accent-green transition-colors" />
                       </div>
                     </td>
@@ -186,7 +186,7 @@ export default function SEOControlCenter() {
                         {row.diff}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm font-black italic text-white">{row.pos}</td>
+                    <td className="py-4 px-4 text-sm font-black italic text-text-primary">{row.pos}</td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                          <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">

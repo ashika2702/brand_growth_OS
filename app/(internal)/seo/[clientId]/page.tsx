@@ -148,18 +148,17 @@ const Sparkline = ({ data, color }: { data: any[], color: string }) => (
 const KPICard = ({ label, value, trend, trendVal, data, color }: any) => {
   const brandColor = color === 'orange' ? '#FF4D00' : color === 'blue' ? '#00A3FF' : color === 'green' ? '#00FF9D' : '#94A3B8';
   return (
-    <div className={`p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] shadow-xl relative overflow-hidden group backdrop-blur-xl`} 
+    <div className={`p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] glass-card relative overflow-hidden group backdrop-blur-xl bg-surface-card`} 
          style={{ 
-           backgroundColor: `${brandColor}12`, 
            borderColor: `${brandColor}40` 
          }}>
     {/* Subtle Glow Accent */}
     <div className="absolute -top-10 -right-10 w-24 h-24 blur-[40px] opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity"
          style={{ backgroundColor: brandColor }} />
     
-    <p className="text-[10px] font-bold text-slate-400 mb-1 tracking-tight uppercase">{label}</p>
+    <p className="text-[10px] font-bold text-text-muted mb-1 tracking-tight uppercase">{label}</p>
     <div className="flex items-center gap-2 mb-3 relative z-10">
-      <h4 className="text-xl font-black text-white tracking-tighter">{value}</h4>
+      <h4 className="text-xl font-black text-text-primary tracking-tighter">{value}</h4>
       {trend && (
         <span className={`text-[11px] font-bold ${trend === 'up' ? 'text-accent-green' : 'text-accent-red'}`}>
           {trend === 'up' ? '+' : '-'}{trendVal}
@@ -365,12 +364,12 @@ export default function ClientSEODashboard() {
   if (error === 'not_connected') {
     return (
        <div className="h-full flex items-center justify-center p-8">
-        <div className="max-w-md w-full glass-card p-10 rounded-[3rem] border border-white/5 text-center space-y-6">
+        <div className="max-w-md w-full glass-card p-10 rounded-[2rem] border border-white/5 text-center space-y-6">
           <div className="w-20 h-20 rounded-3xl flex items-center justify-center border mx-auto mb-4 bg-accent-orange/10 text-accent-orange border-accent-orange/20">
             <ShieldAlert size={40} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-white tracking-tighter uppercase font-sans text-balance">
+            <h2 className="text-2xl font-black text-text-primary tracking-tighter uppercase font-sans text-balance">
               CONNECTION REQUIRED
             </h2>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
@@ -389,20 +388,17 @@ export default function ClientSEODashboard() {
   }
 
   return (
-    <div className="h-full bg-background p-2 lg:p-8 flex flex-col gap-4 overflow-y-auto no-scrollbar animate-in fade-in duration-1000 relative">
-      {/* Background Plasma Blobs for Glass Depth */}
+    <div className="h-full bg-background p-2 lg:p-8 flex flex-col gap-6 overflow-y-auto no-scrollbar animate-in fade-in duration-1000 relative">
+      {/* Background Plasma Blobs for Glass Depth - Removed per user request */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-orange/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-blue/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-[30%] right-[20%] w-[30%] h-[30%] bg-accent-orange/5 blur-[100px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="relative z-10 flex flex-col gap-4">
+      <div className="relative z-10 flex flex-col gap-6">
       
       {/* Header Area */}
       <div className="flex justify-between items-center px-2 ">
         <div className="space-y-1">
-          <h1 className="text-xl font-black text-white tracking-tighter uppercase">SEO Performance</h1>
+          <h1 className="text-xl font-black text-text-primary tracking-tighter uppercase italic">SEO Performance</h1>
         </div>
 
         <div className="flex items-center gap-4 relative">
@@ -410,7 +406,7 @@ export default function ClientSEODashboard() {
           <div className="relative" ref={aggRef}>
             <button 
               onClick={() => setShowAggDropdown(!showAggDropdown)}
-              className="px-4 py-3 bg-[#13171F] rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-text-secondary border border-white/10 hover:border-white/20 transition-all shadow-2xl"
+              className="px-4 py-3 bg-surface-1 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-text-secondary border border-border-1 hover:border-white/20 transition-all shadow-md group"
             >
               <BarChart3 size={14} className="text-accent-orange" />
               {aggregation}
@@ -418,13 +414,13 @@ export default function ClientSEODashboard() {
             </button>
             
             {showAggDropdown && (
-              <div className="absolute top-full right-0 mt-2 w-32 bg-[#13171F]/80 backdrop-blur-xl p-2 rounded-3xl border border-white/10 z-[30] shadow-2xl animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full right-0 mt-2 w-32 bg-surface-1/80 backdrop-blur-xl p-2 rounded-3xl border border-border-1 z-[30] shadow-2xl animate-in fade-in slide-in-from-top-2">
                 {(['daily', 'weekly', 'monthly'] as const).map(mode => (
                   <button
                     key={mode}
                     onClick={() => { setAggregation(mode); setShowAggDropdown(false); }}
                     className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      aggregation === mode ? 'bg-accent-orange text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      aggregation === mode ? 'bg-accent-orange text-white' : 'text-text-muted hover:bg-surface-2 hover:text-text-primary'
                     }`}
                   >
                     {mode}
@@ -437,7 +433,7 @@ export default function ClientSEODashboard() {
           <div className="relative" ref={dateRef}>
             <button 
               onClick={() => setShowDatePicker(!showDatePicker)}
-              className="px-4 py-3 bg-[#13171F] rounded-2xl flex items-center gap-3 text-xs font-black text-white border border-white/10 hover:border-white/20 transition-all shadow-2xl"
+              className="px-4 py-3 bg-surface-1 rounded-2xl flex items-center gap-3 text-xs font-black text-text-primary border border-border-1 hover:border-white/20 transition-all shadow-md"
             >
               <Calendar size={14} className="text-accent-orange" />
               {dateRange === 'custom' ? `${customRange.start} - ${customRange.end}` : 
@@ -448,7 +444,7 @@ export default function ClientSEODashboard() {
             </button>
 
           {showDatePicker && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-[#13171F]/80 backdrop-blur-xl p-4 rounded-3xl border border-white/10 z-50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2">
+            <div className="absolute top-full right-0 mt-2 w-48 bg-surface-1/80 backdrop-blur-xl p-4 rounded-3xl border border-border-1 z-50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2">
               <div className="flex flex-col gap-1">
                 {[
                   { id: '1w', label: 'Last One Week' },
@@ -459,23 +455,23 @@ export default function ClientSEODashboard() {
                     key={p.id}
                     onClick={() => { setDateRange(p.id); setShowDatePicker(false); }}
                     className={`text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      dateRange === p.id ? 'bg-accent-orange text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      dateRange === p.id ? 'bg-accent-orange text-white' : 'text-text-muted hover:bg-surface-2 hover:text-text-primary'
                     }`}
                   >
                     {p.label}
                   </button>
                 ))}
-                <div className="border-t border-white/5 my-2 pt-2 space-y-3">
-                  <p className="text-[8px] font-black uppercase text-slate-600 px-4">Custom Range</p>
+                <div className="border-t border-border-1 my-2 pt-2 space-y-3">
+                  <p className="text-[8px] font-black uppercase text-text-muted px-4">Custom Range</p>
                   <div className="px-2 space-y-2">
                      <input 
                        type="date" 
-                       className="w-full bg-white/5 border border-white/5 rounded-lg p-2 text-[10px] text-white outline-none focus:border-accent-orange transition-colors [color-scheme:dark]"
+                       className="w-full bg-surface-2 border border-border-1 rounded-lg p-2 text-[10px] text-text-primary outline-none focus:border-accent-orange transition-colors"
                        onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
                      />
                      <input 
                        type="date" 
-                       className="w-full bg-white/5 border border-white/5 rounded-lg p-2 text-[10px] text-white outline-none focus:border-accent-orange transition-colors [color-scheme:dark]"
+                       className="w-full bg-surface-2 border border-border-1 rounded-lg p-2 text-[10px] text-text-primary outline-none focus:border-accent-orange transition-colors"
                        onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
                      />
                      <button 
@@ -486,7 +482,7 @@ export default function ClientSEODashboard() {
                             fetchData(customRange.start, customRange.end);
                           }
                         }}
-                        className="w-full py-2 bg-white/10 hover:bg-accent-orange text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                        className="w-full py-2 bg-surface-3 hover:bg-accent-orange text-text-primary hover:text-white text-[10px] font-black uppercase rounded-lg transition-all"
                      >
                        Apply Custom
                      </button>
@@ -500,7 +496,7 @@ export default function ClientSEODashboard() {
     </div>
 
       {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
           label="Total Clicks" 
           value={stats?.clicks.val.toLocaleString()} 
@@ -542,8 +538,8 @@ export default function ClientSEODashboard() {
         <div className="col-span-12 flex flex-col gap-6">
           
           {/* Unified Intelligence Trend Chart */}
-          <div className="bg-[#13171F]/40 backdrop-blur-3xl p-6 lg:p-8 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-2xl">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-accent-blue/10 blur-[100px] opacity-20 transition-all group-hover:bg-accent-orange/10 duration-1000" />
+          <div className="glass-card p-6 lg:p-8 rounded-[2rem] border border-border-1 relative overflow-hidden group">
+              {/* Card Background Glow Removed */}
               
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-7 relative z-10 gap-4 mt-1">
                  <div className="space-y-1">
@@ -610,23 +606,23 @@ export default function ClientSEODashboard() {
                       />
                       
                       <RechartsTooltip 
-                        cursor={{ stroke: '#ffffff20', strokeWidth: 2 }}
+                        cursor={{ stroke: 'rgba(var(--text-muted-rgb), 0.2)', strokeWidth: 2 }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                              return (
-                               <div className="bg-[#13171F]/80 backdrop-blur-xl p-5 border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-3 animate-in fade-in zoom-in duration-200">
-                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">{payload[0].payload.date}</p>
+                               <div className="bg-surface-1/80 backdrop-blur-xl p-5 border border-border-1 rounded-xl shadow-2xl space-y-3 animate-in fade-in zoom-in duration-200">
+                                 <p className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2">{payload[0].payload.date}</p>
                                  <div className="flex items-center justify-between gap-8">
                                     <div className="flex items-center gap-2">
                                        <div className="w-1.5 h-1.5 rounded-full bg-accent-orange shadow-[0_0_10px_rgba(255,77,0,0.5)]" />
-                                       <span className="text-[9px] font-black text-white uppercase tracking-widest">Clicks</span>
+                                       <span className="text-[9px] font-black text-text-primary uppercase tracking-widest">Clicks</span>
                                     </div>
                                     <span className="text-[10px] font-black text-accent-orange">{payload[0].value.toLocaleString()}</span>
                                  </div>
                                  <div className="flex items-center justify-between gap-8">
                                     <div className="flex items-center gap-2">
                                        <div className="w-1.5 h-1.5 rounded-full bg-accent-blue shadow-[0_0_10px_rgba(0,163,255,0.5)]" />
-                                       <span className="text-[9px] font-black text-white uppercase tracking-widest">Impressions</span>
+                                       <span className="text-[9px] font-black text-text-primary uppercase tracking-widest">Impressions</span>
                                     </div>
                                     <span className="text-[10px] font-black text-accent-blue">{payload[1]?.value.toLocaleString()}</span>
                                  </div>
@@ -666,27 +662,27 @@ export default function ClientSEODashboard() {
           </div>
 
           {/* Keyword Performance Table */}
-          <div className="bg-[#13171F]/40 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/5 shadow-2xl">
-             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-3">
-               <h3 className="text-lg font-black text-white uppercase tracking-tighter">Performance</h3>
-               
-               <div className="flex items-center p-1 bg-white/5 rounded-2xl border border-white/5 relative h-10">
-                 {(['queries', 'pages', 'countries', 'devices', 'days'] as const).map(tab => (
-                   <button
-                     key={tab}
-                     onClick={() => setActiveTab(tab)}
-                     className={`relative px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
-                       activeTab === tab ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-                     }`}
-                   >
-                     {tab}
-                     {activeTab === tab && (
-                       <span className="absolute inset-0 bg-accent-orange rounded-xl -z-10 shadow-[0_0_15px_rgba(255,77,0,0.3)] animate-in fade-in zoom-in duration-300" />
-                     )}
-                   </button>
-                 ))}
-               </div>
-             </div>
+          <div className="glass-card p-6 rounded-[2rem] border border-border-1">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-3">
+                <h3 className="text-lg font-black text-text-primary uppercase tracking-tighter">Performance</h3>
+                
+                <div className="flex items-center p-1 bg-white/5 rounded-2xl border border-white/5 relative h-10">
+                  {(['queries', 'pages', 'countries', 'devices', 'days'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`relative px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
+                        activeTab === tab ? 'text-text-primary' : 'text-text-muted hover:text-text-secondary'
+                      }`}
+                    >
+                      {tab}
+                      {activeTab === tab && (
+                        <span className="absolute inset-0 bg-accent-orange rounded-xl -z-10 shadow-[0_0_15px_rgba(255,77,0,0.3)] animate-in fade-in zoom-in duration-300" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
              
              <div className="overflow-x-auto">
                 <table className="w-full table-fixed text-left border-separate border-spacing-y-1.5">
@@ -721,7 +717,7 @@ export default function ClientSEODashboard() {
                                <td className="py-2 px-3">
                                   <div className="flex items-center gap-3">
                                      {activeTab === 'devices' && <DeviceIcon type={row.keys?.[0] || ''} />}
-                                     <span className="text-[13px] font-semibold text-slate-300 group-hover:text-white transition-colors truncate max-full block">
+                                     <span className="text-[13px] font-semibold text-text-primary group-hover:text-accent-blue transition-colors truncate max-full block">
                                         {activeTab === 'countries' ? getCountryName(displayKey) : displayKey}
                                      </span>
                                   </div>
@@ -735,9 +731,9 @@ export default function ClientSEODashboard() {
                                    {row.position.toFixed(0)}
                                 </div>
                              </td>
-                             <td className="py-2 px-3 text-[10px] font-black text-slate-400">{row.clicks.toLocaleString()}</td>
-                             <td className="py-2 px-3 text-[10px] font-black text-slate-400">{row.impressions.toLocaleString()}</td>
-                             <td className="py-2 px-3 text-[10px] font-black text-slate-400">{(row.ctr * 100).toFixed(1)}%</td>
+                              <td className="py-2 px-3 text-[10px] font-black text-text-secondary">{row.clicks.toLocaleString()}</td>
+                              <td className="py-2 px-3 text-[10px] font-black text-text-secondary">{row.impressions.toLocaleString()}</td>
+                              <td className="py-2 px-3 text-[10px] font-black text-text-secondary">{(row.ctr * 100).toFixed(1)}%</td>
                           </tr>
                         );
                       })
@@ -750,23 +746,23 @@ export default function ClientSEODashboard() {
              {data && (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0) > 0 && (
                <div className="mt-8 flex flex-col sm:flex-row items-center justify-end gap-6 px-4 py-4 border-t border-white/5">
                  <div className="flex items-center gap-3 relative" ref={rowsRef}>
-                   <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Rows per page:</span>
+                   <span className="text-[10px] font-black uppercase text-text-muted tracking-widest">Rows per page:</span>
                    <button 
                      onClick={() => setShowRowsDropdown(!showRowsDropdown)}
-                     className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl text-[11px] font-black text-white hover:bg-white/10 transition-all border border-white/5"
+                     className="flex items-center gap-2 px-3 py-1.5 bg-surface-2 rounded-xl text-[11px] font-black text-text-primary hover:bg-surface-3 transition-all border border-border-1"
                    >
                      {rowsPerPage}
                      <ChevronDown size={14} className={`text-slate-500 transition-transform ${showRowsDropdown ? 'rotate-180' : ''}`} />
                    </button>
 
                    {showRowsDropdown && (
-                     <div className="absolute bottom-full right-0 mb-2 w-20 bg-[#13171F]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-1 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2">
+                     <div className="absolute bottom-full right-0 mb-2 w-20 bg-surface-1/80 backdrop-blur-xl border border-border-1 rounded-2xl p-1 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2">
                        {[10, 25, 50, 100].map(size => (
                          <button
                            key={size}
                            onClick={() => { setRowsPerPage(size); setCurrentPage(0); setShowRowsDropdown(false); }}
                            className={`w-full text-left px-4 py-2 rounded-xl text-[10px] font-black transition-all ${
-                             rowsPerPage === size ? 'bg-accent-orange text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                             rowsPerPage === size ? 'bg-accent-orange text-white' : 'text-text-muted hover:bg-surface-2 hover:text-text-primary'
                            }`}
                          >
                            {size}
@@ -777,9 +773,9 @@ export default function ClientSEODashboard() {
                  </div>
 
                  <div className="flex items-center gap-6">
-                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest tabular-nums ">
+                   <span className="text-[10px] font-black uppercase text-text-muted tracking-widest tabular-nums ">
                      {Math.min(currentPage * rowsPerPage + 1, (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0))} - {Math.min((currentPage + 1) * rowsPerPage, (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0))} 
-                     <span className="text-slate-600 mx-1">of</span> 
+                     <span className="text-text-muted mx-1">of</span> 
                      {(data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0)}
                    </span>
 
@@ -787,14 +783,14 @@ export default function ClientSEODashboard() {
                      <button 
                        disabled={currentPage === 0}
                        onClick={() => setCurrentPage(p => p - 1)}
-                       className="p-2 bg-white/5 rounded-xl text-white disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white/10 transition-all border border-white/5"
+                       className="p-2 bg-surface-2 rounded-xl text-text-primary disabled:opacity-20 disabled:cursor-not-allowed hover:bg-surface-3 transition-all border border-border-1"
                      >
                        <ChevronLeft size={16} />
                      </button>
                      <button 
                        disabled={(currentPage + 1) * rowsPerPage >= (data[activeTab === 'days' ? 'trends' : activeTab]?.length || 0)}
                        onClick={() => setCurrentPage(p => p + 1)}
-                       className="p-2 bg-white/5 rounded-xl text-white disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white/10 transition-all border border-white/5"
+                       className="p-2 bg-surface-2 rounded-xl text-text-primary disabled:opacity-20 disabled:cursor-not-allowed hover:bg-surface-3 transition-all border border-border-1"
                      >
                        <ChevronRight size={16} />
                      </button>

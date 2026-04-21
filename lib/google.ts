@@ -192,7 +192,7 @@ export async function fetchGA4Performance(
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'country' }, { name: 'city' }],
       metrics: [{ name: 'activeUsers' }],
-      limit: 10
+      limit: 100
     }
   });
 
@@ -203,11 +203,11 @@ export async function fetchGA4Performance(
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'eventName' }],
       metrics: [{ name: 'eventCount' }],
-      limit: 15
+      limit: 100
     }
   });
 
-  // 5. Acquisition / Behavior (Refined)
+  // 5. Acquisition / Behavior (Existing - Keeping for compatibility)
   const behaviorData = await analyticsdata.properties.runReport({
     property: `properties/${clientData.googleAnalyticsPropertyId}`,
     requestBody: {
@@ -218,15 +218,120 @@ export async function fetchGA4Performance(
     }
   });
 
+  // 6. Detailed User Acquisition (Mirroring GA4 UI Screenshot - FOR CHART)
+  const acquisitionData = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'firstUserDefaultChannelGroup' },
+        { name: 'date' }
+      ],
+      metrics: [
+        { name: 'totalUsers' },
+        { name: 'newUsers' },
+        { name: 'activeUsers' },
+        { name: 'userEngagementDuration' },
+        { name: 'engagedSessions' },
+        { name: 'eventCount' },
+        { name: 'conversions' }
+      ]
+    }
+  });
+
+  // 7. Aggregate User Acquisition (FOR TABLE - Accurate unique counts)
+  const acquisitionTable = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'firstUserDefaultChannelGroup' }
+      ],
+      metrics: [
+        { name: 'totalUsers' },
+        { name: 'newUsers' },
+        { name: 'activeUsers' },
+        { name: 'userEngagementDuration' },
+        { name: 'engagedSessions' },
+        { name: 'eventCount' },
+        { name: 'conversions' },
+        { name: 'userKeyEventRate' }
+      ],
+      metricAggregations: ['TOTAL']
+    }
+  });
+
+  // 8. User Type Breakdown (FOR TABLE - Accurate Returning users)
+  const acquisitionBreakdown = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'firstUserDefaultChannelGroup' },
+        { name: 'newVsReturning' }
+      ],
+      metrics: [
+        { name: 'activeUsers' }
+      ]
+    }
+  });
+
+  // 9. Session Acquisition (FOR CHART)
+  const sessionData = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'sessionDefaultChannelGroup' },
+        { name: 'date' }
+      ],
+      metrics: [
+        { name: 'sessions' }
+      ]
+    }
+  });
+
+  // 10. Session Acquisition Aggregates (FOR TABLE)
+  const sessionTable = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'sessionDefaultChannelGroup' }
+      ],
+      metrics: [
+        { name: 'sessions' },
+        { name: 'engagedSessions' },
+        { name: 'engagementRate' },
+        { name: 'eventsPerSession' },
+        { name: 'sessionKeyEventRate' },
+        { name: 'averageSessionDuration' },
+        { name: 'eventCount' },
+        { name: 'conversions' }
+      ],
+      metricAggregations: ['TOTAL']
+    }
+  });
+
   return {
     rows: response.data.rows || [],
     totals: response.data.totals?.[0]?.metricValues || [],
     realtime: realtimeResponse.data.rows?.[0]?.metricValues?.[0]?.value || '0',
     geo: geoData.data.rows || [],
     events: eventData.data.rows || [],
-    behavior: behaviorData.data.rows || []
+    behavior: behaviorData.data.rows || [],
+    performanceTotals: response.data.totals?.[0] || null,
+    acquisition: acquisitionData.data.rows || [],
+    acquisitionTable: acquisitionTable.data.rows || [],
+    acquisitionTableTotals: acquisitionTable.data.totals?.[0] || null,
+    acquisitionBreakdown: acquisitionBreakdown.data.rows || [],
+    sessionAcquisition: sessionData.data.rows || [],
+    sessionTable: sessionTable.data.rows || [],
+    sessionTableTotals: sessionTable.data.totals?.[0] || null
   };
 }
+
+
 
 /**
  * Fetch Full Realtime Report (Last 30 Minutes)
