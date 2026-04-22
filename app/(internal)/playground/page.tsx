@@ -49,7 +49,7 @@ export default function AIPlayground() {
             <div className="w-10 h-10 rounded-2xl bg-accent-orange/10 flex items-center justify-center text-accent-orange border border-accent-orange/20">
               <Sparkles size={24} />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic text-shadow-glow">Context Playground</h1>
+            <h1 className="text-3xl font-black text-white tracking-tight uppercase italic text-shadow-glow">Context Playground</h1>
           </div>
           <p className="text-slate-500 font-medium">Verify real-time neural context injection across LLM clusters.</p>
         </div>

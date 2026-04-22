@@ -43,7 +43,7 @@ export default function IntelligenceBar({ clientId }: { clientId: string }) {
             <span className="text-[10px] font-black uppercase tracking-widest text-accent-blue">Content Intelligence</span>
         </div>
         
-        <div className="h-4 w-[1px] bg-white/10" />
+        <div className="h-4 w-[1px] bg-border-1" />
 
         <div className="relative flex-1 overflow-hidden h-6">
             <div 
@@ -52,7 +52,7 @@ export default function IntelligenceBar({ clientId }: { clientId: string }) {
             >
                 {tips.map((tip, i) => (
                     <div key={i} className="h-full flex items-center h-6 py-10">
-                        <p className="text-[11px] font-medium text-slate-400 italic">
+                        <p className="text-[11px] font-medium text-text-muted italic">
                             &ldquo;{tip}&rdquo;
                         </p>
                     </div>
@@ -62,7 +62,7 @@ export default function IntelligenceBar({ clientId }: { clientId: string }) {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-text-dim">
             Source: Business Brain
             <ChevronRight size={12} />
         </div>

@@ -75,7 +75,7 @@ export default function BusinessBrainPage() {
             <div className="w-10 h-10 rounded-2xl bg-accent-orange/10 flex items-center justify-center text-accent-orange border border-accent-orange/20">
               <Brain size={24} />
             </div>
-            <h1 className="text-[20px] font-black text-text-primary tracking-tighter uppercase italic transition-colors">Agents</h1>
+            <h1 className="text-[20px] font-black text-text-primary tracking-tight uppercase italic transition-colors">Agents</h1>
           </div>
           <p className="text-text-muted font-medium transition-colors">Manage your brand intelligence cores and AI personas.</p>
         </div>
@@ -207,7 +207,7 @@ export default function BusinessBrainPage() {
                       </div>
 
                       <div className="space-y-3">
-                        <h4 className="text-[15px] font-black text-text-primary uppercase italic tracking-tighter transition-colors">No Agent Found</h4>
+                        <h4 className="text-[15px] font-black text-text-primary uppercase italic tracking-tight transition-colors">No Agent Found</h4>
 
                       </div>
 
@@ -246,7 +246,7 @@ export default function BusinessBrainPage() {
               <Loader2 className="w-12 h-12 text-accent-blue animate-spin relative z-10" />
             </div>
             <div className="text-center space-y-2">
-              <h4 className="text-[14px] font-black text-text-primary uppercase italic tracking-tighter">Synchronizing Neural Core</h4>
+              <h4 className="text-[14px] font-black text-text-primary uppercase italic tracking-tight">Synchronizing Neural Core</h4>
               <p className="text-[9px] text-text-muted font-black uppercase tracking-widest leading-relaxed">Retrieving personas, offers, and voice guides...</p>
             </div>
           </div>

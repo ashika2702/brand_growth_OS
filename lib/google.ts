@@ -192,7 +192,7 @@ export async function fetchGA4Performance(
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'country' }, { name: 'city' }],
       metrics: [{ name: 'activeUsers' }],
-      limit: 100
+      limit: 10000
     }
   });
 
@@ -203,7 +203,7 @@ export async function fetchGA4Performance(
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'eventName' }],
       metrics: [{ name: 'eventCount' }],
-      limit: 100
+      limit: 5000
     }
   });
 
@@ -214,7 +214,7 @@ export async function fetchGA4Performance(
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'sessionSource' }, { name: 'pagePath' }],
       metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
-      limit: 15
+      limit: 5000
     }
   });
 
@@ -313,6 +313,67 @@ export async function fetchGA4Performance(
     }
   });
 
+  // 11. Non-Google Campaign Report (Mirroring User Screenshot)
+  const campaignData = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'sessionCampaignName' },
+        { name: 'sessionSource' },
+        { name: 'sessionMedium' }
+      ],
+      metrics: [
+        { name: 'activeUsers' },
+        { name: 'sessions' },
+        { name: 'engagedSessions' },
+        { name: 'eventCount' },
+        { name: 'conversions' },
+        { name: 'userEngagementDuration' },
+        { name: 'totalRevenue' }
+      ],
+      dimensionFilter: {
+        notExpression: {
+          filter: {
+            fieldName: 'sessionSource',
+            stringFilter: {
+              value: 'google',
+              matchType: 'CONTAINS'
+            }
+          }
+        }
+      },
+      metricAggregations: ['TOTAL'],
+      limit: 5000
+    }
+  });
+
+  // 12. Campaign Trend Report (FOR GRAPH)
+  const campaignSeries = await analyticsdata.properties.runReport({
+    property: `properties/${clientData.googleAnalyticsPropertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [
+        { name: 'sessionCampaignName' },
+        { name: 'date' }
+      ],
+      metrics: [
+        { name: 'activeUsers' }
+      ],
+      dimensionFilter: {
+        notExpression: {
+          filter: {
+            fieldName: 'sessionSource',
+            stringFilter: {
+              value: 'google',
+              matchType: 'CONTAINS'
+            }
+          }
+        }
+      }
+    }
+  });
+
   return {
     rows: response.data.rows || [],
     totals: response.data.totals?.[0]?.metricValues || [],
@@ -327,7 +388,10 @@ export async function fetchGA4Performance(
     acquisitionBreakdown: acquisitionBreakdown.data.rows || [],
     sessionAcquisition: sessionData.data.rows || [],
     sessionTable: sessionTable.data.rows || [],
-    sessionTableTotals: sessionTable.data.totals?.[0] || null
+    sessionTableTotals: sessionTable.data.totals?.[0] || null,
+    campaigns: campaignData.data.rows || [],
+    campaignTotals: campaignData.data.totals?.[0] || null,
+    campaignSeries: campaignSeries.data.rows || []
   };
 }
 

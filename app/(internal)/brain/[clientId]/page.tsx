@@ -58,7 +58,7 @@ export default function BusinessBrainDetailPage() {
                     <Brain size={32} />
                 </div>
                 <div className="max-w-xs space-y-2">
-                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Connection Failed</h3>
+                    <h3 className="text-xl font-black text-white uppercase italic tracking-tight">Connection Failed</h3>
                     <p className="text-xs text-slate-500 font-medium leading-relaxed">{error}</p>
                 </div>
                 <Link
@@ -86,7 +86,7 @@ export default function BusinessBrainDetailPage() {
                         <div className="w-10 h-10 rounded-2xl bg-accent-orange/10 flex items-center justify-center text-accent-orange border border-accent-orange/20">
                             <Brain size={24} />
                         </div>
-                        <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Business Brain <span className="text-slate-700 mx-2">—</span> <span className="text-accent-blue">{data.client?.name}</span></h1>
+                        <h1 className="text-3xl font-black text-white tracking-tight uppercase italic">Business Brain <span className="text-slate-700 mx-2">—</span> <span className="text-accent-blue">{data.client?.name}</span></h1>
                     </div>
                     <p className="text-slate-500 font-medium">The complete intelligence profile and foundation of all AI output.</p>
                 </div>

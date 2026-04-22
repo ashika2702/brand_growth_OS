@@ -104,18 +104,18 @@ export default function ContentCard({ item, isOverlay, onRefresh }: ContentCardP
           className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing"
           title="Drag to move"
         >
-          <div className="p-1.5 bg-black/40 rounded-lg">
+          <div className="p-1.5 bg-surface-2 rounded-lg border border-border-1">
             <TypeIcon type={item.type} />
           </div>
           <div className="flex -space-x-1">
             {item.platform?.map((p: string) => (
-              <div key={p} className="w-5 h-5 rounded-md bg-black border border-white/5 flex items-center justify-center">
+              <div key={p} className="w-5 h-5 rounded-md bg-surface-3 border border-border-1 flex items-center justify-center">
                 <PlatformIcon platform={p} />
               </div>
             ))}
           </div>
         </div>
-        <button className="text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+        <button className="text-text-dim hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity">
             <MoreVertical size={14} />
         </button>
       </div>
@@ -128,7 +128,7 @@ export default function ContentCard({ item, isOverlay, onRefresh }: ContentCardP
       {/* Stats/Badges Row */}
       <div className="flex items-center gap-3">
         {item.dueDate && (
-          <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase">
+          <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
             <Calendar size={10} />
             {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
           </div>

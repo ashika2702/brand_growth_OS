@@ -17,10 +17,10 @@ export default function KanbanColumn({ id, title, color, items, onRefresh }: Kan
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col w-72 shrink-0 bg-surface-1/40 rounded-2xl border border-border-1 overflow-hidden">
-      <div className={`p-4 border-t-2 ${color} bg-surface-2/10 flex justify-between items-center`}>
+    <div className="flex flex-col w-72 shrink-0 bg-surface-1/80 backdrop-blur-sm rounded-2xl border border-border-1 overflow-hidden transition-colors">
+      <div className={`p-4 border-t-2 ${color} bg-surface-2/30 flex justify-between items-center`}>
         <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted">{title}</h3>
-        <span className="bg-surface-3 px-2 py-0.5 rounded-full text-[9px] font-bold text-text-muted">{items.length}</span>
+        <span className="bg-surface-3 border border-border-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-text-muted">{items.length}</span>
       </div>
       
       <div 

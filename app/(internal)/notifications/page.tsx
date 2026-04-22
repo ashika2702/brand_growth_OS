@@ -101,7 +101,7 @@ export default function NotificationsPage() {
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-text-primary uppercase italic tracking-tighter mb-2">Notification <span className="text-accent-blue">Centre</span></h1>
+          <h1 className="text-3xl font-black text-text-primary uppercase italic tracking-tight mb-2">Notification <span className="text-accent-blue">Centre</span></h1>
           <p className="text-sm text-slate-500 font-medium">Real-time intelligence and alerts for your brand ecosystem.</p>
         </div>
         

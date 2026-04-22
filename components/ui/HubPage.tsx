@@ -20,7 +20,7 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
   return (
     <div className="h-full flex flex-col gap-8">
       <div className="space-y-1">
-        <h1 className="text-[22px] font-black text-text-primary tracking-tighter uppercase italic transition-colors">{title}</h1>
+        <h1 className="text-[22px] font-black text-text-primary tracking-tight uppercase italic transition-colors">{title}</h1>
         <p className="text-text-muted font-medium text-sm transition-colors">{description}</p>
       </div>
 
@@ -43,7 +43,7 @@ export default function HubPage({ title, description, modules }: HubPageProps) {
               </div>
               
               <div>
-                <h3 className="text-[15px] font-black text-text-primary uppercase tracking-tight mb-1 group-hover:text-accent-orange transition-colors">
+                <h3 className="text-[15px] font-black text-text-primary uppercase tracking-normal mb-1 group-hover:text-accent-orange transition-colors">
                   {module.title}
                 </h3>
                 <p className="text-xs text-text-muted font-medium leading-relaxed transition-colors">

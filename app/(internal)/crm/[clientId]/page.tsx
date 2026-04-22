@@ -163,7 +163,7 @@ export default function CRMPage() {
             <div className="w-10 h-10 rounded-2xl bg-accent-blue/10 flex items-center justify-center text-accent-blue border border-accent-blue/20">
               <Users size={24} />
             </div>
-            <h1 className="text-xl font-black text-text-primary tracking-tighter uppercase italic transition-colors">Lead Pipeline</h1>
+            <h1 className="text-xl font-black text-text-primary tracking-tight uppercase italic transition-colors">Lead Pipeline</h1>
           </div>
           <p className="text-text-muted font-medium transition-colors">Manage and track your client acquisition infrastructure.</p>
         </div>

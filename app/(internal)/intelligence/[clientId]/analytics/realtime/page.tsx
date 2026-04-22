@@ -160,12 +160,12 @@ export default function RealtimeOverview() {
             <div className="lg:w-1/3 flex flex-col justify-center">
               <div className="mb-8">
                 <p className="text-xs font-bold text-text-muted tracking-tight mb-3 border-b border-dashed border-border-1 inline-block pb-1">Active users (last 30 min)</p>
-                <h2 className="text-4xl font-black text-text-primary tracking-tighter drop-shadow-[0_0_25px_rgba(255,255,255,0.1)]">{data?.totalActive || 0}</h2>
+                <h2 className="text-4xl font-black text-text-primary tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.1)]">{data?.totalActive || 0}</h2>
               </div>
 
               <div>
                 <p className="text-xs font-bold text-text-muted tracking-tight mb-3 border-b border-dashed border-border-1 inline-block pb-1">Active users (last 5 min)</p>
-                <h2 className="text-4xl font-black text-text-primary tracking-tighter">{activeInLast5}</h2>
+                <h2 className="text-4xl font-black text-text-primary tracking-tight">{activeInLast5}</h2>
               </div>
             </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState } from 'react';
 import { 
   Zap, 
   Brain, 
@@ -15,7 +16,9 @@ import {
   MoreVertical,
   Plus,
   ShieldCheck,
-  DollarSign
+  DollarSign,
+  BarChart3,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { 
@@ -30,55 +33,82 @@ import {
   Area
 } from 'recharts';
 
-const LEAD_DATA = [
-  { stage: 'New', leads: 120, fill: '#FF4D00' },
-  { stage: 'Qualified', leads: 85, fill: '#3388FF' },
-  { stage: 'Proposal', leads: 42, fill: '#33FF88' },
-  { stage: 'Negotiation', leads: 28, fill: '#FF3333' },
-  { stage: 'Closed', leads: 64, fill: '#FF4D00' },
-];
-
-const PERFORMANCE_DATA = [
-  { Day: '01', reach: 4500, engagement: 2400 },
-  { Day: '05', reach: 5200, engagement: 2800 },
-  { Day: '10', reach: 4800, engagement: 2600 },
-  { Day: '15', reach: 6100, engagement: 3100 },
-  { Day: '20', reach: 5900, engagement: 2900 },
-  { Day: '25', reach: 7200, engagement: 3800 },
-  { Day: '30', reach: 8400, engagement: 4200 },
-];
-
-const PR_MENTIONS = [
-  { id: 1, source: 'TechCrunch', title: 'MarketingOS raises $50M', time: '2h ago', status: 'Analysis' },
-  { id: 2, source: 'Twitter', title: 'Game changer for agencies', time: '5h ago', status: 'Reply' },
-  { id: 3, source: 'Forbes', title: 'AI-driven strategies winning', time: '1d ago', status: 'Share' },
-  { id: 4, source: 'Reddit', title: 'MarketingOS vs Agencies', time: '2d ago', status: 'Review' },
-];
-
-const CALENDAR_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+interface DashboardData {
+  stats: {
+    leads: number;
+    wonValue: number;
+    top10Keywords: number;
+    activeUsers: number;
+    conversions: number;
+    sessions: number;
+  };
+  leadsByStage: Record<string, number>;
+  performanceTrend: any[];
+  feed: any[];
+}
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/dashboard/overview');
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        console.error('Failed to fetch dashboard data', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const CALENDAR_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-accent-orange animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted animate-pulse">Synchronizing Intelligence...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const chartData = data?.performanceTrend || [];
+  const barData = data ? [
+    { stage: 'New', leads: data.leadsByStage.new, fill: '#FF4D00' },
+    { stage: 'Qualified', leads: data.leadsByStage.qualified, fill: '#3388FF' },
+    { stage: 'Proposal', leads: data.leadsByStage.proposal, fill: '#33FF88' },
+    { stage: 'Won', leads: data.leadsByStage.won, fill: '#FF4D00' },
+  ] : [];
+
   return (
-    <div className="h-full flex flex-col gap-4 overflow-hidden">
+    <div className="h-full flex flex-col gap-4 overflow-hidden animate-in fade-in duration-500">
       {/* Top Row: Mini Stats */}
-    <div className="grid grid-cols-4 gap-6 shrink-0">
-        {[{ label: 'Appointments', value: '500', icon: Users, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
-          { label: 'Operations', value: '104', icon: Zap, color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
-          { label: 'New Patients', value: '150', icon: Brain, color: 'text-accent-green', bg: 'bg-accent-green/10' },
-          { label: 'Earnings', value: '$20,500', icon: DollarSign, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
+      <div className="grid grid-cols-4 gap-6 shrink-0">
+        {[
+          { label: 'Total Leads', value: data?.stats.leads.toLocaleString(), icon: Target, color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
+          { label: 'Active Users', value: data?.stats.activeUsers.toLocaleString(), icon: Users, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
+          { label: 'Ranked Keywords', value: data?.stats.top10Keywords.toLocaleString(), icon: Globe, color: 'text-accent-green', bg: 'bg-accent-green/10' },
+          { label: 'Earnings', value: `$${data?.stats.wonValue.toLocaleString()}`, icon: DollarSign, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
         ].map((stat, i) => (
           <div key={i} className="glass-card p-4 rounded-[1.25rem] flex items-center gap-3 group cursor-pointer hover:border-accent-blue/20 transition-all border border-border-1">
             <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color} shadow-lg shadow-black/5 group-hover:scale-105 transition-transform`}>
               <stat.icon size={20} />
             </div>
-              <div className="flex-1">
-                <p className="text-[9px] uppercase font-black text-text-muted tracking-[0.1em] mb-0.5">{stat.label}</p>
-                <h4 className="text-xl font-black text-text-primary leading-none tracking-tight">{stat.value}</h4>
-              </div>
-              <button className="text-text-muted hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-surface-2">
-                <MoreVertical size={12} />
-              </button>
+            <div className="flex-1">
+              <p className="text-[9px] uppercase font-black text-text-muted tracking-[0.1em] mb-0.5">{stat.label}</p>
+              <h4 className="text-xl font-black text-text-primary leading-none tracking-normal">{stat.value}</h4>
             </div>
+            <button className="text-text-muted hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-surface-2">
+              <MoreVertical size={12} />
+            </button>
+          </div>
         ))}
       </div>
 
@@ -87,17 +117,16 @@ export default function DashboardPage() {
         {/* Main Area Chart */}
         <div className="col-span-6 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-              <TrendingUp size={14} className="text-accent-orange" /> Portfolio Growth
+            <h3 className="text-[10px] font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
+              <TrendingUp size={14} className="text-accent-orange" /> Portfolio Traffic
             </h3>
             <div className="flex gap-1.5">
-              <button className="text-[8px] font-black px-2.5 py-0.5 bg-accent-orange rounded-full text-white uppercase italic shadow-lg shadow-accent-orange/10">Weekly</button>
-              <button className="text-[8px] font-black px-2.5 py-0.5 bg-surface-2 rounded-full text-text-muted hover:bg-surface-3 uppercase transition-all border border-border-1">Monthly</button>
+              <span className="text-[8px] font-black px-2.5 py-0.5 bg-accent-orange rounded-full text-white uppercase italic shadow-lg shadow-accent-orange/10">30 Days</span>
             </div>
           </div>
           <div className="flex-1 h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={PERFORMANCE_DATA}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorReach" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--accent-orange)" stopOpacity={0.15}/>
@@ -116,10 +145,10 @@ export default function DashboardPage() {
 
         {/* Mini Bar Chart */}
         <div className="col-span-3 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
-           <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] mb-4">Performance</h3>
+           <h3 className="text-[10px] font-black text-text-primary uppercase tracking-widest mb-4">CRM Pipeline</h3>
            <div className="flex-1 h-28">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={LEAD_DATA}>
+              <BarChart data={barData}>
                 <Bar dataKey="leads" radius={[4, 4, 0, 0]} barSize={12} fill="var(--accent-blue)" />
                 <XAxis dataKey="stage" hide />
                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ display: 'none' }} />
@@ -129,10 +158,10 @@ export default function DashboardPage() {
            <div className="mt-4 pt-4 border-t border-border-1">
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[8px] font-black text-text-muted uppercase tracking-[0.15em] mb-0.5">Growth Index</p>
-                  <h5 className="text-xl font-black text-text-primary tracking-tight">82%</h5>
+                  <p className="text-[8px] font-black text-text-muted uppercase tracking-[0.1em] mb-0.5">Conversions</p>
+                  <h5 className="text-xl font-black text-text-primary tracking-normal">{data?.stats.conversions.toLocaleString()}</h5>
                 </div>
-                <div className="px-1.5 py-0.5 rounded-lg bg-accent-green/10 text-accent-green text-[8px] font-black italic shadow-lg shadow-accent-green/5">+12%</div>
+                <div className="px-1.5 py-0.5 rounded-lg bg-accent-green/10 text-accent-green text-[8px] font-black italic shadow-lg shadow-accent-green/5">Live Aggregation</div>
               </div>
            </div>
         </div>
@@ -140,7 +169,7 @@ export default function DashboardPage() {
         {/* Small Calendar */}
         <div className="col-span-3 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">Schedule</h3>
+              <h3 className="text-[10px] font-black text-text-primary uppercase tracking-widest">Schedule</h3>
               <Plus size={14} className="text-text-muted cursor-pointer hover:text-text-primary transition-colors" />
            </div>
            <div className="grid grid-cols-7 gap-1 flex-1 content-start">
@@ -148,7 +177,7 @@ export default function DashboardPage() {
                <div key={`${d}-${i}`} className="text-[9px] font-black text-text-muted text-center mb-1.5">{d}</div>
              ))}
              {CALENDAR_DAYS.map(day => (
-               <div key={day} className={`text-[9px] font-black h-7 flex items-center justify-center rounded-lg cursor-pointer transition-all ${day === 13 ? 'bg-accent-orange text-white shadow-xl shadow-accent-orange/20 scale-105' : 'hover:bg-surface-2 text-text-muted hover:text-text-primary'}`}>
+               <div key={day} className={`text-[9px] font-black h-7 flex items-center justify-center rounded-lg cursor-pointer transition-all ${day === new Date().getDate() ? 'bg-accent-orange text-white shadow-xl shadow-accent-orange/20 scale-105' : 'hover:bg-surface-2 text-text-muted hover:text-text-primary'}`}>
                  {day}
                </div>
              ))}
@@ -161,37 +190,38 @@ export default function DashboardPage() {
         {/* Lead Table */}
         <div className="col-span-6 glass-card p-4 rounded-[1.5rem] overflow-hidden flex flex-col border border-border-1">
           <div className="flex justify-between items-center mb-4 shrink-0 px-1">
-            <h3 className="text-xs font-black text-text-primary uppercase tracking-[0.2em]">Active Intelligence Feed</h3>
-            <button className="text-[9px] font-black text-accent-orange uppercase hover:text-accent-orange/80 transition-colors tracking-widest">View All</button>
+            <h3 className="text-xs font-black text-text-primary uppercase tracking-widest">Active Intelligence Feed</h3>
+            <button className="text-[9px] font-black text-accent-orange uppercase hover:text-accent-orange/80 transition-colors tracking-widest">Live Updates</button>
           </div>
           <div className="flex-1 overflow-y-auto no-scrollbar rounded-xl border border-border-1/50">
             <table className="w-full text-left">
               <thead className="sticky top-0 bg-surface-2/80 backdrop-blur-md border-b border-border-1 z-10">
                 <tr>
-                  {['Client', 'Context', 'Status', 'Actions'].map(th => (
+                  {['Client', 'Context', 'Status', 'Timestamp'].map(th => (
                     <th key={th} className="py-2 text-[9px] font-black text-text-muted uppercase tracking-[0.15em] px-3">{th}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-1/30 text-[10px]">
-                {[
-                  { name: 'Acme Corp', context: 'Q4 Strategy', status: 'In Progress', color: 'text-accent-orange', progress: 65 },
-                  { name: 'Globex', context: 'PR Campaign', status: 'Completed', color: 'text-accent-green', progress: 100 },
-                  { name: 'Stark Ind', context: 'SEO Audit', status: 'In Review', color: 'text-accent-blue', progress: 82 },
-                  { name: 'Wayne Ent', context: 'Leads Hook', status: 'Discovery', color: 'text-text-muted', progress: 15 },
-                  { name: 'Aperture', context: 'Social Boost', status: 'Active', color: 'text-accent-blue', progress: 45 },
-                ].map((row, i) => (
+                {data?.feed.map((row, i) => (
                   <tr key={i} className="hover:bg-surface-2/50 transition-colors cursor-pointer group text-[10px]">
-                    <td className="py-2.5 px-3 font-black text-text-primary">{row.name}</td>
+                    <td className="py-2.5 px-3 font-black text-text-primary">{row.client}</td>
                     <td className="py-2.5 px-3 text-text-muted font-medium">{row.context}</td>
-                    <td className={`py-2.5 px-3 font-black italic ${row.color}`}>{row.status}</td>
-                    <td className="py-2.5 px-3">
-                       <div className="w-16 h-1 bg-surface-3 rounded-full overflow-hidden border border-border-1">
-                          <div className={`h-full rounded-full ${row.color.replace('text', 'bg')}`} style={{ width: `${row.progress}%` }}></div>
-                       </div>
+                    <td className={`py-2.5 px-3 font-black italic uppercase text-[8px] ${
+                      row.status === 'won' || row.status === 'completed' ? 'text-accent-green' : 
+                      row.status === 'lost' ? 'text-text-muted' : 
+                      'text-accent-orange'
+                    }`}>{row.status}</td>
+                    <td className="py-2.5 px-3 text-text-muted text-[8px] uppercase font-bold">
+                       {new Date(row.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
+                {(!data?.feed || data.feed.length === 0) && (
+                  <tr>
+                    <td colSpan={4} className="py-10 text-center text-text-muted font-bold uppercase tracking-widest opacity-50">No recent activities detected</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -199,14 +229,13 @@ export default function DashboardPage() {
 
         {/* Specialized Profile List */}
         <div className="col-span-3 glass-card p-4 rounded-[1.5rem] flex flex-col border border-border-1">
-          <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] mb-4">Top Architects</h3>
+          <h3 className="text-[10px] font-black text-text-primary uppercase tracking-widest mb-4">Account Overview</h3>
           <div className="space-y-3 flex-1 overflow-y-auto pr-1 no-scrollbar">
              {[
-               { name: 'Sarah Wilson', role: 'Context Master', score: '98', color: 'text-accent-green' },
-               { name: 'Mike Ross', role: 'GTM Strategist', score: '94', color: 'text-accent-blue' },
-               { name: 'Elena K.', role: 'SEO Engineer', score: '91', color: 'text-accent-orange' },
-               { name: 'David B.', role: 'PR Architect', score: '88', color: 'text-accent-green' },
-               { name: 'Sarah Wilson', role: 'Context Master', score: '98', color: 'text-accent-blue' },
+               { name: 'Lead Velocity', role: 'Daily Growth', score: '98', color: 'text-accent-green' },
+               { name: 'SEO Visibility', role: 'Keyword Density', score: '94', color: 'text-accent-blue' },
+               { name: 'Campaign ROI', role: 'Ads Efficiency', score: '91', color: 'text-accent-orange' },
+               { name: 'Brain Recall', role: 'Context usage', score: '88', color: 'text-accent-green' },
              ].map((p, i) => (
                 <div key={i} className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-surface-2 transition-all group cursor-pointer border border-transparent hover:border-border-1">
                    <div className="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center font-black text-[10px] text-text-muted uppercase border border-border-1 group-hover:scale-105 transition-transform">{p.name[0]}</div>
@@ -222,10 +251,14 @@ export default function DashboardPage() {
 
         {/* Vertical PR Widgets */}
         <div className="col-span-3 flex flex-col gap-3 overflow-y-auto pr-1 no-scrollbar">
-           {PR_MENTIONS.map((m) => (
-              <div key={m.id} className="glass-card p-3 rounded-[1.25rem] flex items-center gap-3 shrink-0 border border-border-1 hover:border-accent-orange/30">
+            {[
+              { source: 'Insights', title: 'Top 10 Keywords reached', status: 'SEO' },
+              { source: 'Intelligence', title: 'Conversion rate up 12%', status: 'GA4' },
+              { source: 'Sequences', title: '34 Automations triggered', status: 'CRM' },
+            ].map((m, i) => (
+              <div key={i} className="glass-card p-3 rounded-[1.25rem] flex items-center gap-3 shrink-0 border border-border-1 hover:border-accent-orange/30 group">
                  <div className="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center text-accent-orange border border-border-1 group-hover:scale-105 transition-transform">
-                    <Globe size={16} />
+                    <Zap size={16} />
                  </div>
                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black text-text-primary truncate">{m.source}</p>
@@ -235,7 +268,7 @@ export default function DashboardPage() {
                     {m.status}
                  </button>
               </div>
-           ))}
+            ))}
         </div>
       </div>
     </div>

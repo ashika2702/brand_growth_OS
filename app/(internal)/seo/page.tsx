@@ -42,7 +42,7 @@ export default function SEOControlCenter() {
             <div className="w-10 h-10 rounded-2xl bg-accent-green/10 flex items-center justify-center text-accent-green border border-accent-green/20">
               <Globe size={24} />
             </div>
-            <h1 className="text-3xl font-black text-text-primary tracking-tighter uppercase italic">SEO Control Center</h1>
+            <h1 className="text-3xl font-black text-text-primary tracking-tight uppercase italic">SEO Control Center</h1>
           </div>
           <p className="text-slate-500 font-medium">Dominate the answer engines with AI-native search infrastructure.</p>
         </div>
@@ -76,7 +76,7 @@ export default function SEOControlCenter() {
         {/* Performance Graph */}
         <div className="col-span-12 lg:col-span-8 glass-card p-8 rounded-[2rem] border border-white/5 min-h-[400px] flex flex-col">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary flex items-center gap-2">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-text-primary flex items-center gap-2">
               <BarChart3 size={14} className="text-accent-green" /> Visibility Index
             </h3>
             <div className="flex gap-2">
@@ -109,7 +109,7 @@ export default function SEOControlCenter() {
 
         {/* Audit Checklist */}
         <div className="col-span-12 lg:col-span-4 glass-card p-8 rounded-[2rem] border border-white/5 flex flex-col">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary mb-8 flex items-center gap-2">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-text-primary mb-8 flex items-center gap-2">
             <ShieldCheck size={14} className="text-accent-orange" /> Site Health Score
           </h3>
           
@@ -144,7 +144,7 @@ export default function SEOControlCenter() {
         {/* Top Keywords Table */}
         <div className="col-span-12 glass-card p-8 rounded-[2rem] border border-white/5 overflow-hidden">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary flex items-center gap-2">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-text-primary flex items-center gap-2">
               <TrendingUp size={14} className="text-accent-blue" /> Keyword Dominance
             </h3>
             <button className="text-[9px] font-black text-slate-500 uppercase hover:text-white transition-all flex items-center gap-2">

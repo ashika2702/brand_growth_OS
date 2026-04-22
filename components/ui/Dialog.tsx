@@ -50,7 +50,7 @@ export default function Dialog({ isOpen, onClose, children, title }: DialogProps
         {/* Header */}
         <div className="px-10 pt-8 pb-4 flex justify-between items-center shrink-0 relative z-10">
           <div>
-            {title && <h2 className="text-2xl font-black text-text-primary uppercase italic tracking-tighter transition-colors">{title}</h2>}
+            {title && <h2 className="text-2xl font-black text-text-primary uppercase italic tracking-tight transition-colors">{title}</h2>}
           </div>
           <button 
             onClick={onClose}

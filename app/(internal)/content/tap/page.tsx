@@ -55,24 +55,16 @@ export default function ContentTapPage() {
       {/* Header Actions */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black italic text-text-primary tracking-tighter uppercase">Content Tap <span className="text-accent-blue">v2.0</span></h1>
+            <h1 className="text-2xl font-black italic text-text-primary tracking-tight uppercase">Content Tap <span className="text-accent-blue">v2.0</span></h1>
             <div className="flex items-center gap-1 bg-surface-2 border border-border-1 rounded-full px-3 py-1">
                 <div className={`w-1.5 h-1.5 rounded-full bg-accent-blue ${isOrchestrating ? 'animate-ping' : 'animate-pulse'}`} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <span className="text-[10px] font-black uppercase tracking-wider text-text-muted">
                     {isOrchestrating ? 'Agent Orchestrating...' : 'AI Pipeline Active'}
                 </span>
             </div>
         </div>
 
         <div className="flex items-center gap-3">
-            {/* <button 
-                onClick={handleFillGaps}
-                disabled={isOrchestrating}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 transition-all group disabled:opacity-50"
-            >
-                <Sparkles size={14} className={`text-accent-blue transition-transform ${isOrchestrating ? 'animate-spin' : 'group-hover:rotate-12'}`} />
-                {isOrchestrating ? 'Filling Gaps...' : 'AI Fill Gaps'}
-            </button> */}
             <button 
                 onClick={() => setIsNewRequestOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-accent-blue hover:bg-blue-600 border border-blue-400/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-[0_0_20px_rgba(62,128,255,0.3)] hover:shadow-[0_0_30px_rgba(62,128,255,0.5)]"
@@ -84,7 +76,7 @@ export default function ContentTapPage() {
       </div>
 
       {/* Main Tabs Navigation */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-4">
+      <div className="flex items-center justify-between border-b border-border-1 pb-4">
         <div className="flex gap-1 bg-surface-2 p-1 rounded-xl border border-border-1">
             {tabs.map((tab) => (
                 <button
@@ -92,8 +84,8 @@ export default function ContentTapPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                         activeTab === tab.id 
-                        ? 'bg-white/10 text-white shadow-lg' 
-                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                        ? 'bg-surface-3 text-text-primary shadow-sm' 
+                        : 'text-text-muted hover:text-text-secondary hover:bg-surface-3/50'
                     }`}
                 >
                     <tab.icon size={14} className={activeTab === tab.id ? 'text-accent-blue' : ''} />

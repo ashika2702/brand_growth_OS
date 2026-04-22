@@ -158,7 +158,7 @@ const KPICard = ({ label, value, trend, trendVal, data, color }: any) => {
     
     <p className="text-[10px] font-bold text-text-muted mb-1 tracking-tight uppercase">{label}</p>
     <div className="flex items-center gap-2 mb-3 relative z-10">
-      <h4 className="text-xl font-black text-text-primary tracking-tighter">{value}</h4>
+      <h4 className="text-xl font-black text-text-primary tracking-tight">{value}</h4>
       {trend && (
         <span className={`text-[11px] font-bold ${trend === 'up' ? 'text-accent-green' : 'text-accent-red'}`}>
           {trend === 'up' ? '+' : '-'}{trendVal}
@@ -369,7 +369,7 @@ export default function ClientSEODashboard() {
             <ShieldAlert size={40} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-text-primary tracking-tighter uppercase font-sans text-balance">
+            <h2 className="text-2xl font-black text-text-primary tracking-tight uppercase font-sans text-balance">
               CONNECTION REQUIRED
             </h2>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
@@ -398,7 +398,7 @@ export default function ClientSEODashboard() {
       {/* Header Area */}
       <div className="flex justify-between items-center px-2 ">
         <div className="space-y-1">
-          <h1 className="text-xl font-black text-text-primary tracking-tighter uppercase italic">SEO Performance</h1>
+          <h1 className="text-xl font-black text-text-primary tracking-tight uppercase italic">SEO Performance</h1>
         </div>
 
         <div className="flex items-center gap-4 relative">
@@ -664,7 +664,7 @@ export default function ClientSEODashboard() {
           {/* Keyword Performance Table */}
           <div className="glass-card p-6 rounded-[2rem] border border-border-1">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-3">
-                <h3 className="text-lg font-black text-text-primary uppercase tracking-tighter">Performance</h3>
+                <h3 className="text-lg font-black text-text-primary uppercase tracking-tight">Performance</h3>
                 
                 <div className="flex items-center p-1 bg-white/5 rounded-2xl border border-white/5 relative h-10">
                   {(['queries', 'pages', 'countries', 'devices', 'days'] as const).map(tab => (
