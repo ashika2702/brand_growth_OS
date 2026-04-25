@@ -49,6 +49,7 @@ model Client {
   googleSearchConsoleUrl String?
   googleTokenExpiresAt   DateTime?
   googleAnalyticsPropertyId String?
+  googleTagManagerContainerId String?
   brain                  BusinessBrain?
   intelligence           ContentIntelligence?
   contentRequests        ContentRequest[]

@@ -133,7 +133,8 @@ export function getGoogleAuthUrl(clientId: string) {
       'https://www.googleapis.com/auth/webmasters.readonly',
       'https://www.googleapis.com/auth/webmasters',
       'https://www.googleapis.com/auth/analytics.readonly',
-      'https://www.googleapis.com/auth/analytics'
+      'https://www.googleapis.com/auth/analytics',
+      'https://www.googleapis.com/auth/tagmanager.readonly'
     ],
     state: clientId // Pass clientId in state to recover it in callback
   });
@@ -496,6 +497,79 @@ export async function fetchGA4Realtime(clientId: string) {
     events: getBreakdown(masterB, 0, 0),      // Event Name + Event Count
     keyEvents: getBreakdown(masterB, 0, 1)    // Event Name + Key Events
   };
+}
+
+/**
+ * Fetch GTM Inventory (Tags, Triggers, Variables)
+ */
+export async function fetchGTMInventory(clientId: string) {
+  await getGoogleToken(clientId);
+
+  const clientData = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { googleTagManagerContainerId: true }
+  });
+
+  const tagmanager = google.tagmanager({ version: 'v2', auth: oauth2Client });
+
+  try {
+    // 1. List accounts
+    const accountsRes = await tagmanager.accounts.list();
+    const accounts = accountsRes.data.account || [];
+
+    let targetContainer: any = null;
+    let targetWorkspace: any = null;
+
+    // 2. Find the container by publicId (GTM-XXXX)
+    for (const account of accounts) {
+      if (!account.path) continue;
+      const containersRes = await tagmanager.accounts.containers.list({ parent: account.path });
+      const containers = containersRes.data.container || [];
+      
+      targetContainer = containers.find(c => c.publicId === clientData?.googleTagManagerContainerId);
+      if (targetContainer) break;
+    }
+
+    if (!targetContainer) {
+      // If we don't have a specific ID, or can't find it, we'll try to find the first one as fallback
+      // but only if the user hasn't specified one.
+      if (!clientData?.googleTagManagerContainerId && accounts[0]) {
+         const firstContainers = await tagmanager.accounts.containers.list({ parent: accounts[0].path! });
+         targetContainer = firstContainers.data.container?.[0];
+      }
+    }
+
+    if (!targetContainer) {
+      throw new Error('GTM Container not found for this account');
+    }
+
+    // 3. Get the latest workspace (usually 'Default Workspace')
+    const workspacesRes = await tagmanager.accounts.containers.workspaces.list({ parent: targetContainer.path! });
+    targetWorkspace = workspacesRes.data.workspace?.[0];
+
+    if (!targetWorkspace) {
+      throw new Error('No workspace found in GTM container');
+    }
+
+    // 4. Fetch Tags, Triggers, and Variables in parallel
+    const [tags, triggers, variables] = await Promise.all([
+      tagmanager.accounts.containers.workspaces.tags.list({ parent: targetWorkspace.path! }),
+      tagmanager.accounts.containers.workspaces.triggers.list({ parent: targetWorkspace.path! }),
+      tagmanager.accounts.containers.workspaces.variables.list({ parent: targetWorkspace.path! })
+    ]);
+
+    return {
+      container: targetContainer,
+      workspace: targetWorkspace,
+      tags: tags.data.tag || [],
+      triggers: triggers.data.trigger || [],
+      variables: variables.data.variable || []
+    };
+
+  } catch (error: any) {
+    console.error('GTM API Error:', error.message);
+    throw error;
+  }
 }
 
 /**

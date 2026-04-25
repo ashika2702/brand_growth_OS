@@ -20,6 +20,7 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
     linkedInAccessToken: '',
     googleSearchConsoleUrl: '',
     googleAnalyticsPropertyId: '',
+    googleTagManagerContainerId: '',
     isGoogleConnected: false
   });
 
@@ -257,6 +258,21 @@ export default function IntegrationsView({ clientId }: IntegrationsViewProps) {
               className="w-full bg-surface-3 border border-border-2 focus:border-accent-green p-4 rounded-2xl text-sm transition-all focus:ring-1 focus:ring-accent-green/20 text-text-primary font-medium"
             />
             <p className="text-[10px] text-text-muted italic">Found in GA4 Admin → Property Settings → Property ID.</p>
+          </div>
+
+          <div className="space-y-2 pt-4 border-t border-border-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
+              GTM Container ID
+              <span className="text-[8px] bg-accent-orange/20 text-accent-orange px-2 py-0.5 rounded-full">Required for Tags</span>
+            </label>
+            <input
+              type="text"
+              value={formData.googleTagManagerContainerId}
+              onChange={(e) => setFormData({ ...formData, googleTagManagerContainerId: e.target.value })}
+              placeholder="e.g. GTM-XXXXXXX"
+              className="w-full bg-surface-3 border border-border-2 focus:border-accent-orange p-4 rounded-2xl text-sm transition-all focus:ring-1 focus:ring-accent-orange/20 text-text-primary font-medium"
+            />
+            <p className="text-[10px] text-text-muted italic">Found in your Google Tag Manager workspace (top right, next to Preview/Submit).</p>
           </div>
         </div>
       </section>

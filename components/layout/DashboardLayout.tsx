@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Brain,
@@ -174,9 +174,39 @@ const NavSection = ({ title, isCollapsed, children }: { title: string, isCollaps
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { activeClientId } = useClientStore();
+  const { activeClientId, clients } = useClientStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(pathname.includes('/analytics') || pathname.includes('/intelligence'));
+  const [isTagsOpen, setIsTagsOpen] = useState(pathname.includes('/tags'));
+  const router = useRouter();
+
+  // Validate clientId in URL and redirect if stale
+  React.useEffect(() => {
+    if (clients.length === 0) return;
+
+    const pathParts = pathname.split('/');
+    // Pattern: /(internal)/[module]/[clientId]/...
+    // In Next.js App Router, (internal) is a route group and not in pathname
+    // Pathname starts after the route group, e.g., /intelligence/client_xxx/analytics
+    if (pathParts.length >= 3) {
+      const module = pathParts[1];
+      const urlClientId = pathParts[2];
+      const clientSpecificModules = ['intelligence', 'crm', 'seo', 'content'];
+      
+      if (clientSpecificModules.includes(module) && urlClientId.startsWith('client_')) {
+        const clientExists = clients.some(c => c.id === urlClientId);
+        if (!clientExists) {
+          console.warn(`Client ${urlClientId} not found, redirecting...`);
+          if (activeClientId && clients.some(c => c.id === activeClientId)) {
+            const newPath = pathname.replace(urlClientId, activeClientId);
+            router.push(newPath);
+          } else {
+            router.push('/dashboard');
+          }
+        }
+      }
+    }
+  }, [pathname, clients, activeClientId, router]);
 
   return (
     <div className="flex h-screen bg-surface-1 font-sans text-text-secondary selection:bg-blue-500/30 overflow-hidden transition-colors duration-500">
@@ -239,7 +269,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href={activeClientId ? `/intelligence/${activeClientId}/analytics` : '/intelligence'}
               icon={<BarChart3 />}
               label="Analytics"
-              active={pathname.includes('/intelligence') || pathname.includes('/analytics')}
+              active={(pathname.includes('/intelligence') || pathname.includes('/analytics')) && !pathname.includes('/tags')}
               isCollapsed={isCollapsed}
               isOpen={isAnalyticsOpen}
               onToggle={(e) => {
@@ -267,6 +297,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href: activeClientId ? `/intelligence/${activeClientId}/analytics/campaigns` : '/intelligence',
                   label: "Non Google campaign",
                   active: pathname.includes('/analytics/campaigns')
+                }
+              ]}
+            />
+            <SidebarItem
+              href={activeClientId ? `/intelligence/${activeClientId}/tags` : '/intelligence'}
+              icon={<ShieldCheck />}
+              label="Tag Manager"
+              active={pathname.includes('/tags')}
+              isCollapsed={isCollapsed}
+              isOpen={isTagsOpen}
+              onToggle={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsTagsOpen(!isTagsOpen);
+              }}
+              subItems={[
+                {
+                  href: activeClientId ? `/intelligence/${activeClientId}/tags/overview` : '/intelligence',
+                  label: "Overview",
+                  active: pathname.includes('/tags/overview')
+                },
+                {
+                  href: activeClientId ? `/intelligence/${activeClientId}/tags/inventory` : '/intelligence',
+                  label: "Tags",
+                  active: pathname.includes('/tags/inventory')
                 }
               ]}
             />

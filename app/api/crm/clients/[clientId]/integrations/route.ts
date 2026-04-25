@@ -20,7 +20,8 @@ export async function GET(
         linkedInAccessToken: true,
         googleRefreshToken: true,
         googleSearchConsoleUrl: true,
-        googleAnalyticsPropertyId: true
+        googleAnalyticsPropertyId: true,
+        googleTagManagerContainerId: true
       }
     });
 
@@ -38,7 +39,8 @@ export async function GET(
       linkedInAccessToken: mask(client.linkedInAccessToken),
       isGoogleConnected: !!client.googleRefreshToken,
       googleSearchConsoleUrl: client.googleSearchConsoleUrl || '',
-      googleAnalyticsPropertyId: client.googleAnalyticsPropertyId || ''
+      googleAnalyticsPropertyId: client.googleAnalyticsPropertyId || '',
+      googleTagManagerContainerId: client.googleTagManagerContainerId || ''
     });
 
   } catch (error) {
@@ -58,13 +60,14 @@ export async function PATCH(
   try {
     const { clientId } = await params;
     const body = await req.json();
-    const { googleAdsKey, metaAccessToken, metaPageId, linkedInAccessToken, googleSearchConsoleUrl, googleAnalyticsPropertyId } = body;
+    const { googleAdsKey, metaAccessToken, metaPageId, linkedInAccessToken, googleSearchConsoleUrl, googleAnalyticsPropertyId, googleTagManagerContainerId } = body;
 
     const data: any = {};
     if (googleAdsKey !== undefined) data.googleAdsKey = googleAdsKey;
     if (metaPageId !== undefined) data.metaPageId = metaPageId;
     if (googleSearchConsoleUrl !== undefined) data.googleSearchConsoleUrl = googleSearchConsoleUrl;
     if (googleAnalyticsPropertyId !== undefined) data.googleAnalyticsPropertyId = googleAnalyticsPropertyId;
+    if (googleTagManagerContainerId !== undefined) data.googleTagManagerContainerId = googleTagManagerContainerId;
     
     // Only update tokens if they aren't masked strings (containing dots)
     if (metaAccessToken && !metaAccessToken.includes('•')) {
@@ -81,8 +84,11 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Integration Update Error:', error);
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Failed to update integrations' }, { status: 500 });
   }
 }

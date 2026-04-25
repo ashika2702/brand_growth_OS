@@ -55,6 +55,7 @@ export default function DashboardPage() {
     async function fetchData() {
       try {
         const res = await fetch('/api/dashboard/overview');
+        if (!res.ok) throw new Error('Failed to fetch');
         const json = await res.json();
         setData(json);
       } catch (err) {
@@ -80,11 +81,11 @@ export default function DashboardPage() {
   }
 
   const chartData = data?.performanceTrend || [];
-  const barData = data ? [
-    { stage: 'New', leads: data.leadsByStage.new, fill: '#FF4D00' },
-    { stage: 'Qualified', leads: data.leadsByStage.qualified, fill: '#3388FF' },
-    { stage: 'Proposal', leads: data.leadsByStage.proposal, fill: '#33FF88' },
-    { stage: 'Won', leads: data.leadsByStage.won, fill: '#FF4D00' },
+  const barData = data?.leadsByStage ? [
+    { stage: 'New', leads: data.leadsByStage.new || 0, fill: '#FF4D00' },
+    { stage: 'Qualified', leads: data.leadsByStage.qualified || 0, fill: '#3388FF' },
+    { stage: 'Proposal', leads: data.leadsByStage.proposal || 0, fill: '#33FF88' },
+    { stage: 'Won', leads: data.leadsByStage.won || 0, fill: '#FF4D00' },
   ] : [];
 
   return (
@@ -92,10 +93,10 @@ export default function DashboardPage() {
       {/* Top Row: Mini Stats */}
       <div className="grid grid-cols-4 gap-6 shrink-0">
         {[
-          { label: 'Total Leads', value: data?.stats.leads.toLocaleString(), icon: Target, color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
-          { label: 'Active Users', value: data?.stats.activeUsers.toLocaleString(), icon: Users, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
-          { label: 'Ranked Keywords', value: data?.stats.top10Keywords.toLocaleString(), icon: Globe, color: 'text-accent-green', bg: 'bg-accent-green/10' },
-          { label: 'Earnings', value: `$${data?.stats.wonValue.toLocaleString()}`, icon: DollarSign, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
+          { label: 'Total Leads', value: data?.stats?.leads?.toLocaleString() || '0', icon: Target, color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
+          { label: 'Active Users', value: data?.stats?.activeUsers?.toLocaleString() || '0', icon: Users, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
+          { label: 'Ranked Keywords', value: data?.stats?.top10Keywords?.toLocaleString() || '0', icon: Globe, color: 'text-accent-green', bg: 'bg-accent-green/10' },
+          { label: 'Earnings', value: `$${data?.stats?.wonValue?.toLocaleString() || '0'}`, icon: DollarSign, color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
         ].map((stat, i) => (
           <div key={i} className="glass-card p-4 rounded-[1.25rem] flex items-center gap-3 group cursor-pointer hover:border-accent-blue/20 transition-all border border-border-1">
             <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color} shadow-lg shadow-black/5 group-hover:scale-105 transition-transform`}>
@@ -159,7 +160,7 @@ export default function DashboardPage() {
               <div className="flex justify-between items-end">
                 <div>
                   <p className="text-[8px] font-black text-text-muted uppercase tracking-[0.1em] mb-0.5">Conversions</p>
-                  <h5 className="text-xl font-black text-text-primary tracking-normal">{data?.stats.conversions.toLocaleString()}</h5>
+                  <h5 className="text-xl font-black text-text-primary tracking-normal">{data?.stats?.conversions?.toLocaleString() || '0'}</h5>
                 </div>
                 <div className="px-1.5 py-0.5 rounded-lg bg-accent-green/10 text-accent-green text-[8px] font-black italic shadow-lg shadow-accent-green/5">Live Aggregation</div>
               </div>

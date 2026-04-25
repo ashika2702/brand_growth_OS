@@ -20,12 +20,17 @@ export async function GET(
     const startDate = searchParams.get('startDate') || thirtyDaysAgo;
     const endDate = searchParams.get('endDate') || today;
 
-    // Calculate Comparison Range
+    // Calculate or Get Comparison Range
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diff = end.getTime() - start.getTime();
-    const prevStart = new Date(start.getTime() - (diff || 86400000)).toISOString().split('T')[0];
-    const prevEnd = new Date(start.getTime() - 1000).toISOString().split('T')[0];
+    
+    // Use provided comparison dates or fall back to automatic calculation
+    const prevStartDate = searchParams.get('prevStartDate');
+    const prevEndDate = searchParams.get('prevEndDate');
+    
+    const prevStart = prevStartDate || new Date(start.getTime() - (diff || 86400000)).toISOString().split('T')[0];
+    const prevEnd = prevEndDate || new Date(start.getTime() - 1000).toISOString().split('T')[0];
     
     const [
       keywords, 

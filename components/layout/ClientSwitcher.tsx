@@ -19,8 +19,9 @@ export default function ClientSwitcher() {
         const data = await res.json();
         if (Array.isArray(data)) {
           setClients(data);
-          // Auto-select first client if none selected
-          if (!activeClientId && data.length > 0) {
+          // Auto-select first client if none selected OR if active client no longer exists
+          const exists = data.some(c => c.id === activeClientId);
+          if (data.length > 0 && (!activeClientId || !exists)) {
             setActiveClientId(data[0].id);
           }
         }
