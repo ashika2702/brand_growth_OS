@@ -62,7 +62,8 @@ export async function fetchGSCPerformance(
   startDate: string, 
   endDate: string,
   dimensions: string[] = ['query'],
-  dataState?: string
+  dataState?: string,
+  country?: string
 ) {
   await getGoogleToken(clientId);
   
@@ -85,6 +86,23 @@ export async function fetchGSCPerformance(
       rowLimit: 5000,
     };
     if (dataState) requestBody.dataState = dataState;
+
+    if (country && country !== 'all') {
+      const countryList = country.split(',').filter(Boolean);
+      if (countryList.length > 0) {
+        requestBody.dimensionFilterGroups = [{
+          filters: [{
+            dimension: 'country',
+            operator: countryList.length > 1 ? 'includingRegex' : 'equals',
+            expression: countryList.length > 1 
+              ? countryList.map(c => c.toLowerCase()).join('|') 
+              : countryList[0].toLowerCase()
+          }]
+        }];
+      }
+    }
+
+    console.log('GSC Request Body:', JSON.stringify(requestBody, null, 2));
 
     const res = await searchconsole.searchanalytics.query({
       siteUrl: clientData.googleSearchConsoleUrl,
